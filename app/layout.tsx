@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import ServiceWorkerRegistrar from "@/components/service-worker-registrar";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -44,8 +45,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="ROSCO" />
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="antialiased">
+        <ServiceWorkerRegistrar />
         {children}
         <Toaster
           position="top-center"

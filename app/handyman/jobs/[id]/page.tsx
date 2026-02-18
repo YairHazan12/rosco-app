@@ -1,10 +1,11 @@
 import { getJob } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Phone, Mail, Calendar, Clock, ChevronLeft } from "lucide-react";
+import { Phone, Mail, Calendar, Clock, ChevronLeft, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import MarkDoneButton from "./_components/MarkDoneButton";
 import WazeButton from "./_components/WazeButton";
+import type { Job } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,35 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
   "In Progress": { label: "In Progress", cls: "badge-in-progress" },
   Completed:     { label: "Completed",   cls: "badge-completed" },
 };
+
+// ─── Google Calendar URL helper ───────────────────────────────────────────────
+
+function googleCalendarUrl(job: Job): string {
+  const start = new Date(job.date);
+  const end   = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+
+  // Format: YYYYMMDDTHHmmssZ
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(".000", "");
+
+  const details = [
+    `Client: ${job.clientName}`,
+    job.clientPhone  ? `Phone: ${job.clientPhone}`     : "",
+    job.handymanName ? `Handyman: ${job.handymanName}` : "",
+    job.description  ? `Notes: ${job.description}`     : "",
+  ].filter(Boolean).join("\n");
+
+  const params = new URLSearchParams({
+    action:   "TEMPLATE",
+    text:     job.title,
+    dates:    `${fmt(start)}/${fmt(end)}`,
+    location: job.location,
+    details,
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function HandymanJobDetailPage({
   params,
@@ -24,7 +54,8 @@ export default async function HandymanJobDetailPage({
   if (!job) notFound();
 
   const isCompleted = job.status === "Completed";
-  const status = statusConfig[job.status] ?? { label: job.status, cls: "badge-pending" };
+  const status      = statusConfig[job.status] ?? { label: job.status, cls: "badge-pending" };
+  const gcalUrl     = googleCalendarUrl(job);
 
   return (
     <div className={isCompleted ? "space-y-3 pb-4" : "space-y-3 pb-40"}>
@@ -53,7 +84,7 @@ export default async function HandymanJobDetailPage({
         </p>
       </div>
 
-      {/* Date & Time — grouped card */}
+      {/* Date & Time */}
       <div className="ios-group">
         <div className="ios-group-row">
           <div
@@ -85,7 +116,37 @@ export default async function HandymanJobDetailPage({
         </div>
       </div>
 
-      {/* Waze Navigation button */}
+      {/* Add to Google Calendar */}
+      <a
+        href={gcalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 ios-card p-4 touch-scale"
+        style={{ textDecoration: "none" }}
+      >
+        <div
+          className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(52,199,89,0.12)" }}
+        >
+          {/* Google Calendar icon (simplified) */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke="var(--ios-green)" strokeWidth="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18" stroke="var(--ios-green)" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" stroke="var(--ios-green)" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold text-[15px]" style={{ color: "var(--label-primary)" }}>
+            Add to Google Calendar
+          </p>
+          <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
+            {format(new Date(job.date), "EEE, MMM d 'at' h:mm a")}
+          </p>
+        </div>
+        <ExternalLink className="w-4 h-4 flex-shrink-0" style={{ color: "var(--label-quaternary)" }} />
+      </a>
+
+      {/* Waze Navigation */}
       <WazeButton address={job.location} />
 
       {/* Notes */}
@@ -165,10 +226,7 @@ export default async function HandymanJobDetailPage({
               />
             </svg>
           </div>
-          <p
-            className="font-bold text-[18px]"
-            style={{ color: "#248A3D" }}
-          >
+          <p className="font-bold text-[18px]" style={{ color: "#248A3D" }}>
             Job Complete!
           </p>
           {job.invoiceId && (

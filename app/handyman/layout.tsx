@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
+import PWAPrompt from "@/components/pwa-prompt";
+import NotificationPrompt from "@/components/notification-prompt";
 
 const navItems = [
   { href: "/handyman",      label: "Schedule", icon: CalendarDays },
@@ -63,6 +65,10 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
           </div>
         </div>
       </header>
+
+      {/* PWA Install + Notification prompts */}
+      <PWAPrompt />
+      <NotificationPrompt />
 
       {/* iOS-style bottom tab bar */}
       <nav

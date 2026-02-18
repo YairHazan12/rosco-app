@@ -69,6 +69,33 @@ export async function getUpcomingJobs(days = 7): Promise<Job[]> {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/** Jobs scheduled during the current ISO week (Monday–Sunday). */
+export async function getWeekJobs(): Promise<Job[]> {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  const diff = dow === 0 ? -6 : 1 - dow; // shift to Monday
+  const start = new Date(today);
+  start.setDate(today.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  const all = await getJobs();
+  return all
+    .filter(j => j.date >= start.toISOString() && j.date < end.toISOString())
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Jobs scheduled during the current calendar month. */
+export async function getMonthJobs(): Promise<Job[]> {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const end   = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const all = await getJobs();
+  return all
+    .filter(j => j.date >= start.toISOString() && j.date < end.toISOString())
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt">): Promise<Job> {
   const ref = db.collection("jobs").doc();
   const job: Job = {
