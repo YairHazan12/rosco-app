@@ -37,32 +37,47 @@ export default function MarkDoneButton({
     if (confirm("Mark this job as completed?")) updateStatus("Completed");
   };
 
-  // bottom-16 = 64px = height of the handyman bottom nav
   return (
-    <div className="fixed bottom-16 left-0 right-0 z-10 px-4 pb-3 pt-2 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent">
-      <div className="max-w-lg mx-auto space-y-2">
+    /* Sits above the tab bar (68px) + safe-area-inset-bottom */
+    <div
+      className="fixed left-0 right-0 z-20 px-4 pb-3 pt-4"
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 50px)",
+        background: "linear-gradient(to top, var(--bg-primary) 75%, transparent)",
+      }}
+    >
+      <div className="max-w-[430px] mx-auto space-y-2.5">
         {currentStatus === "Pending" && (
           <button
             onClick={() => updateStatus("In Progress")}
             disabled={loading}
-            className="w-full bg-blue-500 active:bg-blue-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 text-base shadow-md"
+            className="ios-btn-primary"
+            style={{ background: "var(--ios-blue)" }}
           >
-            {loading
-              ? <Loader2 className="w-5 h-5 animate-spin" />
-              : <><Play className="w-4 h-4 fill-white" /> Start Job</>
-            }
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <Play className="w-[18px] h-[18px] fill-white" />
+                Start Job
+              </>
+            )}
           </button>
         )}
 
         <button
           onClick={handleMarkDone}
           disabled={loading}
-          className="w-full bg-green-500 active:bg-green-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors flex items-center justify-center gap-2 text-lg shadow-lg shadow-green-500/30"
+          className="ios-btn-success"
         >
-          {loading
-            ? <Loader2 className="w-5 h-5 animate-spin" />
-            : <><CheckCircle className="w-6 h-6" /> Mark as Done</>
-          }
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <CheckCircle className="w-[22px] h-[22px]" />
+              Mark as Done
+            </>
+          )}
         </button>
       </div>
     </div>

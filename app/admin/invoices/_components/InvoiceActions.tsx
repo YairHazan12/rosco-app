@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ExternalLink, Send, CheckCircle, Copy } from "lucide-react";
+import { ExternalLink, Send, CheckCircle, Copy, Loader2 } from "lucide-react";
 
 interface Invoice {
   id: string;
@@ -58,90 +56,118 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   const copyLink = () => {
     const link = `${window.location.origin}/pay/${invoice.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Payment link copied!");
+    toast.success("Copied to clipboard!");
   };
 
   return (
-    <Card>
-      <CardContent className="pt-4 space-y-3">
-        <h3 className="font-semibold text-sm text-gray-700">Actions</h3>
+    <div>
+      <p className="ios-section-header mb-2">Actions</p>
+      <div className="space-y-2">
+        {/* Primary actions */}
+        {(invoice.status === "Sent" || invoice.status === "Outstanding") && (
+          <button
+            onClick={() => updateStatus("Paid")}
+            disabled={loading}
+            className="ios-btn-success"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <CheckCircle className="w-[20px] h-[20px]" />
+                Mark as Paid
+              </>
+            )}
+          </button>
+        )}
 
-        <div className="flex flex-wrap gap-2">
+        {/* Secondary actions */}
+        <div className="ios-group">
           {invoice.status === "Draft" && (
-            <Button
+            <button
               onClick={() => updateStatus("Sent")}
               disabled={loading}
-              variant="outline"
-              className="gap-2"
+              className="ios-group-row w-full"
+              style={{ color: "var(--ios-blue)" }}
             >
-              <Send className="w-4 h-4" /> Mark as Sent
-            </Button>
+              <div
+                className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+                style={{ background: "rgba(0,122,255,0.1)" }}
+              >
+                <Send className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+              </div>
+              <span className="font-medium text-[16px]">Mark as Sent</span>
+            </button>
           )}
 
           {invoice.status === "Sent" && (
-            <Button
+            <button
               onClick={() => updateStatus("Outstanding")}
               disabled={loading}
-              variant="outline"
-              className="gap-2 border-orange-300 text-orange-600"
+              className="ios-group-row w-full"
+              style={{ color: "var(--ios-orange)" }}
             >
-              Mark as Outstanding
-            </Button>
+              <div
+                className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+                style={{ background: "rgba(255,149,0,0.1)" }}
+              >
+                <ExternalLink className="w-[18px] h-[18px]" style={{ color: "var(--ios-orange)" }} />
+              </div>
+              <span className="font-medium text-[16px]">Mark as Outstanding</span>
+            </button>
           )}
 
-          {(invoice.status === "Sent" || invoice.status === "Outstanding") && (
-            <Button
-              onClick={() => updateStatus("Paid")}
-              disabled={loading}
-              className="gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="w-4 h-4" /> Mark as Paid
-            </Button>
-          )}
-
-          <Button
+          <button
             onClick={generatePaymentLink}
             disabled={loading}
-            variant="outline"
-            className="gap-2"
+            className="ios-group-row w-full"
+            style={{ color: "var(--ios-blue)" }}
           >
-            <ExternalLink className="w-4 h-4" />
-            {payLink ? "Regenerate Payment Link" : "Generate Payment Link"}
-          </Button>
+            <div
+              className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+              style={{ background: "rgba(0,122,255,0.1)" }}
+            >
+              <ExternalLink className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+            </div>
+            <span className="font-medium text-[16px]">
+              {payLink ? "Regenerate Payment Link" : "Generate Payment Link"}
+            </span>
+          </button>
 
-          <Button
+          <button
             onClick={copyLink}
-            variant="outline"
-            className="gap-2"
+            className="ios-group-row w-full"
+            style={{ color: "var(--ios-blue)" }}
           >
-            <Copy className="w-4 h-4" /> Copy Customer Link
-          </Button>
+            <div
+              className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+              style={{ background: "rgba(0,122,255,0.1)" }}
+            >
+              <Copy className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+            </div>
+            <span className="font-medium text-[16px]">Copy Customer Link</span>
+          </button>
         </div>
 
         {payLink && (
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Stripe Payment Link:</p>
+          <div
+            className="ios-card p-4"
+            style={{ background: "rgba(0,122,255,0.05)" }}
+          >
+            <p className="text-[12px] mb-1" style={{ color: "var(--label-tertiary)" }}>
+              Stripe Payment Link:
+            </p>
             <a
               href={payLink}
               target="_blank"
-              className="text-xs text-blue-600 hover:underline break-all"
+              className="text-[13px] break-all"
+              style={{ color: "var(--ios-blue)" }}
             >
               {payLink}
             </a>
           </div>
         )}
-
-        <p className="text-xs text-gray-400">
-          Customer payment page:{" "}
-          <a
-            href={`/pay/${invoice.id}`}
-            target="_blank"
-            className="text-blue-500 hover:underline"
-          >
-            /pay/{invoice.id}
-          </a>
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

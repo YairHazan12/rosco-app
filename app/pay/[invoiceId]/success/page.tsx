@@ -27,25 +27,97 @@ export default async function PaymentSuccessPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="max-w-sm w-full text-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">✅</span>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4"
+      style={{ background: "var(--bg-primary)" }}
+    >
+      <div
+        className="w-full max-w-sm text-center"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 20px)" }}
+      >
+        {/* Animated checkmark */}
+        <div className="flex justify-center mb-6">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center animate-circle-scale"
+            style={{ background: "var(--ios-green)" }}
+          >
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path
+                d="M10 20.5L16.5 27L30 14"
+                stroke="white"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  strokeDasharray: 100,
+                  strokeDashoffset: 0,
+                  animation: "checkmark-draw 0.5s ease 0.3s both",
+                }}
+              />
+            </svg>
           </div>
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Wrench className="w-5 h-5 text-orange-500" />
-            <span className="font-bold text-gray-900">ROSCO</span>
+        </div>
+
+        {/* Brand */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: "var(--brand)" }}
+          >
+            <Wrench className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-500 mb-1">Thank you, <strong>{invoice.clientName}</strong></p>
-          <p className="text-gray-400 text-sm mb-6">Your payment has been received. We appreciate your business!</p>
-          <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-gray-500">Invoice</p>
-            <p className="font-mono text-sm font-medium">#{invoice.id.slice(-8).toUpperCase()}</p>
-            <p className="text-lg font-bold text-green-600 mt-1">₪{invoice.total.toFixed(2)}</p>
+          <span
+            className="font-semibold text-[17px]"
+            style={{ color: "var(--label-primary)" }}
+          >
+            ROSCO
+          </span>
+        </div>
+
+        {/* Card */}
+        <div className="ios-card p-6 animate-fade-up">
+          <h1
+            className="text-[26px] font-bold mb-1.5"
+            style={{ color: "var(--label-primary)", letterSpacing: "-0.5px" }}
+          >
+            Payment Successful!
+          </h1>
+          <p className="text-[16px]" style={{ color: "var(--label-secondary)" }}>
+            Thank you, <strong>{invoice.clientName}</strong>
+          </p>
+          <p className="text-[14px] mt-1.5" style={{ color: "var(--label-tertiary)" }}>
+            Your payment has been received.
+          </p>
+
+          {/* Invoice details */}
+          <div
+            className="rounded-xl p-4 mt-5"
+            style={{ background: "var(--bg-primary)" }}
+          >
+            <p className="text-[12px]" style={{ color: "var(--label-tertiary)" }}>
+              Invoice
+            </p>
+            <p
+              className="font-mono text-[13px] font-medium mt-0.5"
+              style={{ color: "var(--label-secondary)" }}
+            >
+              #{invoice.id.slice(-8).toUpperCase()}
+            </p>
+            <p
+              className="text-[28px] font-bold mt-2 tracking-tight"
+              style={{ color: "var(--ios-green)", letterSpacing: "-0.5px" }}
+            >
+              ₪{invoice.total.toFixed(2)}
+            </p>
           </div>
-          <Link href={`/pay/${invoiceId}`} className="text-sm text-blue-500 hover:underline">View Invoice →</Link>
+
+          <Link
+            href={`/pay/${invoiceId}`}
+            className="inline-block mt-5 text-[15px] font-medium"
+            style={{ color: "var(--ios-blue)" }}
+          >
+            View Invoice →
+          </Link>
         </div>
       </div>
     </div>

@@ -2,83 +2,208 @@ import { getInvoice } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
+import { ChevronLeft } from "lucide-react";
 import InvoiceActions from "../_components/InvoiceActions";
 
 export const dynamic = "force-dynamic";
 
-const statusStyles: Record<string, string> = {
-  Draft:       "bg-gray-100 text-gray-700",
-  Sent:        "bg-blue-100 text-blue-700",
-  Paid:        "bg-green-100 text-green-700",
-  Outstanding: "bg-orange-100 text-orange-700",
+const statusConfig: Record<string, { cls: string }> = {
+  Draft:       { cls: "badge-pending" },
+  Sent:        { cls: "badge-in-progress" },
+  Paid:        { cls: "badge-completed" },
+  Outstanding: { cls: "badge-pending" },
 };
 
-export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InvoiceDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const invoice = await getInvoice(id);
   if (!invoice) notFound();
 
+  const cfg = statusConfig[invoice.status] ?? statusConfig.Draft;
+
   return (
     <div className="space-y-4 pb-8">
+      {/* Back nav */}
       <div>
-        <Link href="/admin/invoices" className="text-sm text-gray-400">← Invoices</Link>
-        <div className="flex items-center justify-between mt-2">
+        <Link
+          href="/admin/invoices"
+          className="inline-flex items-center gap-1 -ml-1 min-h-[44px] px-1"
+          style={{ color: "var(--brand)" }}
+        >
+          <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          <span className="text-[17px]">Invoices</span>
+        </Link>
+
+        <div className="flex items-center justify-between mt-1">
           <div>
-            <p className="text-xs text-gray-400 font-mono">#{invoice.id.slice(-8).toUpperCase()}</p>
-            <h1 className="text-xl font-bold text-gray-900">{invoice.clientName}</h1>
+            <p
+              className="text-[12px] font-mono"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              #{invoice.id.slice(-8).toUpperCase()}
+            </p>
+            <h1
+              className="text-[22px] font-bold"
+              style={{ color: "var(--label-primary)", letterSpacing: "-0.3px" }}
+            >
+              {invoice.clientName}
+            </h1>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusStyles[invoice.status]}`}>{invoice.status}</span>
+          <span className={cfg.cls}>{invoice.status}</span>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-2 text-sm">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Job</p>
-        <p className="font-medium text-gray-900">{invoice.jobTitle}</p>
-        <p className="text-gray-500">{format(new Date(invoice.jobDate), "MMMM d, yyyy")}</p>
-        <p className="text-gray-500">{invoice.jobLocation}</p>
-        {invoice.clientEmail && <p className="text-gray-500">{invoice.clientEmail}</p>}
-        {invoice.clientPhone && <p className="text-gray-500">{invoice.clientPhone}</p>}
-        {invoice.handymanName && <p className="text-gray-400 text-xs">Handyman: {invoice.handymanName}</p>}
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Services</p>
-        <div className="space-y-3">
-          {invoice.items.map((item) => (
-            <div key={item.id} className="flex justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900">{item.description}</p>
-                {item.quantity > 1 && <p className="text-xs text-gray-400">{item.quantity} × ₪{item.unitPrice.toFixed(2)}</p>}
-              </div>
-              <p className="text-sm font-semibold text-gray-900 flex-shrink-0">₪{item.total.toFixed(2)}</p>
+      {/* Job details */}
+      <div>
+        <p className="ios-section-header mb-2">Job Details</p>
+        <div className="ios-group">
+          <div className="ios-group-row">
+            <div className="flex-1">
+              <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Job</p>
+              <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                {invoice.jobTitle}
+              </p>
             </div>
-          ))}
-        </div>
-        <div className="border-t border-gray-100 mt-4 pt-4 space-y-2">
-          <div className="flex justify-between text-sm text-gray-500"><span>Subtotal</span><span>₪{invoice.subtotal.toFixed(2)}</span></div>
-          {invoice.vatEnabled && (
-            <div className="flex justify-between text-sm text-gray-400">
-              <span>VAT ({(invoice.vatRate * 100).toFixed(0)}%)</span>
-              <span>₪{invoice.vatAmount.toFixed(2)}</span>
+          </div>
+          <div className="ios-group-row">
+            <div className="flex-1">
+              <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Date</p>
+              <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                {format(new Date(invoice.jobDate), "MMMM d, yyyy")}
+              </p>
+            </div>
+          </div>
+          <div className="ios-group-row">
+            <div className="flex-1">
+              <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Location</p>
+              <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                {invoice.jobLocation}
+              </p>
+            </div>
+          </div>
+          {invoice.clientEmail && (
+            <div className="ios-group-row">
+              <div className="flex-1">
+                <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Email</p>
+                <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                  {invoice.clientEmail}
+                </p>
+              </div>
             </div>
           )}
-          <div className="flex justify-between font-bold text-lg pt-1 border-t border-gray-100">
-            <span>Total</span><span className="text-orange-600">₪{invoice.total.toFixed(2)}</span>
+          {invoice.clientPhone && (
+            <div className="ios-group-row">
+              <div className="flex-1">
+                <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Phone</p>
+                <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                  {invoice.clientPhone}
+                </p>
+              </div>
+            </div>
+          )}
+          {invoice.handymanName && (
+            <div className="ios-group-row">
+              <div className="flex-1">
+                <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Handyman</p>
+                <p className="font-medium text-[15px]" style={{ color: "var(--label-primary)" }}>
+                  {invoice.handymanName}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Services */}
+      <div>
+        <p className="ios-section-header mb-2">Services</p>
+        <div className="ios-card p-4">
+          <div className="space-y-3.5">
+            {invoice.items.map((item) => (
+              <div key={item.id} className="flex justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-medium" style={{ color: "var(--label-primary)" }}>
+                    {item.description}
+                  </p>
+                  {item.quantity > 1 && (
+                    <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
+                      {item.quantity} × ₪{item.unitPrice.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+                <p
+                  className="text-[15px] font-semibold flex-shrink-0"
+                  style={{ color: "var(--label-primary)" }}
+                >
+                  ₪{item.total.toFixed(2)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className="mt-4 pt-4 space-y-2"
+            style={{ borderTop: "0.5px solid var(--separator)" }}
+          >
+            <div
+              className="flex justify-between text-[14px]"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              <span>Subtotal</span>
+              <span>₪{invoice.subtotal.toFixed(2)}</span>
+            </div>
+            {invoice.vatEnabled && (
+              <div
+                className="flex justify-between text-[14px]"
+                style={{ color: "var(--label-tertiary)" }}
+              >
+                <span>VAT ({(invoice.vatRate * 100).toFixed(0)}%)</span>
+                <span>₪{invoice.vatAmount.toFixed(2)}</span>
+              </div>
+            )}
+            <div
+              className="flex justify-between font-bold pt-2"
+              style={{ borderTop: "0.5px solid var(--separator)" }}
+            >
+              <span className="text-[17px]" style={{ color: "var(--label-primary)" }}>
+                Total
+              </span>
+              <span className="text-[22px]" style={{ color: "var(--brand)", letterSpacing: "-0.3px" }}>
+                ₪{invoice.total.toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <p className="text-xs font-semibold text-gray-500 mb-1">Customer payment page</p>
-        <a href={`/pay/${invoice.id}`} target="_blank" className="text-sm text-blue-600 hover:underline break-all">
-          /pay/{invoice.id}
-        </a>
+      {/* Payment link */}
+      <div>
+        <p className="ios-section-header mb-2">Payment Link</p>
+        <div className="ios-group">
+          <div className="ios-group-row">
+            <a
+              href={`/pay/${invoice.id}`}
+              target="_blank"
+              className="text-[14px] break-all"
+              style={{ color: "var(--ios-blue)" }}
+            >
+              /pay/{invoice.id}
+            </a>
+          </div>
+        </div>
       </div>
 
       <InvoiceActions invoice={invoice} />
 
       {invoice.paidAt && (
-        <p className="text-sm text-green-600 text-center font-medium">
+        <p
+          className="text-[14px] font-medium text-center"
+          style={{ color: "var(--ios-green)" }}
+        >
           ✅ Paid {format(new Date(invoice.paidAt), "MMMM d, yyyy")}
         </p>
       )}

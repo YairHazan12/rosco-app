@@ -47,7 +47,7 @@ export default function PayButton({ invoice }: { invoice: Invoice }) {
     <button
       onClick={handlePay}
       disabled={loading}
-      className="w-full bg-orange-500 active:bg-orange-600 disabled:opacity-60 text-white font-bold text-lg py-4 rounded-2xl transition-colors flex items-center justify-center gap-2"
+      className="ios-btn-brand"
     >
       {loading ? (
         <Loader2 className="w-5 h-5 animate-spin" />

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 interface Handyman { id: string; name: string }
 interface Job {
@@ -81,101 +82,265 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
     }
   };
 
-  const fieldClass = "h-12 text-base";
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-10">
-      {/* Client */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Client</p>
+      {/* Client Section */}
+      <div>
+        <p className="ios-section-header mb-2">Client</p>
+        <div className="ios-group px-4 py-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="clientName"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Name *
+            </Label>
+            <Input
+              id="clientName"
+              required
+              value={formData.clientName}
+              onChange={e => set("clientName", e.target.value)}
+              placeholder="John Smith"
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="clientName" className="text-sm font-medium">Name *</Label>
-          <Input id="clientName" required value={formData.clientName} className={fieldClass}
-            onChange={e => set("clientName", e.target.value)} placeholder="John Smith" />
-        </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="clientPhone"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Phone
+            </Label>
+            <Input
+              id="clientPhone"
+              type="tel"
+              value={formData.clientPhone}
+              onChange={e => set("clientPhone", e.target.value)}
+              placeholder="+972-50-1234567"
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="clientPhone" className="text-sm font-medium">Phone</Label>
-          <Input id="clientPhone" type="tel" value={formData.clientPhone} className={fieldClass}
-            onChange={e => set("clientPhone", e.target.value)} placeholder="+972-50-1234567" />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="clientEmail" className="text-sm font-medium">Email</Label>
-          <Input id="clientEmail" type="email" value={formData.clientEmail} className={fieldClass}
-            onChange={e => set("clientEmail", e.target.value)} placeholder="client@email.com" />
-        </div>
-      </div>
-
-      {/* Job details */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Job Details</p>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
-          <Input id="title" required value={formData.title} className={fieldClass}
-            onChange={e => set("title", e.target.value)} placeholder="Kitchen sink repair" />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-          <Textarea id="description" value={formData.description} rows={3}
-            onChange={e => set("description", e.target.value)}
-            placeholder="What needs to be done..." className="text-base resize-none" />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="date" className="text-sm font-medium">Date & Time *</Label>
-          <Input id="date" type="datetime-local" required value={formData.date} className={fieldClass}
-            onChange={e => set("date", e.target.value)} />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="location" className="text-sm font-medium">Address *</Label>
-          <Input id="location" required value={formData.location} className={fieldClass}
-            onChange={e => set("location", e.target.value)} placeholder="Rothschild Blvd 45, Tel Aviv" />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Status</Label>
-          <Select value={formData.status} onValueChange={val => set("status", val)}>
-            <SelectTrigger className={fieldClass}><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Handyman</Label>
-          <Select
-            value={formData.handymanId || "none"}
-            onValueChange={val => set("handymanId", val === "none" ? "" : val)}
-          >
-            <SelectTrigger className={fieldClass}><SelectValue placeholder="Select handyman" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Unassigned</SelectItem>
-              {handymen.map(h => (
-                <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="clientEmail"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Email
+            </Label>
+            <Input
+              id="clientEmail"
+              type="email"
+              value={formData.clientEmail}
+              onChange={e => set("clientEmail", e.target.value)}
+              placeholder="client@email.com"
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Job Details Section */}
+      <div>
+        <p className="ios-section-header mb-2">Job Details</p>
+        <div className="ios-group px-4 py-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="title"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Title *
+            </Label>
+            <Input
+              id="title"
+              required
+              value={formData.title}
+              onChange={e => set("title", e.target.value)}
+              placeholder="Kitchen sink repair"
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="description"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Description
+            </Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              rows={3}
+              onChange={e => set("description", e.target.value)}
+              placeholder="What needs to be done..."
+              className="text-[16px] resize-none rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="date"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Date & Time *
+            </Label>
+            <Input
+              id="date"
+              type="datetime-local"
+              required
+              value={formData.date}
+              onChange={e => set("date", e.target.value)}
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="location"
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Address *
+            </Label>
+            <Input
+              id="location"
+              required
+              value={formData.location}
+              onChange={e => set("location", e.target.value)}
+              placeholder="Rothschild Blvd 45, Tel Aviv"
+              className="h-11 text-[16px] rounded-xl border"
+              style={{
+                background: "var(--bg-primary)",
+                borderColor: "var(--border)",
+                color: "var(--label-primary)",
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Status
+            </Label>
+            <Select value={formData.status} onValueChange={val => set("status", val)}>
+              <SelectTrigger
+                className="h-11 text-[16px] rounded-xl border"
+                style={{
+                  background: "var(--bg-primary)",
+                  borderColor: "var(--border)",
+                  color: "var(--label-primary)",
+                }}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              className="text-[13px] font-medium"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              Handyman
+            </Label>
+            <Select
+              value={formData.handymanId || "none"}
+              onValueChange={val => set("handymanId", val === "none" ? "" : val)}
+            >
+              <SelectTrigger
+                className="h-11 text-[16px] rounded-xl border"
+                style={{
+                  background: "var(--bg-primary)",
+                  borderColor: "var(--border)",
+                  color: "var(--label-primary)",
+                }}
+              >
+                <SelectValue placeholder="Select handyman" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {handymen.map(h => (
+                  <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Submit */}
       <div className="space-y-3">
-        <Button type="submit" disabled={loading} className="w-full h-14 text-base font-bold rounded-2xl">
-          {loading ? "Saving..." : isEditing ? "Update Job" : "Create Job"}
-        </Button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="ios-btn-brand"
+        >
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            isEditing ? "Update Job" : "Create Job"
+          )}
+        </button>
+
         {isEditing && (
-          <Button type="button" variant="outline" onClick={handleDelete} disabled={loading}
-            className="w-full h-12 text-red-600 border-red-200 hover:bg-red-50 rounded-2xl">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading}
+            className="w-full h-12 rounded-2xl font-semibold text-[16px] border transition-colors"
+            style={{
+              color: "var(--ios-red)",
+              borderColor: "rgba(255,59,48,0.3)",
+              background: "transparent",
+            }}
+          >
             Delete Job
-          </Button>
+          </button>
         )}
       </div>
     </form>
