@@ -52,14 +52,10 @@ export async function getTodayJobs(): Promise<Job[]> {
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const snap = await db
-    .collection("jobs")
-    .where("date", ">=", today.toISOString())
-    .where("date", "<", tomorrow.toISOString())
-    .orderBy("date", "asc")
-    .get();
-  return snap.docs.map(docToJob);
+  const all = await getJobs();
+  return all
+    .filter(j => j.date >= today.toISOString() && j.date < tomorrow.toISOString())
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getUpcomingJobs(days = 7): Promise<Job[]> {
@@ -67,16 +63,10 @@ export async function getUpcomingJobs(days = 7): Promise<Job[]> {
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + days);
-
-  const snap = await db
-    .collection("jobs")
-    .where("date", ">=", start.toISOString())
-    .where("date", "<=", end.toISOString())
-    .where("status", "!=", "Completed")
-    .orderBy("status")
-    .orderBy("date", "asc")
-    .get();
-  return snap.docs.map(docToJob);
+  const all = await getJobs();
+  return all
+    .filter(j => j.date >= start.toISOString() && j.date <= end.toISOString() && j.status !== "Completed")
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt">): Promise<Job> {
@@ -115,22 +105,18 @@ export async function getInvoice(id: string): Promise<Invoice | null> {
 }
 
 export async function getInvoiceByJobId(jobId: string): Promise<Invoice | null> {
-  const snap = await db.collection("invoices").where("jobId", "==", jobId).limit(1).get();
-  return snap.empty ? null : docToInvoice(snap.docs[0]);
+  const all = await getInvoices();
+  return all.find(i => i.jobId === jobId) ?? null;
 }
 
 export async function getOutstandingInvoices(): Promise<Invoice[]> {
-  const snap = await db
-    .collection("invoices")
-    .where("status", "in", ["Sent", "Outstanding"])
-    .orderBy("createdAt", "desc")
-    .get();
-  return snap.docs.map(docToInvoice);
+  const all = await getInvoices();
+  return all.filter(i => ["Sent", "Outstanding"].includes(i.status));
 }
 
 export async function getPaidInvoices(): Promise<Invoice[]> {
-  const snap = await db.collection("invoices").where("status", "==", "Paid").get();
-  return snap.docs.map(docToInvoice);
+  const all = await getInvoices();
+  return all.filter(i => i.status === "Paid");
 }
 
 export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "updatedAt">): Promise<Invoice> {
