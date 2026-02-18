@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getJob } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Phone, Mail, Calendar, Clock } from "lucide-react";
@@ -14,35 +14,24 @@ const statusStyles: Record<string, string> = {
   Completed: "bg-green-100 text-green-800",
 };
 
-export default async function HandymanJobDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function HandymanJobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const job = await prisma.job.findUnique({
-    where: { id },
-    include: { handyman: true, invoice: true },
-  });
+  const job = await getJob(id);
   if (!job) notFound();
 
   const isCompleted = job.status === "Completed";
 
   return (
     <div className={isCompleted ? "space-y-4 pb-6" : "space-y-4 pb-48"}>
-      {/* Back + header */}
       <div>
         <Link href="/handyman" className="text-sm text-gray-400 active:text-gray-600">← Schedule</Link>
         <div className="flex items-start justify-between mt-2 gap-2">
           <h1 className="text-xl font-bold text-gray-900 flex-1 leading-tight">{job.title}</h1>
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold flex-shrink-0 ${statusStyles[job.status]}`}>
-            {job.status}
-          </span>
+          <span className={`px-3 py-1 rounded-full text-sm font-semibold flex-shrink-0 ${statusStyles[job.status]}`}>{job.status}</span>
         </div>
         <p className="text-gray-500 mt-1">{job.clientName}</p>
       </div>
 
-      {/* Date & Time */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 grid grid-cols-2 gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
@@ -64,10 +53,8 @@ export default async function HandymanJobDetailPage({
         </div>
       </div>
 
-      {/* Big Waze button */}
       <WazeButton address={job.location} />
 
-      {/* Job notes */}
       {job.description && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notes</p>
@@ -75,45 +62,32 @@ export default async function HandymanJobDetailPage({
         </div>
       )}
 
-      {/* Client contacts */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Client</p>
         <p className="font-semibold text-gray-900">{job.clientName}</p>
         {job.clientPhone && (
-          <a
-            href={`tel:${job.clientPhone}`}
-            className="flex items-center gap-3 bg-green-50 rounded-xl px-4 py-3 active:bg-green-100 transition-colors"
-          >
+          <a href={`tel:${job.clientPhone}`} className="flex items-center gap-3 bg-green-50 rounded-xl px-4 py-3 active:bg-green-100 transition-colors">
             <Phone className="w-5 h-5 text-green-600" />
             <span className="text-green-700 font-medium">{job.clientPhone}</span>
           </a>
         )}
         {job.clientEmail && (
-          <a
-            href={`mailto:${job.clientEmail}`}
-            className="flex items-center gap-3 bg-blue-50 rounded-xl px-4 py-3 active:bg-blue-100 transition-colors"
-          >
+          <a href={`mailto:${job.clientEmail}`} className="flex items-center gap-3 bg-blue-50 rounded-xl px-4 py-3 active:bg-blue-100 transition-colors">
             <Mail className="w-5 h-5 text-blue-600" />
             <span className="text-blue-700 font-medium text-sm">{job.clientEmail}</span>
           </a>
         )}
       </div>
 
-      {/* Completed state */}
       {isCompleted && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
           <p className="text-3xl mb-2">✅</p>
           <p className="text-green-700 font-bold text-lg">Job Complete!</p>
-          {job.invoice && (
-            <p className="text-green-600 text-sm mt-1">Invoice: {job.invoice.status}</p>
-          )}
+          {job.invoiceId && <p className="text-green-600 text-sm mt-1">Invoice created</p>}
         </div>
       )}
 
-      {/* Action buttons — fixed above bottom nav */}
-      {!isCompleted && (
-        <MarkDoneButton jobId={job.id} currentStatus={job.status} />
-      )}
+      {!isCompleted && <MarkDoneButton jobId={job.id} currentStatus={job.status} />}
     </div>
   );
 }

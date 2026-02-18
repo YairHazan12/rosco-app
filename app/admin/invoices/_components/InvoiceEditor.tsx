@@ -12,9 +12,9 @@ import { toast } from "sonner";
 interface ServicePreset {
   id: string;
   name: string;
-  description: string | null;
+  description?: string | null;
   price: number;
-  category: string | null;
+  category?: string | null;
 }
 
 interface Job {

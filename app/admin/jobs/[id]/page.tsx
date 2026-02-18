@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getJob } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,13 @@ const statusStyles: Record<string, string> = {
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const job = await prisma.job.findUnique({
-    where: { id },
-    include: { handyman: true, invoice: { include: { items: true } } },
-  });
+  const job = await getJob(id);
   if (!job) notFound();
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(job.location)}&navigate=yes`;
 
   return (
     <div className="space-y-4 pb-6">
-      {/* Header */}
       <div>
         <Link href="/admin/jobs" className="text-sm text-gray-400 active:text-gray-600">← Jobs</Link>
         <div className="flex items-start justify-between mt-2 gap-2">
@@ -41,7 +37,6 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </span>
       </div>
 
-      {/* Date/Time card */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
@@ -65,7 +60,6 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      {/* Location with Waze button */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -74,18 +68,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400 mb-0.5">Location</p>
             <p className="text-sm font-semibold">{job.location}</p>
-            <a
-              href={wazeUrl}
-              target="_blank"
-              className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#00C8D7] font-medium"
-            >
+            <a href={wazeUrl} target="_blank" className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#00C8D7] font-medium">
               <ExternalLink className="w-3 h-3" /> Open in Waze
             </a>
           </div>
         </div>
       </div>
 
-      {/* Description */}
       {job.description && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <p className="text-xs text-gray-400 mb-1">Notes</p>
@@ -93,50 +82,36 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </div>
       )}
 
-      {/* Client */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Client</p>
         <p className="font-semibold text-gray-900">{job.clientName}</p>
         {job.clientPhone && (
           <a href={`tel:${job.clientPhone}`} className="flex items-center gap-2 text-blue-600 active:text-blue-800">
-            <Phone className="w-4 h-4" />
-            <span className="text-sm">{job.clientPhone}</span>
+            <Phone className="w-4 h-4" /><span className="text-sm">{job.clientPhone}</span>
           </a>
         )}
         {job.clientEmail && (
           <a href={`mailto:${job.clientEmail}`} className="flex items-center gap-2 text-blue-600 active:text-blue-800">
-            <Mail className="w-4 h-4" />
-            <span className="text-sm">{job.clientEmail}</span>
+            <Mail className="w-4 h-4" /><span className="text-sm">{job.clientEmail}</span>
           </a>
         )}
       </div>
 
-      {/* Handyman */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Handyman</p>
-        {job.handyman ? (
-          <div>
-            <p className="font-semibold text-gray-900">{job.handyman.name}</p>
-            {job.handyman.phone && (
-              <a href={`tel:${job.handyman.phone}`} className="text-sm text-blue-600">{job.handyman.phone}</a>
-            )}
-          </div>
+        {job.handymanName ? (
+          <p className="font-semibold text-gray-900">{job.handymanName}</p>
         ) : (
           <p className="text-gray-400 italic text-sm">No handyman assigned</p>
         )}
       </div>
 
-      {/* Invoice */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Invoice</p>
-        {job.invoice ? (
-          <Link href={`/admin/invoices/${job.invoice.id}`}>
+        {job.invoiceId ? (
+          <Link href={`/admin/invoices/${job.invoiceId}`}>
             <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 active:bg-gray-100 transition-colors">
-              <div>
-                <span className="text-sm font-medium">{job.invoice.status}</span>
-                <p className="text-xs text-gray-400 mt-0.5">₪{job.invoice.total.toFixed(2)}</p>
-              </div>
-              <span className="text-blue-500 text-sm">View →</span>
+              <span className="text-sm font-medium text-blue-600">View Invoice →</span>
             </div>
           </Link>
         ) : job.status === "Completed" ? (

@@ -10,7 +10,7 @@ import { ExternalLink, Send, CheckCircle, Copy } from "lucide-react";
 interface Invoice {
   id: string;
   status: string;
-  stripePaymentLink: string | null;
+  stripePaymentLink?: string | null;
   total: number;
 }
 

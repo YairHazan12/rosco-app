@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface Invoice {
   id: string;
   total: number;
-  stripePaymentLink: string | null;
+  stripePaymentLink?: string | null;
 }
 
 export default function PayButton({ invoice }: { invoice: Invoice }) {

@@ -1,23 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { getJob, getServicePresets } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import InvoiceEditor from "../_components/InvoiceEditor";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewInvoicePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ jobId?: string }>;
-}) {
+export default async function NewInvoicePage({ searchParams }: { searchParams: Promise<{ jobId?: string }> }) {
   const { jobId } = await searchParams;
-
   if (!jobId) redirect("/admin/invoices");
 
-  const [job, presets] = await Promise.all([
-    prisma.job.findUnique({ where: { id: jobId } }),
-    prisma.servicePreset.findMany({ orderBy: { category: "asc" } }),
-  ]);
-
+  const [job, presets] = await Promise.all([getJob(jobId), getServicePresets()]);
   if (!job) notFound();
 
   return (

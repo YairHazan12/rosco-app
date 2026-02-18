@@ -18,16 +18,16 @@ import { format } from "date-fns";
 
 interface Handyman { id: string; name: string }
 interface Job {
-  id: string; clientName: string; clientPhone: string | null;
-  clientEmail: string | null; title: string; description: string | null;
-  date: Date; location: string; status: string; handymanId: string | null;
+  id: string; clientName: string; clientPhone?: string | null;
+  clientEmail?: string | null; title: string; description?: string | null;
+  date: string | Date; location: string; status: string; handymanId?: string | null;
 }
 
 export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?: Job }) {
   const router = useRouter();
   const isEditing = !!job;
 
-  const formatDateForInput = (date: Date) =>
+  const formatDateForInput = (date: string | Date) =>
     format(new Date(date), "yyyy-MM-dd'T'HH:mm");
 
   const [formData, setFormData] = useState({
