@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Handyman {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  clientName  String
+  clientPhone String?
+  clientEmail String?
+  title       String
+  description String?
+  date        DateTime
+  location    String
+  status      String    @default("Pending") // Pending | In Progress | Completed
+  handyman    Handyman? @relation(fields: [handymanId], references: [id])
+  handymanId  String?
+  invoice     Invoice?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  job           Job           @relation(fields: [jobId], references: [id])
+  jobId         String        @unique
+  items         InvoiceItem[]
+  subtotal      Float         @default(0)
+  vatEnabled    Boolean       @default(false)
+  vatRate       Float         @default(0.17)
+  vatAmount     Float         @default(0)
+  total         Float         @default(0)
+  status        String        @default("Draft") // Draft | Sent | Paid | Outstanding
+  stripePaymentLink String?
+  stripeSessionId   String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId   String
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Float
+  total       Float
+}
+
+model ServicePreset {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  category    String?
+}
