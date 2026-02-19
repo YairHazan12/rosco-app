@@ -123,7 +123,7 @@ The seed includes:
 
 ---
 
-## Project Structure
+## Project Structure 
 
 ```
 rosco-app/
