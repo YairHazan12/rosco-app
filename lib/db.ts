@@ -18,7 +18,7 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem } from "./types";
+import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -270,6 +270,28 @@ export async function updateInvoice(id: string, data: Partial<Invoice>): Promise
     updatedAt: now(),
   });
   revalidateTag("invoices", "max");
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+
+const DEFAULT_SETTINGS: AppSettings = {
+  currency: "ILS",
+  language: "en",
+  timezone: "Asia/Jerusalem",
+  notifications: { email: true, sms: false, push: false },
+};
+
+export async function getSettings(): Promise<AppSettings> {
+  const doc = await db.collection("settings").doc("admin").get();
+  if (!doc.exists) return DEFAULT_SETTINGS;
+  return { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) };
+}
+
+export async function updateSettings(data: Partial<AppSettings>): Promise<AppSettings> {
+  const ref = db.collection("settings").doc("admin");
+  await ref.set(data, { merge: true });
+  const updated = await ref.get();
+  return { ...DEFAULT_SETTINGS, ...(updated.data() as Partial<AppSettings>) };
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────

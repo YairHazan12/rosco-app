@@ -64,3 +64,14 @@ export interface ServicePreset {
   price: number;
   category?: string;
 }
+
+export interface AppSettings {
+  currency: "ILS" | "USD" | "EUR" | "GBP";
+  language: "en" | "he" | "ru" | "ar";
+  timezone: string;
+  notifications: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  };
+}

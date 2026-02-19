@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FileText } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/admin",          label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/jobs",     label: "Jobs",      icon: Briefcase },
-  { href: "/admin/invoices", label: "Invoices",  icon: FileText },
+  { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/jobs",      label: "Jobs",      icon: Briefcase },
+  { href: "/admin/invoices",  label: "Invoices",  icon: FileText },
+  { href: "/admin/settings",  label: "Settings",  icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
