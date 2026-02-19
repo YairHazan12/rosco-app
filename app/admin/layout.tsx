@@ -16,32 +16,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      {/* iOS-style top bar */}
+      {/* iOS-style frosted top bar */}
       <header
         className="ios-header fixed top-0 left-0 right-0 z-30"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          {/* Logo + brand */}
+          <div className="flex items-center gap-2.5">
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--brand)" }}
+              className="w-8 h-8 rounded-[10px] flex items-center justify-center"
+              style={{
+                background: "linear-gradient(145deg, #FF7A47, #FF5500)",
+                boxShadow: "0 2px 6px rgba(255,107,53,0.35)",
+              }}
             >
-              <span className="text-white font-bold text-xs">R</span>
+              <span className="text-white font-bold text-[13px] tracking-tight">R</span>
             </div>
             <span
-              className="font-semibold text-[17px] tracking-tight"
+              className="font-semibold text-[17px] tracking-[-0.3px]"
               style={{ color: "var(--label-primary)" }}
             >
-              ROSCO Admin
+              Admin
             </span>
           </div>
+
+          {/* Home link */}
           <Link
             href="/"
-            className="text-[15px] min-h-[44px] flex items-center px-2 -mr-2"
+            className="text-[15px] font-medium min-h-[44px] flex items-center px-2 -mr-2"
             style={{ color: "var(--brand)" }}
           >
-            Home
+            ← Home
           </Link>
         </div>
       </header>
@@ -50,14 +56,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main
         className="max-w-2xl mx-auto px-4"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 70px)",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 72px)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 90px)",
         }}
       >
         {children}
       </main>
 
-      {/* iOS tab bar */}
+      {/* iOS-style frosted tab bar */}
       <nav
         className="ios-tab-bar fixed bottom-0 left-0 right-0 z-30"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -65,24 +71,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="max-w-2xl mx-auto flex">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive =
-              href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+              href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(href);
+
             return (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-[3px] py-2.5 min-h-[50px]",
+                  "flex-1 flex flex-col items-center justify-center gap-[3px] py-2 min-h-[50px]",
                   "transition-all duration-150"
                 )}
               >
                 <Icon
                   className="w-[26px] h-[26px]"
                   strokeWidth={isActive ? 2.5 : 1.8}
-                  style={{ color: isActive ? "var(--brand)" : "var(--label-tertiary)" }}
+                  style={{
+                    color: isActive ? "var(--brand)" : "var(--label-quaternary)",
+                  }}
                 />
                 <span
-                  className="text-[10px] font-medium tracking-tight"
-                  style={{ color: isActive ? "var(--brand)" : "var(--label-tertiary)" }}
+                  className="text-[10px] font-semibold tracking-[0.2px]"
+                  style={{
+                    color: isActive ? "var(--brand)" : "var(--label-quaternary)",
+                  }}
                 >
                   {label}
                 </span>

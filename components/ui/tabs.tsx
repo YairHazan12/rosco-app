@@ -26,12 +26,17 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "rounded-lg p-[3px] group-data-[orientation=horizontal]/tabs:h-9 data-[variant=line]:rounded-none group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
+  // Apple segmented-control base
+  "inline-flex items-center justify-center rounded-[11px] p-[3px] group/tabs-list",
   {
     variants: {
       variant: {
-        default: "bg-muted",
-        line: "gap-1 bg-transparent",
+        // Default: iOS segmented control style
+        default:
+          "bg-[var(--bg-grouped)] dark:bg-[rgba(118,118,128,0.24)]",
+        // Line variant: underline style
+        line:
+          "bg-transparent rounded-none gap-1 border-b border-[var(--separator)]",
       },
     },
     defaultVariants: {
@@ -64,10 +69,39 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring text-foreground/60 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent",
-        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 data-[state=active]:text-foreground",
-        "after:bg-foreground after:absolute after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
+        // Base
+        "relative inline-flex flex-1 items-center justify-center gap-1.5",
+        "whitespace-nowrap transition-all duration-200 select-none",
+        "text-[13px] font-semibold",
+        "disabled:pointer-events-none disabled:opacity-50",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+
+        // Default variant — pill style (iOS segmented control)
+        "group-data-[variant=default]/tabs-list:rounded-[9px]",
+        "group-data-[variant=default]/tabs-list:px-4",
+        "group-data-[variant=default]/tabs-list:py-1.5",
+        "group-data-[variant=default]/tabs-list:min-h-[30px]",
+
+        // Default — inactive
+        "group-data-[variant=default]/tabs-list:text-[var(--label-tertiary)]",
+
+        // Default — active pill
+        "group-data-[variant=default]/tabs-list:data-[state=active]:bg-[var(--bg-card)]",
+        "group-data-[variant=default]/tabs-list:data-[state=active]:text-[var(--label-primary)]",
+        "group-data-[variant=default]/tabs-list:data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.12),0_0.5px_1px_rgba(0,0,0,0.06)]",
+
+        // Line variant — underline style
+        "group-data-[variant=line]/tabs-list:rounded-none",
+        "group-data-[variant=line]/tabs-list:px-3",
+        "group-data-[variant=line]/tabs-list:py-2",
+        "group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-transparent",
+        "group-data-[variant=line]/tabs-list:text-[var(--label-tertiary)]",
+        "group-data-[variant=line]/tabs-list:data-[state=active]:text-[var(--brand)]",
+        "group-data-[variant=line]/tabs-list:data-[state=active]:border-[var(--brand)]",
+
+        // Focus ring
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ios-blue)]/50",
+
         className
       )}
       {...props}

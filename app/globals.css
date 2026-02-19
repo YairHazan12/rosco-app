@@ -8,7 +8,7 @@
    ═══════════════════════════════════════════════ */
 
 :root {
-  /* iOS System Colors */
+  /* ── iOS System Colors ─────────────────────── */
   --ios-blue:       #007AFF;
   --ios-green:      #34C759;
   --ios-orange:     #FF9500;
@@ -16,49 +16,53 @@
   --ios-yellow:     #FFCC00;
   --ios-purple:     #AF52DE;
   --ios-teal:       #5AC8FA;
+  --ios-indigo:     #5856D6;
+  --ios-cyan:       #32ADE6;
 
-  /* ROSCO Brand */
+  /* ── ROSCO Brand ───────────────────────────── */
   --brand:          #FF6B35;
   --brand-dark:     #E55A28;
+  --brand-light:    rgba(255,107,53,0.12);
 
-  /* Light Mode Surfaces */
+  /* ── Light Mode Surfaces ───────────────────── */
   --bg-primary:     #F2F2F7;
   --bg-card:        #FFFFFF;
   --bg-card-alt:    #F9F9FB;
   --bg-grouped:     #EFEFF4;
+  --bg-elevated:    #FFFFFF;
 
-  /* Light Mode Labels */
+  /* ── Light Mode Labels ─────────────────────── */
   --label-primary:      #000000;
-  --label-secondary:    #3C3C43CC;  /* 80% */
-  --label-tertiary:     #3C3C4399;  /* 60% */
-  --label-quaternary:   #3C3C4366;  /* 40% */
+  --label-secondary:    rgba(60,60,67,0.80);
+  --label-tertiary:     rgba(60,60,67,0.60);
+  --label-quaternary:   rgba(60,60,67,0.40);
 
-  /* Separator */
-  --separator:          #C6C6C8;
+  /* ── Separator ─────────────────────────────── */
+  --separator:          rgba(60,60,67,0.18);
   --separator-opaque:   #C6C6C8;
 
-  /* Tailwind compat CSS vars */
-  --background:     #F2F2F7;
-  --foreground:     #000000;
-  --card:           #FFFFFF;
-  --card-foreground:#000000;
-  --popover:        #FFFFFF;
+  /* ── Tailwind-compat CSS vars ──────────────── */
+  --background:         #F2F2F7;
+  --foreground:         #000000;
+  --card:               #FFFFFF;
+  --card-foreground:    #000000;
+  --popover:            #FFFFFF;
   --popover-foreground: #000000;
-  --primary:        #FF6B35;
+  --primary:            #FF6B35;
   --primary-foreground: #FFFFFF;
-  --secondary:      #EFEFF4;
+  --secondary:          #EFEFF4;
   --secondary-foreground: #000000;
-  --muted:          #F2F2F7;
-  --muted-foreground: rgba(60,60,67,0.6);
-  --accent:         #F2F2F7;
-  --accent-foreground: #000000;
-  --destructive:    #FF3B30;
-  --border:         rgba(60,60,67,0.18);
-  --input:          rgba(60,60,67,0.18);
-  --ring:           #FF6B35;
-  --radius:         0.75rem;
+  --muted:              #F2F2F7;
+  --muted-foreground:   rgba(60,60,67,0.6);
+  --accent:             #F2F2F7;
+  --accent-foreground:  #000000;
+  --destructive:        #FF3B30;
+  --border:             rgba(60,60,67,0.18);
+  --input:              rgba(60,60,67,0.18);
+  --ring:               #FF6B35;
+  --radius:             0.75rem;
 
-  /* Safe area fallbacks */
+  /* ── Safe Areas ────────────────────────────── */
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
@@ -66,28 +70,28 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
+  --color-primary:            var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
+  --color-secondary:          var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+  --radius-sm:  calc(var(--radius) - 4px);
+  --radius-md:  calc(var(--radius) - 2px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
 }
 
 /* ═══════════════════════════════════════════════
@@ -102,38 +106,52 @@
 }
 
 html {
-  /* Prevent font size bumping on iOS rotation */
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-               'Helvetica Neue', 'Segoe UI', system-ui, sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "SF Pro Text",
+    "Helvetica Neue",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
   background-color: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
 /* ═══════════════════════════════════════════════
    iOS-Inspired Utility Classes
    ═══════════════════════════════════════════════ */
 
-/* Card with iOS feel */
+/* ── Card ── */
 .ios-card {
   background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.07),
+    0 1px 2px rgba(0,0,0,0.04),
+    0 0 0 0.5px rgba(0,0,0,0.04);
   border: none;
+  overflow: hidden;
 }
 
-/* Inset grouped card (like iOS Settings section) */
+/* ── Inset grouped (iOS Settings style) ── */
 .ios-group {
   background: var(--bg-card);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.07),
+    0 0 0 0.5px rgba(0,0,0,0.04);
 }
 
 .ios-group-row {
@@ -148,30 +166,23 @@ body {
   border-bottom: none;
 }
 
-/* Header blur effect */
+/* ── Navigation Bar ── */
 .ios-header {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(255,255,255,0.85);
-  border-bottom: 0.5px solid rgba(60,60,67,0.18);
+  background: rgba(242,242,247,0.85);
+  border-bottom: 0.5px solid rgba(60,60,67,0.15);
 }
 
-.ios-header-dark {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(28,28,30,0.9);
-  border-bottom: 0.5px solid rgba(255,255,255,0.12);
-}
-
-/* Tab bar blur */
+/* ── Tab Bar ── */
 .ios-tab-bar {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   background: rgba(249,249,249,0.94);
-  border-top: 0.5px solid rgba(60,60,67,0.2);
+  border-top: 0.5px solid rgba(60,60,67,0.18);
 }
 
-/* Button styles */
+/* ── Primary Button (Blue) ── */
 .ios-btn-primary {
   background: var(--ios-blue);
   color: #fff;
@@ -188,17 +199,13 @@ body {
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.1s ease;
   letter-spacing: -0.3px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.ios-btn-primary:active {
-  opacity: 0.7;
-  transform: scale(0.98);
-}
+.ios-btn-primary:active  { opacity: 0.75; transform: scale(0.98); }
+.ios-btn-primary:disabled { opacity: 0.5; }
 
-.ios-btn-primary:disabled {
-  opacity: 0.5;
-}
-
+/* ── Success Button (Green) ── */
 .ios-btn-success {
   background: var(--ios-green);
   color: #fff;
@@ -214,15 +221,15 @@ body {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.1s ease;
-  box-shadow: 0 4px 16px rgba(52,199,89,0.35);
+  box-shadow: 0 4px 16px rgba(52,199,89,0.32);
   letter-spacing: -0.3px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.ios-btn-success:active {
-  opacity: 0.7;
-  transform: scale(0.98);
-}
+.ios-btn-success:active  { opacity: 0.75; transform: scale(0.98); }
+.ios-btn-success:disabled { opacity: 0.5; }
 
+/* ── Brand Button (Orange) ── */
 .ios-btn-brand {
   background: var(--brand);
   color: #fff;
@@ -238,22 +245,23 @@ body {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 3px 12px rgba(255,107,53,0.28);
   letter-spacing: -0.3px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.ios-btn-brand:active {
-  opacity: 0.75;
-  transform: scale(0.98);
-}
+.ios-btn-brand:active  { opacity: 0.75; transform: scale(0.98); }
+.ios-btn-brand:disabled { opacity: 0.5; }
 
-/* Status badges */
+/* ── Status Badges ── */
 .badge-pending {
-  background: rgba(255,149,0,0.15);
+  background: rgba(255,149,0,0.12);
   color: #B25000;
   font-weight: 600;
   font-size: 12px;
   padding: 3px 10px;
   border-radius: 20px;
+  letter-spacing: 0.1px;
 }
 
 .badge-in-progress {
@@ -263,6 +271,7 @@ body {
   font-size: 12px;
   padding: 3px 10px;
   border-radius: 20px;
+  letter-spacing: 0.1px;
 }
 
 .badge-completed {
@@ -272,9 +281,10 @@ body {
   font-size: 12px;
   padding: 3px 10px;
   border-radius: 20px;
+  letter-spacing: 0.1px;
 }
 
-/* Large title (iOS style) */
+/* ── Typography ── */
 .ios-large-title {
   font-size: 34px;
   font-weight: 700;
@@ -290,19 +300,26 @@ body {
   color: var(--label-primary);
 }
 
-/* Section headers (all-caps, like iOS) */
+.ios-headline {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--label-primary);
+}
+
+/* Section header — iOS all-caps style */
 .ios-section-header {
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: rgba(60,60,67,0.6);
+  color: var(--label-tertiary);
   padding: 0 4px 6px;
 }
 
-/* Touch scaling */
+/* ── Touch Scaling ── */
 .touch-scale {
-  transition: transform 0.1s ease, opacity 0.1s ease;
+  transition: transform 0.12s ease, opacity 0.12s ease;
 }
 
 .touch-scale:active {
@@ -310,10 +327,24 @@ body {
   opacity: 0.85;
 }
 
-/* Smooth scroll */
+/* ── iOS Toggle Switch ── */
+.ios-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* ── Scroll helpers ── */
 .scroll-smooth {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+}
+
+/* ── Stat number highlight ── */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -327,62 +358,101 @@ body {
 
 @keyframes circle-scale {
   0%   { transform: scale(0.6); opacity: 0; }
-  60%  { transform: scale(1.1); opacity: 1; }
+  60%  { transform: scale(1.08); opacity: 1; }
   100% { transform: scale(1);   opacity: 1; }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 .animate-fade-up {
-  animation: fade-up 0.5s ease forwards;
+  animation: fade-up 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
 }
 
 .animate-circle-scale {
-  animation: circle-scale 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  animation: circle-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* ═══════════════════════════════════════════════
-   Dark mode (system)
+   Dark Mode (system preference)
    ═══════════════════════════════════════════════ */
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background:    #000000;
-    --foreground:    #FFFFFF;
-    --card:          #1C1C1E;
-    --bg-primary:    #000000;
-    --bg-card:       #1C1C1E;
-    --bg-grouped:    #000000;
-    --label-primary:     #FFFFFF;
-    --label-secondary:   rgba(235,235,245,0.6);
-    --label-tertiary:    rgba(235,235,245,0.3);
-    --separator:         rgba(84,84,88,0.6);
-    --border:            rgba(84,84,88,0.4);
+    --background:         #000000;
+    --foreground:         #FFFFFF;
+    --card:               #1C1C1E;
+    --card-foreground:    #FFFFFF;
+    --bg-primary:         #000000;
+    --bg-card:            #1C1C1E;
+    --bg-card-alt:        #2C2C2E;
+    --bg-grouped:         #000000;
+    --bg-elevated:        #2C2C2E;
+    --label-primary:      #FFFFFF;
+    --label-secondary:    rgba(235,235,245,0.6);
+    --label-tertiary:     rgba(235,235,245,0.3);
+    --label-quaternary:   rgba(235,235,245,0.18);
+    --separator:          rgba(84,84,88,0.55);
+    --separator-opaque:   #38383A;
+    --border:             rgba(84,84,88,0.4);
+    --input:              rgba(84,84,88,0.4);
+    --secondary:          #2C2C2E;
+    --secondary-foreground: #FFFFFF;
+    --muted:              #2C2C2E;
+    --muted-foreground:   rgba(235,235,245,0.3);
+    --accent:             #2C2C2E;
+    --accent-foreground:  #FFFFFF;
   }
 
   .ios-header {
     background: rgba(28,28,30,0.88);
-    border-bottom-color: rgba(255,255,255,0.12);
+    border-bottom-color: rgba(255,255,255,0.10);
   }
 
   .ios-tab-bar {
     background: rgba(28,28,30,0.92);
-    border-top-color: rgba(255,255,255,0.12);
+    border-top-color: rgba(255,255,255,0.10);
   }
 
   .ios-card {
     background: #1C1C1E;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.4),
+      0 0 0 0.5px rgba(255,255,255,0.06);
   }
 
   .ios-group {
     background: #1C1C1E;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.4),
+      0 0 0 0.5px rgba(255,255,255,0.06);
   }
 
-  .badge-pending   { background: rgba(255,149,0,0.2); color: #FF9F0A; }
-  .badge-in-progress { background: rgba(0,122,255,0.2); color: #0A84FF; }
-  .badge-completed { background: rgba(52,199,89,0.2); color: #30D158; }
+  .badge-pending    { background: rgba(255,149,0,0.18);  color: #FF9F0A; }
+  .badge-in-progress{ background: rgba(0,122,255,0.18);  color: #0A84FF; }
+  .badge-completed  { background: rgba(52,199,89,0.18);  color: #30D158; }
+
+  .ios-btn-brand {
+    box-shadow: 0 3px 12px rgba(255,107,53,0.35);
+  }
+
+  .ios-btn-success {
+    box-shadow: 0 4px 16px rgba(52,199,89,0.4);
+  }
 }
