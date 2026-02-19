@@ -176,6 +176,15 @@ export default function Home() {
           </div>
         </Link>
 
+        {/* Learn more */}
+        <Link
+          href="/marketing"
+          className="block text-center text-[13px] font-medium py-1 transition-colors duration-200 hover:opacity-80"
+          style={{ color: "rgba(255,107,53,0.65)" }}
+        >
+          Learn more about ROSCO →
+        </Link>
+
         {/* Version tag */}
         <p
           className="text-center text-[11px] pt-2 tracking-widest uppercase"
