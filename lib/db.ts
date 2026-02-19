@@ -1,7 +1,21 @@
 /**
  * All Firestore data access in one place.
  * Server-side only (uses firebase-admin).
+ *
+ * CACHING STRATEGY
+ * ─────────────────
+ * Base read functions (getJobs, getInvoices, getHandymen, getServicePresets)
+ * are wrapped with Next.js unstable_cache so Firestore is only hit once per
+ * cache window (default 60 s).  After any write the relevant tag is
+ * revalidated so the next read picks up fresh data.
+ *
+ * Tags:
+ *   "jobs"      – revalidated by createJob / updateJob / deleteJob
+ *   "invoices"  – revalidated by createInvoice / updateInvoice
+ *   "handymen"  – revalidated by any handyman write (seed only for now)
+ *   "presets"   – revalidated by any preset write  (seed only for now)
  */
+import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem } from "./types";
@@ -23,78 +37,189 @@ function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
   return { id: doc.id, ...doc.data() } as ServicePreset;
 }
 
-// ─── Handymen ────────────────────────────────────────────────────────────────
+// ─── Base Firestore reads (cached) ───────────────────────────────────────────
+// Each function is wrapped with unstable_cache so repeated calls within the
+// same 60-second window return the same data without hitting Firestore.
 
-export async function getHandymen(): Promise<Handyman[]> {
-  const snap = await db.collection("handymen").orderBy("name").get();
-  return snap.docs.map(docToHandyman);
-}
-
-export async function getHandyman(id: string): Promise<Handyman | null> {
-  const doc = await db.collection("handymen").doc(id).get();
-  return doc.exists ? docToHandyman(doc) : null;
-}
-
-// ─── Jobs ────────────────────────────────────────────────────────────────────
-
-export async function getJobs(): Promise<Job[]> {
+const _fetchJobs = async (): Promise<Job[]> => {
   const snap = await db.collection("jobs").orderBy("date", "desc").get();
   return snap.docs.map(docToJob);
+};
+
+const _fetchInvoices = async (): Promise<Invoice[]> => {
+  const snap = await db.collection("invoices").orderBy("createdAt", "desc").get();
+  return snap.docs.map(docToInvoice);
+};
+
+const _fetchHandymen = async (): Promise<Handyman[]> => {
+  const snap = await db.collection("handymen").orderBy("name").get();
+  return snap.docs.map(docToHandyman);
+};
+
+const _fetchServicePresets = async (): Promise<ServicePreset[]> => {
+  const snap = await db.collection("servicePresets").orderBy("category").get();
+  return snap.docs.map(docToPreset);
+};
+
+// Cached wrappers – 60-second TTL, revalidated by tag on writes
+export const getJobs = unstable_cache(_fetchJobs, ["jobs"], {
+  revalidate: 60,
+  tags: ["jobs"],
+});
+
+export const getInvoices = unstable_cache(_fetchInvoices, ["invoices"], {
+  revalidate: 60,
+  tags: ["invoices"],
+});
+
+export const getHandymen = unstable_cache(_fetchHandymen, ["handymen"], {
+  revalidate: 60,
+  tags: ["handymen"],
+});
+
+export const getServicePresets = unstable_cache(_fetchServicePresets, ["presets"], {
+  revalidate: 60,
+  tags: ["presets"],
+});
+
+// ─── Single-doc reads (short cache) ──────────────────────────────────────────
+// These are cached per-ID to avoid re-fetching the same doc on detail pages.
+// Tags ensure they're busted when the parent collection is revalidated.
+
+export async function getHandyman(id: string): Promise<Handyman | null> {
+  const cached = unstable_cache(
+    async () => {
+      const doc = await db.collection("handymen").doc(id).get();
+      return doc.exists ? docToHandyman(doc) : null;
+    },
+    [`handyman-${id}`],
+    { revalidate: 60, tags: ["handymen"] }
+  );
+  return cached();
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  const doc = await db.collection("jobs").doc(id).get();
-  return doc.exists ? docToJob(doc) : null;
+  const cached = unstable_cache(
+    async () => {
+      const doc = await db.collection("jobs").doc(id).get();
+      return doc.exists ? docToJob(doc) : null;
+    },
+    [`job-${id}`],
+    { revalidate: 60, tags: ["jobs"] }
+  );
+  return cached();
 }
 
-export async function getTodayJobs(): Promise<Job[]> {
+export async function getInvoice(id: string): Promise<Invoice | null> {
+  const cached = unstable_cache(
+    async () => {
+      const doc = await db.collection("invoices").doc(id).get();
+      return doc.exists ? docToInvoice(doc) : null;
+    },
+    [`invoice-${id}`],
+    { revalidate: 60, tags: ["invoices"] }
+  );
+  return cached();
+}
+
+// ─── In-memory derived queries (no extra Firestore reads) ────────────────────
+// These accept a pre-fetched array so the caller decides how to source data.
+// Nothing here touches Firestore.
+
+export function filterTodayJobs(jobs: Job[]): Job[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const all = await getJobs();
-  return all
+  return jobs
     .filter(j => j.date >= today.toISOString() && j.date < tomorrow.toISOString())
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export async function getUpcomingJobs(days = 7): Promise<Job[]> {
+export function filterUpcomingJobs(jobs: Job[], days = 7): Job[] {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + days);
-  const all = await getJobs();
-  return all
+  return jobs
     .filter(j => j.date >= start.toISOString() && j.date <= end.toISOString() && j.status !== "Completed")
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Jobs scheduled during the current ISO week (Monday–Sunday). */
-export async function getWeekJobs(): Promise<Job[]> {
+export function filterWeekJobs(jobs: Job[]): Job[] {
   const today = new Date();
-  const dow = today.getDay(); // 0=Sun
-  const diff = dow === 0 ? -6 : 1 - dow; // shift to Monday
+  const dow = today.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
   const start = new Date(today);
   start.setDate(today.getDate() + diff);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(start.getDate() + 7);
-  const all = await getJobs();
-  return all
+  return jobs
     .filter(j => j.date >= start.toISOString() && j.date < end.toISOString())
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Jobs scheduled during the current calendar month. */
-export async function getMonthJobs(): Promise<Job[]> {
+export function filterMonthJobs(jobs: Job[]): Job[] {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), 1);
   const end   = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  const all = await getJobs();
-  return all
+  return jobs
     .filter(j => j.date >= start.toISOString() && j.date < end.toISOString())
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+export function filterOutstandingInvoices(invoices: Invoice[]): Invoice[] {
+  return invoices.filter(i => ["Sent", "Outstanding"].includes(i.status));
+}
+
+export function filterPaidInvoices(invoices: Invoice[]): Invoice[] {
+  return invoices.filter(i => i.status === "Paid");
+}
+
+export function findInvoiceByJobId(invoices: Invoice[], jobId: string): Invoice | undefined {
+  return invoices.find(i => i.jobId === jobId);
+}
+
+// ─── Legacy wrapper aliases (kept for any callers not yet updated) ────────────
+// These still return the same data but now go through the cache.
+
+/** @deprecated Use getJobs() + filterTodayJobs() */
+export async function getTodayJobs(): Promise<Job[]> {
+  return filterTodayJobs(await getJobs());
+}
+
+/** @deprecated Use getJobs() + filterUpcomingJobs() */
+export async function getUpcomingJobs(days = 7): Promise<Job[]> {
+  return filterUpcomingJobs(await getJobs(), days);
+}
+
+/** @deprecated Use getJobs() + filterWeekJobs() */
+export async function getWeekJobs(): Promise<Job[]> {
+  return filterWeekJobs(await getJobs());
+}
+
+/** @deprecated Use getJobs() + filterMonthJobs() */
+export async function getMonthJobs(): Promise<Job[]> {
+  return filterMonthJobs(await getJobs());
+}
+
+/** @deprecated Use getInvoices() + filterOutstandingInvoices() */
+export async function getOutstandingInvoices(): Promise<Invoice[]> {
+  return filterOutstandingInvoices(await getInvoices());
+}
+
+/** @deprecated Use getInvoices() + filterPaidInvoices() */
+export async function getPaidInvoices(): Promise<Invoice[]> {
+  return filterPaidInvoices(await getInvoices());
+}
+
+/** @deprecated Use getInvoices() + findInvoiceByJobId() */
+export async function getInvoiceByJobId(jobId: string): Promise<Invoice | null> {
+  return findInvoiceByJobId(await getInvoices(), jobId) ?? null;
+}
+
+// ─── Jobs – mutations ────────────────────────────────────────────────────────
 
 export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt">): Promise<Job> {
   const ref = db.collection("jobs").doc();
@@ -105,6 +230,7 @@ export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt"
     updatedAt: now(),
   };
   await ref.set(job);
+  revalidateTag("jobs", "max");
   return job;
 }
 
@@ -113,38 +239,15 @@ export async function updateJob(id: string, data: Partial<Job>): Promise<void> {
     ...data,
     updatedAt: now(),
   });
+  revalidateTag("jobs", "max");
 }
 
 export async function deleteJob(id: string): Promise<void> {
   await db.collection("jobs").doc(id).delete();
+  revalidateTag("jobs", "max");
 }
 
-// ─── Invoices ────────────────────────────────────────────────────────────────
-
-export async function getInvoices(): Promise<Invoice[]> {
-  const snap = await db.collection("invoices").orderBy("createdAt", "desc").get();
-  return snap.docs.map(docToInvoice);
-}
-
-export async function getInvoice(id: string): Promise<Invoice | null> {
-  const doc = await db.collection("invoices").doc(id).get();
-  return doc.exists ? docToInvoice(doc) : null;
-}
-
-export async function getInvoiceByJobId(jobId: string): Promise<Invoice | null> {
-  const all = await getInvoices();
-  return all.find(i => i.jobId === jobId) ?? null;
-}
-
-export async function getOutstandingInvoices(): Promise<Invoice[]> {
-  const all = await getInvoices();
-  return all.filter(i => ["Sent", "Outstanding"].includes(i.status));
-}
-
-export async function getPaidInvoices(): Promise<Invoice[]> {
-  const all = await getInvoices();
-  return all.filter(i => i.status === "Paid");
-}
+// ─── Invoices – mutations ────────────────────────────────────────────────────
 
 export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "updatedAt">): Promise<Invoice> {
   const ref = db.collection("invoices").doc();
@@ -157,6 +260,7 @@ export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "up
   await ref.set(invoice);
   // Update job with invoiceId
   await updateJob(data.jobId, { invoiceId: ref.id });
+  revalidateTag("invoices", "max");
   return invoice;
 }
 
@@ -165,13 +269,7 @@ export async function updateInvoice(id: string, data: Partial<Invoice>): Promise
     ...data,
     updatedAt: now(),
   });
-}
-
-// ─── Service Presets ─────────────────────────────────────────────────────────
-
-export async function getServicePresets(): Promise<ServicePreset[]> {
-  const snap = await db.collection("servicePresets").orderBy("category").get();
-  return snap.docs.map(docToPreset);
+  revalidateTag("invoices", "max");
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -214,6 +312,8 @@ export async function seedDatabase(): Promise<void> {
   });
 
   await batch.commit();
+  revalidateTag("handymen", "max");
+  revalidateTag("presets", "max");
 
   // Jobs (sequential so we can reference IDs)
   const jobs = [

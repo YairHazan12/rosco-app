@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Pencil, MapPin, Phone, Mail, Calendar, Clock, ExternalLink, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 60 s; job mutations call revalidateTag("jobs") for immediate freshness
+export const revalidate = 60;
 
 const statusConfig: Record<string, { cls: string }> = {
   Pending:       { cls: "badge-pending" },

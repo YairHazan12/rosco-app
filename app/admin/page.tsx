@@ -1,11 +1,12 @@
 import {
-  getTodayJobs,
-  getOutstandingInvoices,
-  getInvoices,
   getJobs,
+  getInvoices,
   getHandymen,
-  getWeekJobs,
-  getMonthJobs,
+  filterTodayJobs,
+  filterWeekJobs,
+  filterMonthJobs,
+  filterOutstandingInvoices,
+  filterPaidInvoices,
 } from "@/lib/db";
 import {
   Briefcase,
@@ -31,16 +32,20 @@ const statusConfig: Record<string, { cls: string; bar: string; color: string }> 
 };
 
 export default async function AdminDashboard() {
-  const [todayJobs, outstanding, allInvoices, allJobs, weekJobs, monthJobs, handymen] =
-    await Promise.all([
-      getTodayJobs(),
-      getOutstandingInvoices(),
-      getInvoices(),
-      getJobs(),
-      getWeekJobs(),
-      getMonthJobs(),
-      getHandymen(),
-    ]);
+  // ── Fetch each collection ONCE ────────────────────────────────────────────
+  // All derived queries are computed in-memory below — no extra Firestore reads.
+  const [allJobs, allInvoices, handymen] = await Promise.all([
+    getJobs(),
+    getInvoices(),
+    getHandymen(),
+  ]);
+
+  // ── Derived data (in-memory, zero extra Firestore reads) ──────────────────
+  const todayJobs   = filterTodayJobs(allJobs);
+  const weekJobs    = filterWeekJobs(allJobs);
+  const monthJobs   = filterMonthJobs(allJobs);
+  const outstanding = filterOutstandingInvoices(allInvoices);
+  const paidInvoices = filterPaidInvoices(allInvoices);
 
   // ── KPI: today ────────────────────────────────────────────────────────────
   const doneToday      = todayJobs.filter(j => j.status === "Completed").length;
@@ -48,14 +53,12 @@ export default async function AdminDashboard() {
   const pendingToday   = todayJobs.length - doneToday - inProgressToday;
 
   // ── KPI: financials ────────────────────────────────────────────────────────
-  const paidInvoices      = allInvoices.filter(i => i.status === "Paid");
   const totalRevenue      = paidInvoices.reduce((s, i) => s + i.total, 0);
   const outstandingTotal  = outstanding.reduce((s, i) => s + i.total, 0);
 
   // ── Week / Month summaries ─────────────────────────────────────────────────
   const weekCompleted = weekJobs.filter(j => j.status === "Completed").length;
 
-  // Week revenue = paid invoices whose jobDate falls in this week
   const today = new Date();
   const dow   = today.getDay();
   const diff  = dow === 0 ? -6 : 1 - dow;
