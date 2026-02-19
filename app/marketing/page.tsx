@@ -129,7 +129,7 @@ export default function MarketingPage() {
 
         {/* CTA */}
         <Link
-          href="https://rosco-app-chi.vercel.app"
+          href="/signup-intent"
           className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[14px] font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95"
           style={{
             background: "linear-gradient(135deg, #FF6B35, #FF5500)",
@@ -211,7 +211,7 @@ export default function MarketingPage() {
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
-              href="https://rosco-app-chi.vercel.app"
+              href="/signup-intent"
               className="flex items-center gap-2 px-8 py-4 rounded-[14px] text-[16px] font-bold text-white transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: "linear-gradient(135deg, #FF6B35, #FF4500)",
@@ -491,11 +491,11 @@ export default function MarketingPage() {
                 style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
               >
                 <Link
-                  href="https://rosco-app-chi.vercel.app/admin"
+                  href="/signup-intent"
                   className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors duration-200 hover:opacity-80"
                   style={{ color: "#007AFF" }}
                 >
-                  Open Admin Panel
+                  Talk to us
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -569,11 +569,11 @@ export default function MarketingPage() {
                 style={{ borderTop: "1px solid rgba(255,107,53,0.15)" }}
               >
                 <Link
-                  href="https://rosco-app-chi.vercel.app/handyman"
+                  href="/signup-intent"
                   className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors duration-200 hover:opacity-80"
                   style={{ color: "#FF6B35" }}
                 >
-                  Open Handyman App
+                  Join the early access list
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -622,11 +622,11 @@ export default function MarketingPage() {
                 style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
               >
                 <Link
-                  href="https://rosco-app-chi.vercel.app/pay/demo"
+                  href="/signup-intent"
                   className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors duration-200 hover:opacity-80"
                   style={{ color: "#34C759" }}
                 >
-                  See Payment Page
+                  Register your interest
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -937,7 +937,7 @@ export default function MarketingPage() {
                   ))}
                 </ul>
                 <Link
-                  href="https://rosco-app-chi.vercel.app"
+                  href="/signup-intent"
                   className="mt-6 flex items-center justify-center gap-1.5 py-3 rounded-[12px] text-[14px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-95"
                   style={
                     plan.highlight
@@ -951,7 +951,7 @@ export default function MarketingPage() {
                           color: "rgba(235,235,245,0.70)",
                           border: "1px solid rgba(255,255,255,0.08)",
                         }
-                  }
+                      }
                 >
                   Get Started
                   <ArrowRight className="w-4 h-4" />
@@ -1002,7 +1002,7 @@ export default function MarketingPage() {
               ROSCO. Get set up in minutes.
             </p>
             <Link
-              href="https://rosco-app-chi.vercel.app"
+              href="/signup-intent"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] text-[16px] font-bold text-white transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: "linear-gradient(135deg, #FF6B35, #FF4500)",
