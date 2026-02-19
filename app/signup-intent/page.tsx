@@ -56,7 +56,7 @@ export default function SignupIntentPage() {
 
           <form
             className="space-y-4"
-            action="https://formspree.io/f/xqakrqrg"
+            action="https://formspree.io/f/mdaldqoa"
             method="POST"
           >
             <div className="space-y-1.5">
