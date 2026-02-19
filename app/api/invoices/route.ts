@@ -1,9 +1,20 @@
+/**
+ * /api/invoices
+ *
+ * GET  — Returns all invoices (server-side cached via unstable_cache, 60 s).
+ *         Response carries a short-lived Cache-Control header.
+ * POST — Creates a new invoice and revalidates "invoices" + "jobs" cache tags.
+ */
 import { NextResponse } from "next/server";
 import { getInvoices, createInvoice, getJob } from "@/lib/db";
 
 export async function GET() {
   const invoices = await getInvoices();
-  return NextResponse.json(invoices);
+  return NextResponse.json(invoices, {
+    headers: {
+      "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30",
+    },
+  });
 }
 
 export async function POST(req: Request) {

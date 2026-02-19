@@ -2,27 +2,51 @@
  * All Firestore data access in one place.
  * Server-side only (uses firebase-admin).
  *
- * CACHING STRATEGY
- * ─────────────────
- * Base read functions (getJobs, getInvoices, getHandymen, getServicePresets)
- * are wrapped with Next.js unstable_cache so Firestore is only hit once per
- * cache window (default 60 s).  After any write the relevant tag is
- * revalidated so the next read picks up fresh data.
+ * ─── CACHING STRATEGY ───────────────────────────────────────────────────────
+ *
+ * Collection reads (getJobs, getInvoices, getHandymen, getServicePresets,
+ * getSettings) are wrapped with Next.js unstable_cache so Firestore is only
+ * hit ONCE per cache window (60 s for jobs/invoices, 5 min for settings,
+ * 10 min for handymen/presets).
+ *
+ * Single-doc lookups (getJob, getInvoice, getHandyman) are derived from the
+ * already-cached collection, costing zero extra Firestore reads.
  *
  * Tags:
  *   "jobs"      – revalidated by createJob / updateJob / deleteJob
  *   "invoices"  – revalidated by createInvoice / updateInvoice
- *   "handymen"  – revalidated by any handyman write (seed only for now)
- *   "presets"   – revalidated by any preset write  (seed only for now)
+ *   "handymen"  – (seed only for now)
+ *   "presets"   – (seed only for now)
+ *   "settings"  – revalidated by updateSettings
+ *
+ * ─── READ BUDGET PER PAGE LOAD ──────────────────────────────────────────────
+ * Dashboard  : 3 collection reads  (jobs + invoices + handymen)  → cached
+ * Jobs list  : 1 collection read   (jobs)                        → cached
+ * Invoice list: 1 collection read  (invoices)                    → cached
+ * Job detail : 0 extra reads       (derived from cached jobs)
+ * Invoice detail: 0 extra reads    (derived from cached invoices)
+ * Settings   : 1 doc read          (settings)                    → cached 5 min
+ * Handyman   : 1 collection read   (jobs)                        → cached
+ * Pay page   : 0 extra reads       (derived from cached invoices)
+ *
+ * Cache HIT  = 0 Firestore reads per page visit.
+ * Cache MISS = reads above (first visit per 60s window).
+ * ────────────────────────────────────────────────────────────────────────────
  */
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
 import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const now = () => new Date().toISOString();
+
+// Max docs per collection fetch — safety bound to prevent runaway reads.
+// Increase only if the business genuinely grows beyond this.
+const JOBS_LIMIT     = 500;
+const INVOICES_LIMIT = 500;
+const HANDYMEN_LIMIT = 50;
+const PRESETS_LIMIT  = 100;
 
 function docToJob(doc: FirebaseFirestore.DocumentSnapshot): Job {
   return { id: doc.id, ...doc.data() } as Job;
@@ -37,94 +61,114 @@ function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
   return { id: doc.id, ...doc.data() } as ServicePreset;
 }
 
-// ─── Base Firestore reads (cached) ───────────────────────────────────────────
-// Each function is wrapped with unstable_cache so repeated calls within the
-// same 60-second window return the same data without hitting Firestore.
+// ─── Base Firestore reads (UNCACHED — only called by the cache wrappers) ─────
 
 const _fetchJobs = async (): Promise<Job[]> => {
-  const snap = await db.collection("jobs").orderBy("date", "desc").get();
+  // READ: 1 Firestore query, up to JOBS_LIMIT document reads
+  console.log("[Firestore READ] jobs collection — cache miss");
+  const snap = await db
+    .collection("jobs")
+    .orderBy("date", "desc")
+    .limit(JOBS_LIMIT)
+    .get();
   return snap.docs.map(docToJob);
 };
 
 const _fetchInvoices = async (): Promise<Invoice[]> => {
-  const snap = await db.collection("invoices").orderBy("createdAt", "desc").get();
+  // READ: 1 Firestore query, up to INVOICES_LIMIT document reads
+  console.log("[Firestore READ] invoices collection — cache miss");
+  const snap = await db
+    .collection("invoices")
+    .orderBy("createdAt", "desc")
+    .limit(INVOICES_LIMIT)
+    .get();
   return snap.docs.map(docToInvoice);
 };
 
 const _fetchHandymen = async (): Promise<Handyman[]> => {
-  const snap = await db.collection("handymen").orderBy("name").get();
+  // READ: 1 Firestore query, up to HANDYMEN_LIMIT document reads
+  console.log("[Firestore READ] handymen collection — cache miss");
+  const snap = await db
+    .collection("handymen")
+    .orderBy("name")
+    .limit(HANDYMEN_LIMIT)
+    .get();
   return snap.docs.map(docToHandyman);
 };
 
 const _fetchServicePresets = async (): Promise<ServicePreset[]> => {
-  const snap = await db.collection("servicePresets").orderBy("category").get();
+  // READ: 1 Firestore query, up to PRESETS_LIMIT document reads
+  console.log("[Firestore READ] servicePresets collection — cache miss");
+  const snap = await db
+    .collection("servicePresets")
+    .orderBy("category")
+    .limit(PRESETS_LIMIT)
+    .get();
   return snap.docs.map(docToPreset);
 };
 
-// Cached wrappers – 60-second TTL, revalidated by tag on writes
+const _fetchSettings = async (): Promise<AppSettings> => {
+  // READ: 1 Firestore document read
+  console.log("[Firestore READ] settings/admin — cache miss");
+  const doc = await db.collection("settings").doc("admin").get();
+  if (!doc.exists) return DEFAULT_SETTINGS;
+  return { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) };
+};
+
+// ─── Cached wrappers — persistent Data Cache, revalidated by tag ─────────────
+// In production: cache persists across requests (zero Firestore reads on hit).
+// In dev (next dev): cache resets between requests — that's expected behaviour.
+
+/** All jobs, newest-first. Cached 60 s. Tag: "jobs". */
 export const getJobs = unstable_cache(_fetchJobs, ["jobs"], {
   revalidate: 60,
   tags: ["jobs"],
 });
 
+/** All invoices, newest-first. Cached 60 s. Tag: "invoices". */
 export const getInvoices = unstable_cache(_fetchInvoices, ["invoices"], {
   revalidate: 60,
   tags: ["invoices"],
 });
 
+/** All handymen, alpha. Cached 10 min. Tag: "handymen". */
 export const getHandymen = unstable_cache(_fetchHandymen, ["handymen"], {
-  revalidate: 60,
+  revalidate: 600,
   tags: ["handymen"],
 });
 
+/** All service presets, by category. Cached 10 min. Tag: "presets". */
 export const getServicePresets = unstable_cache(_fetchServicePresets, ["presets"], {
-  revalidate: 60,
+  revalidate: 600,
   tags: ["presets"],
 });
 
-// ─── Single-doc reads (short cache) ──────────────────────────────────────────
-// These are cached per-ID to avoid re-fetching the same doc on detail pages.
-// Tags ensure they're busted when the parent collection is revalidated.
+/** App settings. Cached 5 min. Tag: "settings". */
+export const getSettings = unstable_cache(_fetchSettings, ["settings"], {
+  revalidate: 300,
+  tags: ["settings"],
+});
 
-export async function getHandyman(id: string): Promise<Handyman | null> {
-  const cached = unstable_cache(
-    async () => {
-      const doc = await db.collection("handymen").doc(id).get();
-      return doc.exists ? docToHandyman(doc) : null;
-    },
-    [`handyman-${id}`],
-    { revalidate: 60, tags: ["handymen"] }
-  );
-  return cached();
-}
+// ─── Single-doc lookups (DERIVED — zero extra Firestore reads) ────────────────
+// These look up a document from the already-cached collection array.
+// Cost: 0 Firestore reads when the collection is already cached.
 
 export async function getJob(id: string): Promise<Job | null> {
-  const cached = unstable_cache(
-    async () => {
-      const doc = await db.collection("jobs").doc(id).get();
-      return doc.exists ? docToJob(doc) : null;
-    },
-    [`job-${id}`],
-    { revalidate: 60, tags: ["jobs"] }
-  );
-  return cached();
+  const jobs = await getJobs();
+  return jobs.find(j => j.id === id) ?? null;
 }
 
 export async function getInvoice(id: string): Promise<Invoice | null> {
-  const cached = unstable_cache(
-    async () => {
-      const doc = await db.collection("invoices").doc(id).get();
-      return doc.exists ? docToInvoice(doc) : null;
-    },
-    [`invoice-${id}`],
-    { revalidate: 60, tags: ["invoices"] }
-  );
-  return cached();
+  const invoices = await getInvoices();
+  return invoices.find(i => i.id === id) ?? null;
 }
 
-// ─── In-memory derived queries (no extra Firestore reads) ────────────────────
-// These accept a pre-fetched array so the caller decides how to source data.
-// Nothing here touches Firestore.
+export async function getHandyman(id: string): Promise<Handyman | null> {
+  const handymen = await getHandymen();
+  return handymen.find(h => h.id === id) ?? null;
+}
+
+// ─── In-memory derived queries (no Firestore reads) ─────────────────────────
 
 export function filterTodayJobs(jobs: Job[]): Job[] {
   const today = new Date();
@@ -181,39 +225,32 @@ export function findInvoiceByJobId(invoices: Invoice[], jobId: string): Invoice 
   return invoices.find(i => i.jobId === jobId);
 }
 
-// ─── Legacy wrapper aliases (kept for any callers not yet updated) ────────────
-// These still return the same data but now go through the cache.
+// ─── Legacy wrapper aliases ───────────────────────────────────────────────────
 
 /** @deprecated Use getJobs() + filterTodayJobs() */
 export async function getTodayJobs(): Promise<Job[]> {
   return filterTodayJobs(await getJobs());
 }
-
 /** @deprecated Use getJobs() + filterUpcomingJobs() */
 export async function getUpcomingJobs(days = 7): Promise<Job[]> {
   return filterUpcomingJobs(await getJobs(), days);
 }
-
 /** @deprecated Use getJobs() + filterWeekJobs() */
 export async function getWeekJobs(): Promise<Job[]> {
   return filterWeekJobs(await getJobs());
 }
-
 /** @deprecated Use getJobs() + filterMonthJobs() */
 export async function getMonthJobs(): Promise<Job[]> {
   return filterMonthJobs(await getJobs());
 }
-
 /** @deprecated Use getInvoices() + filterOutstandingInvoices() */
 export async function getOutstandingInvoices(): Promise<Invoice[]> {
   return filterOutstandingInvoices(await getInvoices());
 }
-
 /** @deprecated Use getInvoices() + filterPaidInvoices() */
 export async function getPaidInvoices(): Promise<Invoice[]> {
   return filterPaidInvoices(await getInvoices());
 }
-
 /** @deprecated Use getInvoices() + findInvoiceByJobId() */
 export async function getInvoiceByJobId(jobId: string): Promise<Invoice | null> {
   return findInvoiceByJobId(await getInvoices(), jobId) ?? null;
@@ -230,7 +267,7 @@ export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt"
     updatedAt: now(),
   };
   await ref.set(job);
-  revalidateTag("jobs", "max");
+  revalidateTag("jobs", "max");   // bust cached collection so next read is fresh
   return job;
 }
 
@@ -258,7 +295,7 @@ export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "up
     updatedAt: now(),
   };
   await ref.set(invoice);
-  // Update job with invoiceId
+  // Link invoice to job
   await updateJob(data.jobId, { invoiceId: ref.id });
   revalidateTag("invoices", "max");
   return invoice;
@@ -281,15 +318,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   notifications: { email: true, sms: false, push: false },
 };
 
-export async function getSettings(): Promise<AppSettings> {
-  const doc = await db.collection("settings").doc("admin").get();
-  if (!doc.exists) return DEFAULT_SETTINGS;
-  return { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) };
-}
-
 export async function updateSettings(data: Partial<AppSettings>): Promise<AppSettings> {
   const ref = db.collection("settings").doc("admin");
   await ref.set(data, { merge: true });
+  revalidateTag("settings", "max");  // bust settings cache immediately
   const updated = await ref.get();
   return { ...DEFAULT_SETTINGS, ...(updated.data() as Partial<AppSettings>) };
 }
@@ -299,7 +331,6 @@ export async function updateSettings(data: Partial<AppSettings>): Promise<AppSet
 export async function seedDatabase(): Promise<void> {
   const batch = db.batch();
 
-  // Service presets
   const presets = [
     { name: "Basic Plumbing Repair", description: "Fix leaks, replace fittings", price: 250, category: "Plumbing" },
     { name: "Pipe Installation", description: "Install or replace pipes", price: 450, category: "Plumbing" },
@@ -318,7 +349,6 @@ export async function seedDatabase(): Promise<void> {
     batch.set(ref, { ...p, id: ref.id });
   }
 
-  // Handymen
   const yosefRef = db.collection("handymen").doc();
   batch.set(yosefRef, {
     id: yosefRef.id, name: "Yosef Cohen",
@@ -337,7 +367,6 @@ export async function seedDatabase(): Promise<void> {
   revalidateTag("handymen", "max");
   revalidateTag("presets", "max");
 
-  // Jobs (sequential so we can reference IDs)
   const jobs = [
     {
       clientName: "David Levy", clientPhone: "+972-54-1112223",
@@ -377,7 +406,6 @@ export async function seedDatabase(): Promise<void> {
     await createJob(j);
   }
 
-  // One completed job with invoice
   const completedJob = await createJob({
     clientName: "Noa Ben-David", clientPhone: "+972-52-7778889",
     clientEmail: "noa.bd@hotmail.com", title: "Bedroom Door Lock Replacement",
