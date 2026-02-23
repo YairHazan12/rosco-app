@@ -1,22 +1,41 @@
 /**
  * /api/jobs
  *
- * GET  — Returns all jobs (server-side cached via unstable_cache, 60 s).
- *         Response also carries a short-lived Cache-Control header so
+ * GET  — Returns jobs with optional pagination.
+ *         Query params: ?page=1&limit=10 (defaults: page=1, limit=10)
+ *         Response: { data: Job[], total: number, page: number, totalPages: number }
+ *         Also carries a short-lived Cache-Control header so
  *         repeated client fetches within 30 s don't even reach the server.
  * POST — Creates a new job and revalidates the "jobs" cache tag.
  */
 import { NextResponse } from "next/server";
 import { getJobs, createJob } from "@/lib/db";
 
-export async function GET() {
-  const jobs = await getJobs();
-  return NextResponse.json(jobs, {
-    headers: {
-      // Allow CDN / browser to cache for 30 s; stale-while-revalidate another 30 s
-      "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30",
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const pageParam  = searchParams.get("page");
+  const limitParam = searchParams.get("limit");
+
+  const allJobs = await getJobs();
+  const total   = allJobs.length;
+
+  const page  = Math.max(1, parseInt(pageParam  ?? "1",  10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(limitParam ?? "10", 10) || 10));
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage   = Math.min(page, totalPages);
+  const startIdx   = (safePage - 1) * limit;
+  const data       = allJobs.slice(startIdx, startIdx + limit);
+
+  return NextResponse.json(
+    { data, total, page: safePage, totalPages },
+    {
+      headers: {
+        // Allow CDN / browser to cache for 30 s; stale-while-revalidate another 30 s
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30",
+      },
     },
-  });
+  );
 }
 
 export async function POST(req: Request) {

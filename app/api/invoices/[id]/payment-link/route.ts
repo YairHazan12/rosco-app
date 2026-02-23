@@ -22,7 +22,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       payment_method_types: ["card"],
       line_items: invoice.items.map((item) => ({
         price_data: {
-          currency: "ils",
+          currency: "zar",
           product_data: { name: item.description },
           unit_amount: Math.round(item.unitPrice * 100),
         },

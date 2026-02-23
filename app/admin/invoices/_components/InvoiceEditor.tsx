@@ -133,7 +133,7 @@ export default function InvoiceEditor({
                           border: "none",
                         }}
                       >
-                        {preset.name} — ₪{preset.price}
+                        {preset.name} — R{preset.price}
                       </button>
                     ))}
                   </div>
@@ -214,7 +214,7 @@ export default function InvoiceEditor({
                       className="text-[12px]"
                       style={{ color: "var(--label-tertiary)" }}
                     >
-                      Unit Price ₪
+                      Unit Price R
                     </Label>
                     <Input
                       type="number"
@@ -233,7 +233,7 @@ export default function InvoiceEditor({
                 </div>
                 {(item.quantity > 1 || item.unitPrice > 0) && (
                   <p className="text-[13px] text-right" style={{ color: "var(--label-tertiary)" }}>
-                    ₪{(item.quantity * item.unitPrice).toFixed(2)}
+                    R{(item.quantity * item.unitPrice).toFixed(2)}
                   </p>
                 )}
               </div>
@@ -289,12 +289,12 @@ export default function InvoiceEditor({
           <div className="space-y-2.5">
             <div className="flex justify-between text-[14px]" style={{ color: "var(--label-tertiary)" }}>
               <span>Subtotal</span>
-              <span>₪{subtotal.toFixed(2)}</span>
+              <span>R{subtotal.toFixed(2)}</span>
             </div>
             {vatEnabled && (
               <div className="flex justify-between text-[14px]" style={{ color: "var(--label-tertiary)" }}>
                 <span>VAT (17%)</span>
-                <span>₪{vatAmount.toFixed(2)}</span>
+                <span>R{vatAmount.toFixed(2)}</span>
               </div>
             )}
             <div
@@ -308,7 +308,7 @@ export default function InvoiceEditor({
                 className="font-bold text-[22px]"
                 style={{ color: "var(--brand)", letterSpacing: "-0.3px" }}
               >
-                ₪{total.toFixed(2)}
+                R{total.toFixed(2)}
               </span>
             </div>
           </div>

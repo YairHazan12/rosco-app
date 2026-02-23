@@ -131,7 +131,7 @@ export default async function InvoiceDetailPage({
                   </p>
                   {item.quantity > 1 && (
                     <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
-                      {item.quantity} × ₪{item.unitPrice.toFixed(2)}
+                      {item.quantity} × R{item.unitPrice.toFixed(2)}
                     </p>
                   )}
                 </div>
@@ -139,7 +139,7 @@ export default async function InvoiceDetailPage({
                   className="text-[15px] font-semibold flex-shrink-0"
                   style={{ color: "var(--label-primary)" }}
                 >
-                  ₪{item.total.toFixed(2)}
+                  R{item.total.toFixed(2)}
                 </p>
               </div>
             ))}
@@ -154,7 +154,7 @@ export default async function InvoiceDetailPage({
               style={{ color: "var(--label-tertiary)" }}
             >
               <span>Subtotal</span>
-              <span>₪{invoice.subtotal.toFixed(2)}</span>
+              <span>R{invoice.subtotal.toFixed(2)}</span>
             </div>
             {invoice.vatEnabled && (
               <div
@@ -162,7 +162,7 @@ export default async function InvoiceDetailPage({
                 style={{ color: "var(--label-tertiary)" }}
               >
                 <span>VAT ({(invoice.vatRate * 100).toFixed(0)}%)</span>
-                <span>₪{invoice.vatAmount.toFixed(2)}</span>
+                <span>R{invoice.vatAmount.toFixed(2)}</span>
               </div>
             )}
             <div
@@ -173,7 +173,7 @@ export default async function InvoiceDetailPage({
                 Total
               </span>
               <span className="text-[22px]" style={{ color: "var(--brand)", letterSpacing: "-0.3px" }}>
-                ₪{invoice.total.toFixed(2)}
+                R{invoice.total.toFixed(2)}
               </span>
             </div>
           </div>

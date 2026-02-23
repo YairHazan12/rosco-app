@@ -52,7 +52,7 @@ export default function PayButton({ invoice }: { invoice: Invoice }) {
       {loading ? (
         <Loader2 className="w-5 h-5 animate-spin" />
       ) : (
-        `Pay ₪${invoice.total.toFixed(2)}`
+        `Pay R${invoice.total.toFixed(2)}`
       )}
     </button>
   );

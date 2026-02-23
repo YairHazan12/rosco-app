@@ -122,7 +122,7 @@ export default async function CustomerPayPage({
                   </p>
                   {item.quantity > 1 && (
                     <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
-                      {item.quantity} × ₪{item.unitPrice.toFixed(2)}
+                      {item.quantity} × R{item.unitPrice.toFixed(2)}
                     </p>
                   )}
                 </div>
@@ -130,7 +130,7 @@ export default async function CustomerPayPage({
                   className="text-[15px] font-semibold flex-shrink-0"
                   style={{ color: "var(--label-primary)" }}
                 >
-                  ₪{item.total.toFixed(2)}
+                  R{item.total.toFixed(2)}
                 </p>
               </div>
             ))}
@@ -146,7 +146,7 @@ export default async function CustomerPayPage({
               style={{ color: "var(--label-tertiary)" }}
             >
               <span>Subtotal</span>
-              <span>₪{invoice.subtotal.toFixed(2)}</span>
+              <span>R{invoice.subtotal.toFixed(2)}</span>
             </div>
             {invoice.vatEnabled && (
               <div
@@ -154,7 +154,7 @@ export default async function CustomerPayPage({
                 style={{ color: "var(--label-tertiary)" }}
               >
                 <span>VAT ({(invoice.vatRate * 100).toFixed(0)}%)</span>
-                <span>₪{invoice.vatAmount.toFixed(2)}</span>
+                <span>R{invoice.vatAmount.toFixed(2)}</span>
               </div>
             )}
             <div
@@ -171,7 +171,7 @@ export default async function CustomerPayPage({
                 className="text-[28px] font-bold tracking-tight"
                 style={{ color: "var(--brand)", letterSpacing: "-0.5px" }}
               >
-                ₪{invoice.total.toFixed(2)}
+                R{invoice.total.toFixed(2)}
               </span>
             </div>
           </div>
@@ -260,7 +260,7 @@ function DemoPage() {
           <button
             className="ios-btn-brand"
           >
-            Pay ₪760.50
+            Pay R760.50
           </button>
         </div>
       </div>

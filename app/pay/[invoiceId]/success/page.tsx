@@ -107,7 +107,7 @@ export default async function PaymentSuccessPage({
               className="text-[28px] font-bold mt-2 tracking-tight"
               style={{ color: "var(--ios-green)", letterSpacing: "-0.5px" }}
             >
-              ₪{invoice.total.toFixed(2)}
+              R{invoice.total.toFixed(2)}
             </p>
           </div>
 

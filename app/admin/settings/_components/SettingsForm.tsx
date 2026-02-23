@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import type { AppSettings } from "@/lib/types";
 
 const CURRENCIES = [
-  { value: "ILS", label: "₪ ILS – Israeli Shekel" },
+  { value: "ZAR", label: "R ZAR – South African Rand" },
   { value: "USD", label: "$ USD – US Dollar" },
   { value: "EUR", label: "€ EUR – Euro" },
   { value: "GBP", label: "£ GBP – British Pound" },

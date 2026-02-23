@@ -96,8 +96,8 @@ export default async function AdminDashboard() {
     .filter(j => new Date(j.date) < startOfDay(today))
     .slice(0, 5);
 
-  const fmtNIS = (n: number) =>
-    n >= 1000 ? `₪${(n / 1000).toFixed(1)}k` : `₪${n.toFixed(0)}`;
+  const fmtZAR = (n: number) =>
+    n >= 1000 ? `R${(n / 1000).toFixed(1)}k` : `R${n.toFixed(0)}`;
 
   return (
     <div className="space-y-6">
@@ -168,7 +168,7 @@ export default async function AdminDashboard() {
           </p>
           {outstanding.length > 0 && (
             <p className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--ios-red)" }}>
-              ₪{outstandingTotal.toFixed(0)}
+              R{outstandingTotal.toFixed(0)}
             </p>
           )}
         </div>
@@ -185,7 +185,7 @@ export default async function AdminDashboard() {
             className="text-[22px] font-bold tracking-tight leading-none stat-number"
             style={{ color: "var(--label-primary)" }}
           >
-            {fmtNIS(totalRevenue)}
+            {fmtZAR(totalRevenue)}
           </p>
           <p className="text-[12px] mt-1.5 font-medium" style={{ color: "var(--label-tertiary)" }}>
             Collected
@@ -221,7 +221,7 @@ export default async function AdminDashboard() {
           </p>
           <div className="mt-3 pt-3" style={{ borderTop: "0.5px solid var(--separator)" }}>
             <p className="text-[16px] font-bold stat-number" style={{ color: "var(--ios-green)" }}>
-              {fmtNIS(weekRevenue)}
+              {fmtZAR(weekRevenue)}
             </p>
             <p className="text-[11px]" style={{ color: "var(--label-tertiary)" }}>collected</p>
           </div>
@@ -253,7 +253,7 @@ export default async function AdminDashboard() {
           </p>
           <div className="mt-3 pt-3" style={{ borderTop: "0.5px solid var(--separator)" }}>
             <p className="text-[16px] font-bold stat-number" style={{ color: "var(--ios-green)" }}>
-              {fmtNIS(monthRevenue)}
+              {fmtZAR(monthRevenue)}
             </p>
             <p className="text-[11px]" style={{ color: "var(--label-tertiary)" }}>collected</p>
           </div>
@@ -664,7 +664,7 @@ export default async function AdminDashboard() {
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                     <div className="text-right">
                       <p className="font-bold text-[15px] stat-number" style={{ color: "var(--ios-red)" }}>
-                        ₪{inv.total.toFixed(0)}
+                        R{inv.total.toFixed(0)}
                       </p>
                       <p className="text-[11px]" style={{ color: "var(--label-quaternary)" }}>
                         {inv.status}
@@ -681,7 +681,7 @@ export default async function AdminDashboard() {
               {outstanding.length} invoice{outstanding.length > 1 ? "s" : ""}
             </p>
             <p className="font-bold text-[15px] stat-number" style={{ color: "var(--ios-red)" }}>
-              ₪{outstandingTotal.toFixed(0)}
+              R{outstandingTotal.toFixed(0)}
             </p>
           </div>
         </section>

@@ -63,7 +63,7 @@ export default async function InvoicesPage({
             </div>
           </div>
           <p className="text-[26px] font-bold tracking-tight stat-number" style={{ color: "var(--ios-red)" }}>
-            ₪{totals.outstanding.toFixed(0)}
+            R{totals.outstanding.toFixed(0)}
           </p>
           <p className="text-[12px] mt-1 font-medium" style={{ color: "var(--label-tertiary)" }}>
             Outstanding
@@ -77,7 +77,7 @@ export default async function InvoicesPage({
             </div>
           </div>
           <p className="text-[26px] font-bold tracking-tight stat-number" style={{ color: "var(--ios-green)" }}>
-            ₪{totals.paid.toFixed(0)}
+            R{totals.paid.toFixed(0)}
           </p>
           <p className="text-[12px] mt-1 font-medium" style={{ color: "var(--label-tertiary)" }}>
             Collected
@@ -129,7 +129,7 @@ export default async function InvoicesPage({
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="text-right">
                           <p className="font-bold text-[18px] stat-number" style={{ color: "var(--label-primary)" }}>
-                            ₪{inv.total.toFixed(0)}
+                            R{inv.total.toFixed(0)}
                           </p>
                           {inv.vatEnabled && (
                             <p className="text-[11px]" style={{ color: "var(--label-quaternary)" }}>

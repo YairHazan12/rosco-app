@@ -124,7 +124,7 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
               type="tel"
               value={formData.clientPhone}
               onChange={e => set("clientPhone", e.target.value)}
-              placeholder="+972-50-1234567"
+              placeholder="+27-82-123-4567"
               className="h-11 text-[16px] rounded-xl border"
               style={{
                 background: "var(--bg-primary)",
@@ -245,7 +245,7 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
               required
               value={formData.location}
               onChange={e => set("location", e.target.value)}
-              placeholder="Rothschild Blvd 45, Tel Aviv"
+              placeholder="Long Street 45, Cape Town"
               className="h-11 text-[16px] rounded-xl border"
               style={{
                 background: "var(--bg-primary)",
