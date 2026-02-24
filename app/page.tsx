@@ -90,7 +90,7 @@ export default function Home() {
           {/* CTAs */}
           <div className="w-full max-w-[380px] space-y-3">
             {/* Try Demo */}
-            <Link href="/handyman" className="block touch-scale">
+            <Link href="/demo" className="block touch-scale">
               <div
                 className="rounded-[18px] p-5 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all duration-200"
                 style={{
