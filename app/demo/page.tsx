@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export default function DemoPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Demo credentials
@@ -23,39 +23,30 @@ export default function DemoPage() {
       const email = role === "admin" ? DEMO_ADMIN_EMAIL : DEMO_HANDYMAN_EMAIL;
       const password = role === "admin" ? DEMO_ADMIN_PASSWORD : DEMO_HANDYMAN_PASSWORD;
 
-      try {
-        // Try to sign in
-        await signIn(email, password);
-      } catch (signInError: any) {
-        // If sign in fails, try to create the account first
-        if (signInError.code === "auth/user-not-found" || signInError.code === "auth/invalid-credential") {
-          toast.info("Creating demo account...");
-          
-          // Create the demo account using the /api/setup-demo endpoint
-          const response = await fetch("/api/setup-demo", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role }),
-          });
+      // Always ensure demo account + Firestore doc exist first
+      const response = await fetch("/api/setup-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
 
-          if (!response.ok) {
-            throw new Error("Failed to create demo account");
-          }
-
-          // Now try signing in again
-          await signIn(email, password);
-        } else {
-          throw signInError;
-        }
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to setup demo account");
       }
 
-      toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
+      // Now sign in
+      await signIn(email, password);
       
-      // Redirect to appropriate dashboard
+      // Give auth context time to fetch user data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await refreshUser();
+
+      toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
       router.push(role === "admin" ? "/admin" : "/handyman");
     } catch (error: any) {
       console.error("Demo login error:", error);
-      toast.error("Demo login failed. Please try again or contact support.");
+      toast.error("Demo login failed. Please try again.");
     } finally {
       setLoading(false);
     }
