@@ -1,19 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Briefcase, FileText, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { LayoutDashboard, Briefcase, FileText, Settings, Users, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/jobs",      label: "Jobs",      icon: Briefcase },
   { href: "/admin/invoices",  label: "Invoices",  icon: FileText },
+  { href: "/admin/team",      label: "Team",      icon: Users },
   { href: "/admin/settings",  label: "Settings",  icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, firebaseUser, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!firebaseUser) {
+        router.push("/login");
+      } else if (!user?.onboardingComplete) {
+        router.push("/onboarding");
+      } else if (user.status === "pending") {
+        router.push("/pending");
+      } else if (user.role !== "admin") {
+        router.push("/handyman");
+      }
+    }
+  }, [user, firebaseUser, loading, router]);
+
+  if (loading || !user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -42,14 +69,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
 
-          {/* Home link */}
-          <Link
-            href="/"
-            className="text-[15px] font-medium min-h-[44px] flex items-center px-2 -mr-2"
-            style={{ color: "var(--brand)" }}
+          {/* User menu */}
+          <button
+            onClick={() => signOut()}
+            className="text-[15px] font-medium min-h-[44px] flex items-center gap-1.5 px-2 -mr-2"
+            style={{ color: "var(--ios-red)" }}
           >
-            ← Home
-          </Link>
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
         </div>
       </header>
 

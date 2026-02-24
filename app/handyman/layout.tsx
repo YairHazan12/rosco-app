@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CalendarDays, Briefcase } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { CalendarDays, Briefcase, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PWAPrompt from "@/components/pwa-prompt";
 import NotificationPrompt from "@/components/notification-prompt";
+import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/handyman",      label: "Schedule", icon: CalendarDays },
@@ -14,6 +16,30 @@ const navItems = [
 
 export default function HandymanLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, firebaseUser, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!firebaseUser) {
+        router.push("/login");
+      } else if (!user?.onboardingComplete) {
+        router.push("/onboarding");
+      } else if (user.status === "pending") {
+        router.push("/pending");
+      } else if (user.role !== "handyman") {
+        router.push("/admin");
+      }
+    }
+  }, [user, firebaseUser, loading, router]);
+
+  if (loading || !user || user.role !== "handyman") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -55,22 +81,14 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
             </span>
           </div>
 
-          {/* Status pill */}
-          <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full"
-            style={{
-              background: "rgba(52,199,89,0.10)",
-              border: "0.5px solid rgba(52,199,89,0.25)",
-            }}
+          {/* Logout button */}
+          <button
+            onClick={() => signOut()}
+            className="flex items-center gap-1 px-2 py-1 text-[13px] font-medium"
+            style={{ color: "var(--ios-red)" }}
           >
-            <div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: "var(--ios-green)" }}
-            />
-            <span className="text-[12px] font-semibold" style={{ color: "var(--ios-green)" }}>
-              Active
-            </span>
-          </div>
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
