@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { format, addDays, startOfDay } from "date-fns";
+import CreateInvoiceLink from "./_components/CreateInvoiceLink";
 
 export const dynamic = "force-dynamic";
 
@@ -473,9 +474,8 @@ export default async function AdminDashboard() {
                                 Has invoice
                               </span>
                             ) : job.status === "Completed" ? (
-                              <Link
-                                href={`/admin/invoices/new?jobId=${job.id}`}
-                                onClick={e => e.stopPropagation()}
+                              <CreateInvoiceLink
+                                jobId={job.id}
                                 className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
                                 style={{
                                   background: "rgba(255,107,53,0.10)",
@@ -483,7 +483,7 @@ export default async function AdminDashboard() {
                                 }}
                               >
                                 + Invoice
-                              </Link>
+                              </CreateInvoiceLink>
                             ) : null}
                             <ChevronRight
                               className="w-4 h-4"
