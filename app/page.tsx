@@ -4,9 +4,8 @@ import { Wrench, Shield, CreditCard, ChevronRight } from "lucide-react";
 export default function Home() {
   return (
     <main
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-teal-50"
       style={{
-        background: "linear-gradient(160deg, #1A1A1C 0%, #2C2C2E 45%, #1A1A1C 100%)",
         paddingTop: "env(safe-area-inset-top, 0px)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
@@ -16,33 +15,33 @@ export default function Home() {
         {/* Logo */}
         <div className="relative mb-6">
           <div
-            className="w-[88px] h-[88px] rounded-[22px] flex items-center justify-center"
+            className="w-[88px] h-[88px] rounded-[22px] flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 shadow-xl"
             style={{
-              background: "linear-gradient(145deg, #FF7A47, #FF5500)",
               boxShadow:
-                "0 12px 40px rgba(255,107,53,0.45), 0 4px 12px rgba(255,107,53,0.25), inset 0 1px 0 rgba(255,255,255,0.15)",
+                "0 12px 32px rgba(15, 156, 140, 0.25), 0 4px 12px rgba(15, 156, 140, 0.15)",
             }}
           >
-            <Wrench className="w-11 h-11 text-white" strokeWidth={2} />
+            <Wrench className="w-11 h-11 text-white" strokeWidth={2.5} />
           </div>
           {/* Shine overlay */}
           <div
             className="absolute inset-0 rounded-[22px] pointer-events-none"
             style={{
               background:
-                "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)",
+                "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
             }}
           />
         </div>
 
         <h1
-          className="text-[44px] font-bold text-white tracking-[-1.5px] leading-none mb-2"
+          className="text-[44px] font-bold tracking-[-1.5px] leading-none mb-2"
+          style={{ color: "#0F172A" }}
         >
           ROSCO
         </h1>
         <p
           className="text-[16px] font-medium tracking-wide"
-          style={{ color: "rgba(235,235,245,0.45)" }}
+          style={{ color: "#64748B" }}
         >
           Handyman Management
         </p>
@@ -53,40 +52,37 @@ export default function Home() {
         {/* Handyman */}
         <Link href="/handyman" className="block touch-scale">
           <div
-            className="rounded-[20px] p-5 flex items-center gap-4"
+            className="rounded-[20px] p-5 flex items-center gap-4 bg-white border shadow-sm hover:shadow-md transition-all duration-200"
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "0.5px solid rgba(255,255,255,0.10)",
-              backdropFilter: "blur(12px)",
+              borderColor: "#E2E8F0",
             }}
           >
             <div
               className="w-[50px] h-[50px] rounded-[14px] flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(255,107,53,0.20)",
-                border: "0.5px solid rgba(255,107,53,0.25)",
+                background: "#E6F7F5",
               }}
             >
-              <Wrench className="w-6 h-6" style={{ color: "#FF6B35" }} />
+              <Wrench className="w-6 h-6 text-teal-600" strokeWidth={2.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-[17px] tracking-tight">
+              <p className="font-semibold text-[17px] tracking-tight" style={{ color: "#0F172A" }}>
                 Handyman App
               </p>
               <p
                 className="text-[14px] mt-[2px]"
-                style={{ color: "rgba(235,235,245,0.45)" }}
+                style={{ color: "#64748B" }}
               >
                 Schedule, navigation, status
               </p>
             </div>
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,255,255,0.08)" }}
+              style={{ background: "#F1F5F9" }}
             >
               <ChevronRight
                 className="w-4 h-4"
-                style={{ color: "rgba(255,255,255,0.4)" }}
+                style={{ color: "#94A3B8" }}
               />
             </div>
           </div>
@@ -95,40 +91,37 @@ export default function Home() {
         {/* Admin */}
         <Link href="/admin" className="block touch-scale">
           <div
-            className="rounded-[20px] p-5 flex items-center gap-4"
+            className="rounded-[20px] p-5 flex items-center gap-4 bg-white border shadow-sm hover:shadow-md transition-all duration-200"
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "0.5px solid rgba(255,255,255,0.10)",
-              backdropFilter: "blur(12px)",
+              borderColor: "#E2E8F0",
             }}
           >
             <div
               className="w-[50px] h-[50px] rounded-[14px] flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(0,122,255,0.20)",
-                border: "0.5px solid rgba(0,122,255,0.25)",
+                background: "#E6F4FA",
               }}
             >
-              <Shield className="w-6 h-6" style={{ color: "#007AFF" }} />
+              <Shield className="w-6 h-6" style={{ color: "#0088CC" }} strokeWidth={2.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-[17px] tracking-tight">
+              <p className="font-semibold text-[17px] tracking-tight" style={{ color: "#0F172A" }}>
                 Admin Panel
               </p>
               <p
                 className="text-[14px] mt-[2px]"
-                style={{ color: "rgba(235,235,245,0.45)" }}
+                style={{ color: "#64748B" }}
               >
                 Jobs, invoices, dashboard
               </p>
             </div>
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,255,255,0.08)" }}
+              style={{ background: "#F1F5F9" }}
             >
               <ChevronRight
                 className="w-4 h-4"
-                style={{ color: "rgba(255,255,255,0.4)" }}
+                style={{ color: "#94A3B8" }}
               />
             </div>
           </div>
@@ -137,40 +130,37 @@ export default function Home() {
         {/* Customer Payment */}
         <Link href="/pay/demo" className="block touch-scale">
           <div
-            className="rounded-[20px] p-5 flex items-center gap-4"
+            className="rounded-[20px] p-5 flex items-center gap-4 bg-white border shadow-sm hover:shadow-md transition-all duration-200"
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "0.5px solid rgba(255,255,255,0.10)",
-              backdropFilter: "blur(12px)",
+              borderColor: "#E2E8F0",
             }}
           >
             <div
               className="w-[50px] h-[50px] rounded-[14px] flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(52,199,89,0.20)",
-                border: "0.5px solid rgba(52,199,89,0.25)",
+                background: "#D1FAE5",
               }}
             >
-              <CreditCard className="w-6 h-6" style={{ color: "#34C759" }} />
+              <CreditCard className="w-6 h-6" style={{ color: "#10B981" }} strokeWidth={2.5} />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold text-[17px] tracking-tight">
+              <p className="font-semibold text-[17px] tracking-tight" style={{ color: "#0F172A" }}>
                 Customer Payment
               </p>
               <p
                 className="text-[14px] mt-[2px]"
-                style={{ color: "rgba(235,235,245,0.45)" }}
+                style={{ color: "#64748B" }}
               >
                 View invoice & pay
               </p>
             </div>
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,255,255,0.08)" }}
+              style={{ background: "#F1F5F9" }}
             >
               <ChevronRight
                 className="w-4 h-4"
-                style={{ color: "rgba(255,255,255,0.4)" }}
+                style={{ color: "#94A3B8" }}
               />
             </div>
           </div>
@@ -180,7 +170,7 @@ export default function Home() {
         <Link
           href="/marketing"
           className="block text-center text-[13px] font-medium py-1 transition-colors duration-200 hover:opacity-80"
-          style={{ color: "rgba(255,107,53,0.65)" }}
+          style={{ color: "#0F9C8C" }}
         >
           Learn more about ROSCO →
         </Link>
@@ -188,7 +178,7 @@ export default function Home() {
         {/* Version tag */}
         <p
           className="text-center text-[11px] pt-2 tracking-widest uppercase"
-          style={{ color: "rgba(235,235,245,0.18)" }}
+          style={{ color: "#CBD5E1" }}
         >
           MVP v1.0
         </p>

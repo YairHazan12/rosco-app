@@ -28,8 +28,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div
               className="w-8 h-8 rounded-[10px] flex items-center justify-center"
               style={{
-                background: "linear-gradient(145deg, #FF7A47, #FF5500)",
-                boxShadow: "0 2px 6px rgba(255,107,53,0.35)",
+                background: "linear-gradient(145deg, #0F9C8C, #0D8578)",
+                boxShadow: "0 2px 6px rgba(15, 156, 140, 0.3)",
               }}
             >
               <span className="text-white font-bold text-[13px] tracking-tight">R</span>
