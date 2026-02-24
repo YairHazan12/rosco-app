@@ -10,9 +10,11 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const settings = await getSettings();
+    const { searchParams } = new URL(req.url);
+    const companyId = searchParams.get("companyId") || "DEMO";
+    const settings = await getSettings(companyId);
     return NextResponse.json(settings, {
       headers: {
         // Settings rarely change — cache for 5 minutes
@@ -28,7 +30,9 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const settings = await updateSettings(body);
+    const companyId = body.companyId || "DEMO";
+    const { companyId: _, ...settingsData } = body; // Remove companyId from settings data
+    const settings = await updateSettings(settingsData, companyId);
     return NextResponse.json(settings);
   } catch (e) {
     console.error(e);

@@ -64,62 +64,66 @@ function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
 
 // ─── Base Firestore reads (UNCACHED — only called by the cache wrappers) ─────
 
-const _fetchJobs = async (): Promise<Job[]> => {
+const _fetchJobs = async (companyId: string = "DEMO"): Promise<Job[]> => {
   // READ: 1 Firestore query, up to JOBS_LIMIT document reads
-  console.log(`[🔥 Firestore READ] jobs collection (limit: ${JOBS_LIMIT}) — CACHE MISS`);
+  console.log(`[🔥 Firestore READ] jobs collection (companyId: ${companyId}, limit: ${JOBS_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("jobs")
+    .where("companyId", "==", companyId)
     .orderBy("date", "desc")
     .limit(JOBS_LIMIT)
     .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} jobs`);
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} jobs for company ${companyId}`);
   return snap.docs.map(docToJob);
 };
 
-const _fetchInvoices = async (): Promise<Invoice[]> => {
+const _fetchInvoices = async (companyId: string = "DEMO"): Promise<Invoice[]> => {
   // READ: 1 Firestore query, up to INVOICES_LIMIT document reads
-  console.log(`[🔥 Firestore READ] invoices collection (limit: ${INVOICES_LIMIT}) — CACHE MISS`);
+  console.log(`[🔥 Firestore READ] invoices collection (companyId: ${companyId}, limit: ${INVOICES_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("invoices")
+    .where("companyId", "==", companyId)
     .orderBy("createdAt", "desc")
     .limit(INVOICES_LIMIT)
     .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} invoices`);
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} invoices for company ${companyId}`);
   return snap.docs.map(docToInvoice);
 };
 
-const _fetchHandymen = async (): Promise<Handyman[]> => {
+const _fetchHandymen = async (companyId: string = "DEMO"): Promise<Handyman[]> => {
   // READ: 1 Firestore query, up to HANDYMEN_LIMIT document reads
-  console.log(`[🔥 Firestore READ] handymen collection (limit: ${HANDYMEN_LIMIT}) — CACHE MISS`);
+  console.log(`[🔥 Firestore READ] handymen collection (companyId: ${companyId}, limit: ${HANDYMEN_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("handymen")
+    .where("companyId", "==", companyId)
     .orderBy("name")
     .limit(HANDYMEN_LIMIT)
     .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} handymen`);
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} handymen for company ${companyId}`);
   return snap.docs.map(docToHandyman);
 };
 
-const _fetchServicePresets = async (): Promise<ServicePreset[]> => {
+const _fetchServicePresets = async (companyId: string = "DEMO"): Promise<ServicePreset[]> => {
   // READ: 1 Firestore query, up to PRESETS_LIMIT document reads
-  console.log(`[🔥 Firestore READ] servicePresets collection (limit: ${PRESETS_LIMIT}) — CACHE MISS`);
+  console.log(`[🔥 Firestore READ] servicePresets collection (companyId: ${companyId}, limit: ${PRESETS_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("servicePresets")
+    .where("companyId", "==", companyId)
     .orderBy("category")
     .limit(PRESETS_LIMIT)
     .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} presets`);
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} presets for company ${companyId}`);
   return snap.docs.map(docToPreset);
 };
 
-const _fetchSettings = async (): Promise<AppSettings> => {
+const _fetchSettings = async (companyId: string = "DEMO"): Promise<AppSettings> => {
   // READ: 1 Firestore document read
-  console.log("[🔥 Firestore READ] settings/admin — CACHE MISS");
-  const doc = await db.collection("settings").doc("admin").get();
+  console.log(`[🔥 Firestore READ] settings/${companyId} — CACHE MISS`);
+  const doc = await db.collection("settings").doc(companyId).get();
   const result = doc.exists 
     ? { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) }
     : DEFAULT_SETTINGS;
-  console.log("[✅ Firestore] Loaded settings");
+  console.log(`[✅ Firestore] Loaded settings for company ${companyId}`);
   return result;
 };
 
@@ -127,52 +131,57 @@ const _fetchSettings = async (): Promise<AppSettings> => {
 // In production: cache persists across requests (zero Firestore reads on hit).
 // In dev (next dev): cache resets between requests — that's expected behaviour.
 
-/** All jobs, newest-first. Cached 5 min. Tag: "jobs". */
-export const getJobs = unstable_cache(_fetchJobs, ["jobs"], {
-  revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
-  tags: ["jobs"],
-});
+/** All jobs, newest-first. Cached 5 min. Tag: "jobs-{companyId}". */
+export const getJobs = (companyId: string = "DEMO") => 
+  unstable_cache(() => _fetchJobs(companyId), [`jobs-${companyId}`], {
+    revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
+    tags: [`jobs-${companyId}`],
+  })();
 
-/** All invoices, newest-first. Cached 5 min. Tag: "invoices". */
-export const getInvoices = unstable_cache(_fetchInvoices, ["invoices"], {
-  revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
-  tags: ["invoices"],
-});
+/** All invoices, newest-first. Cached 5 min. Tag: "invoices-{companyId}". */
+export const getInvoices = (companyId: string = "DEMO") =>
+  unstable_cache(() => _fetchInvoices(companyId), [`invoices-${companyId}`], {
+    revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
+    tags: [`invoices-${companyId}`],
+  })();
 
-/** All handymen, alpha. Cached 10 min. Tag: "handymen". */
-export const getHandymen = unstable_cache(_fetchHandymen, ["handymen"], {
-  revalidate: 600,
-  tags: ["handymen"],
-});
+/** All handymen, alpha. Cached 10 min. Tag: "handymen-{companyId}". */
+export const getHandymen = (companyId: string = "DEMO") =>
+  unstable_cache(() => _fetchHandymen(companyId), [`handymen-${companyId}`], {
+    revalidate: 600,
+    tags: [`handymen-${companyId}`],
+  })();
 
-/** All service presets, by category. Cached 10 min. Tag: "presets". */
-export const getServicePresets = unstable_cache(_fetchServicePresets, ["presets"], {
-  revalidate: 600,
-  tags: ["presets"],
-});
+/** All service presets, by category. Cached 10 min. Tag: "presets-{companyId}". */
+export const getServicePresets = (companyId: string = "DEMO") =>
+  unstable_cache(() => _fetchServicePresets(companyId), [`presets-${companyId}`], {
+    revalidate: 600,
+    tags: [`presets-${companyId}`],
+  })();
 
-/** App settings. Cached 5 min. Tag: "settings". */
-export const getSettings = unstable_cache(_fetchSettings, ["settings"], {
-  revalidate: 300,
-  tags: ["settings"],
-});
+/** App settings. Cached 5 min. Tag: "settings-{companyId}". */
+export const getSettings = (companyId: string = "DEMO") =>
+  unstable_cache(() => _fetchSettings(companyId), [`settings-${companyId}`], {
+    revalidate: 300,
+    tags: [`settings-${companyId}`],
+  })();
 
 // ─── Single-doc lookups (DERIVED — zero extra Firestore reads) ────────────────
 // These look up a document from the already-cached collection array.
 // Cost: 0 Firestore reads when the collection is already cached.
 
-export async function getJob(id: string): Promise<Job | null> {
-  const jobs = await getJobs();
+export async function getJob(id: string, companyId: string = "DEMO"): Promise<Job | null> {
+  const jobs = await getJobs(companyId);
   return jobs.find(j => j.id === id) ?? null;
 }
 
-export async function getInvoice(id: string): Promise<Invoice | null> {
-  const invoices = await getInvoices();
+export async function getInvoice(id: string, companyId: string = "DEMO"): Promise<Invoice | null> {
+  const invoices = await getInvoices(companyId);
   return invoices.find(i => i.id === id) ?? null;
 }
 
-export async function getHandyman(id: string): Promise<Handyman | null> {
-  const handymen = await getHandymen();
+export async function getHandyman(id: string, companyId: string = "DEMO"): Promise<Handyman | null> {
+  const handymen = await getHandymen(companyId);
   return handymen.find(h => h.id === id) ?? null;
 }
 
@@ -236,32 +245,32 @@ export function findInvoiceByJobId(invoices: Invoice[], jobId: string): Invoice 
 // ─── Legacy wrapper aliases ───────────────────────────────────────────────────
 
 /** @deprecated Use getJobs() + filterTodayJobs() */
-export async function getTodayJobs(): Promise<Job[]> {
-  return filterTodayJobs(await getJobs());
+export async function getTodayJobs(companyId: string = "DEMO"): Promise<Job[]> {
+  return filterTodayJobs(await getJobs(companyId));
 }
 /** @deprecated Use getJobs() + filterUpcomingJobs() */
-export async function getUpcomingJobs(days = 7): Promise<Job[]> {
-  return filterUpcomingJobs(await getJobs(), days);
+export async function getUpcomingJobs(days = 7, companyId: string = "DEMO"): Promise<Job[]> {
+  return filterUpcomingJobs(await getJobs(companyId), days);
 }
 /** @deprecated Use getJobs() + filterWeekJobs() */
-export async function getWeekJobs(): Promise<Job[]> {
-  return filterWeekJobs(await getJobs());
+export async function getWeekJobs(companyId: string = "DEMO"): Promise<Job[]> {
+  return filterWeekJobs(await getJobs(companyId));
 }
 /** @deprecated Use getJobs() + filterMonthJobs() */
-export async function getMonthJobs(): Promise<Job[]> {
-  return filterMonthJobs(await getJobs());
+export async function getMonthJobs(companyId: string = "DEMO"): Promise<Job[]> {
+  return filterMonthJobs(await getJobs(companyId));
 }
 /** @deprecated Use getInvoices() + filterOutstandingInvoices() */
-export async function getOutstandingInvoices(): Promise<Invoice[]> {
-  return filterOutstandingInvoices(await getInvoices());
+export async function getOutstandingInvoices(companyId: string = "DEMO"): Promise<Invoice[]> {
+  return filterOutstandingInvoices(await getInvoices(companyId));
 }
 /** @deprecated Use getInvoices() + filterPaidInvoices() */
-export async function getPaidInvoices(): Promise<Invoice[]> {
-  return filterPaidInvoices(await getInvoices());
+export async function getPaidInvoices(companyId: string = "DEMO"): Promise<Invoice[]> {
+  return filterPaidInvoices(await getInvoices(companyId));
 }
 /** @deprecated Use getInvoices() + findInvoiceByJobId() */
-export async function getInvoiceByJobId(jobId: string): Promise<Invoice | null> {
-  return findInvoiceByJobId(await getInvoices(), jobId) ?? null;
+export async function getInvoiceByJobId(jobId: string, companyId: string = "DEMO"): Promise<Invoice | null> {
+  return findInvoiceByJobId(await getInvoices(companyId), jobId) ?? null;
 }
 
 // ─── Jobs – mutations ────────────────────────────────────────────────────────
@@ -275,24 +284,26 @@ export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt"
     updatedAt: now(),
   };
   await ref.set(job);
-  console.log(`[♻️ Cache] Revalidating "jobs" tag after CREATE`);
-  revalidateTag("jobs", "max");   // bust cached collection so next read is fresh
+  console.log(`[♻️ Cache] Revalidating "jobs-${data.companyId}" tag after CREATE`);
+  revalidateTag(`jobs-${data.companyId}`, "max");   // bust cached collection so next read is fresh
   return job;
 }
 
-export async function updateJob(id: string, data: Partial<Job>): Promise<void> {
+export async function updateJob(id: string, data: Partial<Job>, companyId?: string): Promise<void> {
   await db.collection("jobs").doc(id).update({
     ...data,
     updatedAt: now(),
   });
-  console.log(`[♻️ Cache] Revalidating "jobs" tag after UPDATE`);
-  revalidateTag("jobs", "max");
+  // Use companyId from data if provided, otherwise use the parameter
+  const cid = data.companyId || companyId || "DEMO";
+  console.log(`[♻️ Cache] Revalidating "jobs-${cid}" tag after UPDATE`);
+  revalidateTag(`jobs-${cid}`, "max");
 }
 
-export async function deleteJob(id: string): Promise<void> {
+export async function deleteJob(id: string, companyId: string = "DEMO"): Promise<void> {
   await db.collection("jobs").doc(id).delete();
-  console.log(`[♻️ Cache] Revalidating "jobs" tag after DELETE`);
-  revalidateTag("jobs", "max");
+  console.log(`[♻️ Cache] Revalidating "jobs-${companyId}" tag after DELETE`);
+  revalidateTag(`jobs-${companyId}`, "max");
 }
 
 // ─── Invoices – mutations ────────────────────────────────────────────────────
@@ -307,19 +318,20 @@ export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "up
   };
   await ref.set(invoice);
   // Link invoice to job
-  await updateJob(data.jobId, { invoiceId: ref.id });
-  console.log(`[♻️ Cache] Revalidating "invoices" tag after CREATE`);
-  revalidateTag("invoices", "max");
+  await updateJob(data.jobId, { invoiceId: ref.id }, data.companyId);
+  console.log(`[♻️ Cache] Revalidating "invoices-${data.companyId}" tag after CREATE`);
+  revalidateTag(`invoices-${data.companyId}`, "max");
   return invoice;
 }
 
-export async function updateInvoice(id: string, data: Partial<Invoice>): Promise<void> {
+export async function updateInvoice(id: string, data: Partial<Invoice>, companyId?: string): Promise<void> {
   await db.collection("invoices").doc(id).update({
     ...data,
     updatedAt: now(),
   });
-  console.log(`[♻️ Cache] Revalidating "invoices" tag after UPDATE`);
-  revalidateTag("invoices", "max");
+  const cid = data.companyId || companyId || "DEMO";
+  console.log(`[♻️ Cache] Revalidating "invoices-${cid}" tag after UPDATE`);
+  revalidateTag(`invoices-${cid}`, "max");
 }
 
 // ─── Settings ────────────────────────────────────────────────────────────────
@@ -331,11 +343,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   notifications: { email: true, sms: false, push: false },
 };
 
-export async function updateSettings(data: Partial<AppSettings>): Promise<AppSettings> {
-  const ref = db.collection("settings").doc("admin");
+export async function updateSettings(data: Partial<AppSettings>, companyId: string = "DEMO"): Promise<AppSettings> {
+  const ref = db.collection("settings").doc(companyId);
   await ref.set(data, { merge: true });
-  console.log(`[♻️ Cache] Revalidating "settings" tag after UPDATE`);
-  revalidateTag("settings", "max");  // bust settings cache immediately
+  console.log(`[♻️ Cache] Revalidating "settings-${companyId}" tag after UPDATE`);
+  revalidateTag(`settings-${companyId}`, "max");  // bust settings cache immediately
   const updated = await ref.get();
   return { ...DEFAULT_SETTINGS, ...(updated.data() as Partial<AppSettings>) };
 }
@@ -343,19 +355,37 @@ export async function updateSettings(data: Partial<AppSettings>): Promise<AppSet
 // ─── Seed ────────────────────────────────────────────────────────────────────
 
 export async function seedDatabase(): Promise<void> {
+  const DEMO_COMPANY_ID = "DEMO";
+  
+  // Create demo company
+  const companyRef = db.collection("companies").doc(DEMO_COMPANY_ID);
+  await companyRef.set({
+    id: DEMO_COMPANY_ID,
+    name: "ROSCO Demo Company",
+    companyNameLower: "rosco demo company",
+    companyCode: "ROSCO-DEMO",
+    adminUid: "demo-admin",
+    settings: {
+      businessType: "general",
+      phone: "+972-50-0000000",
+      teamSize: "1-5",
+    },
+    createdAt: now(),
+  });
+
   const batch = db.batch();
 
   const presets = [
-    { name: "Basic Plumbing Repair", description: "Fix leaks, replace fittings", price: 250, category: "Plumbing" },
-    { name: "Pipe Installation", description: "Install or replace pipes", price: 450, category: "Plumbing" },
-    { name: "Electrical Outlet Fix", description: "Replace or repair outlets", price: 180, category: "Electrical" },
-    { name: "Light Fixture Installation", description: "Install ceiling/wall lights", price: 220, category: "Electrical" },
-    { name: "Tile Repair", description: "Repair broken/cracked tiles", price: 300, category: "Tiling" },
-    { name: "Tile Installation (per sqm)", description: "Full tile installation", price: 120, category: "Tiling" },
-    { name: "Painting - Room", description: "Paint single room walls", price: 800, category: "Painting" },
-    { name: "Door Lock Replacement", description: "Replace lock and keys", price: 350, category: "General" },
-    { name: "AC Unit Service", description: "Clean and service AC", price: 280, category: "HVAC" },
-    { name: "General Handyman (per hour)", description: "Hourly rate", price: 150, category: "General" },
+    { name: "Basic Plumbing Repair", description: "Fix leaks, replace fittings", price: 250, category: "Plumbing", companyId: DEMO_COMPANY_ID },
+    { name: "Pipe Installation", description: "Install or replace pipes", price: 450, category: "Plumbing", companyId: DEMO_COMPANY_ID },
+    { name: "Electrical Outlet Fix", description: "Replace or repair outlets", price: 180, category: "Electrical", companyId: DEMO_COMPANY_ID },
+    { name: "Light Fixture Installation", description: "Install ceiling/wall lights", price: 220, category: "Electrical", companyId: DEMO_COMPANY_ID },
+    { name: "Tile Repair", description: "Repair broken/cracked tiles", price: 300, category: "Tiling", companyId: DEMO_COMPANY_ID },
+    { name: "Tile Installation (per sqm)", description: "Full tile installation", price: 120, category: "Tiling", companyId: DEMO_COMPANY_ID },
+    { name: "Painting - Room", description: "Paint single room walls", price: 800, category: "Painting", companyId: DEMO_COMPANY_ID },
+    { name: "Door Lock Replacement", description: "Replace lock and keys", price: 350, category: "General", companyId: DEMO_COMPANY_ID },
+    { name: "AC Unit Service", description: "Clean and service AC", price: 280, category: "HVAC", companyId: DEMO_COMPANY_ID },
+    { name: "General Handyman (per hour)", description: "Hourly rate", price: 150, category: "General", companyId: DEMO_COMPANY_ID },
   ];
 
   for (const p of presets) {
@@ -367,6 +397,7 @@ export async function seedDatabase(): Promise<void> {
   batch.set(yosefRef, {
     id: yosefRef.id, name: "Yosef Cohen",
     phone: "+972-50-1234567", email: "yosef@rosco.co.il",
+    companyId: DEMO_COMPANY_ID,
     createdAt: now(),
   });
 
@@ -374,15 +405,17 @@ export async function seedDatabase(): Promise<void> {
   batch.set(aviRef, {
     id: aviRef.id, name: "Avi Mizrahi",
     phone: "+972-52-9876543", email: "avi@rosco.co.il",
+    companyId: DEMO_COMPANY_ID,
     createdAt: now(),
   });
 
   await batch.commit();
-  revalidateTag("handymen", "max");
-  revalidateTag("presets", "max");
+  revalidateTag(`handymen-${DEMO_COMPANY_ID}`, "max");
+  revalidateTag(`presets-${DEMO_COMPANY_ID}`, "max");
 
   const jobs = [
     {
+      companyId: DEMO_COMPANY_ID,
       clientName: "David Levy", clientPhone: "+972-54-1112223",
       clientEmail: "david.levy@email.com", title: "Kitchen Sink Repair",
       description: "Slow drain and small leak under cabinet.",
@@ -391,6 +424,7 @@ export async function seedDatabase(): Promise<void> {
       status: "In Progress" as const, handymanId: yosefRef.id, handymanName: "Yosef Cohen",
     },
     {
+      companyId: DEMO_COMPANY_ID,
       clientName: "Rachel Shapiro", clientPhone: "+972-58-3334445",
       clientEmail: "rachel.s@gmail.com", title: "Bathroom Tile Repair",
       description: "Three cracked tiles need replacing.",
@@ -399,6 +433,7 @@ export async function seedDatabase(): Promise<void> {
       status: "Pending" as const, handymanId: yosefRef.id, handymanName: "Yosef Cohen",
     },
     {
+      companyId: DEMO_COMPANY_ID,
       clientName: "Moshe Katz", clientPhone: "+972-50-5556667",
       clientEmail: "mkatz@business.com", title: "Office Electrical Work",
       description: "Install 4 new power outlets with surge protectors.",
@@ -407,6 +442,7 @@ export async function seedDatabase(): Promise<void> {
       status: "Pending" as const, handymanId: aviRef.id, handymanName: "Avi Mizrahi",
     },
     {
+      companyId: DEMO_COMPANY_ID,
       clientName: "Ilan Peretz", clientPhone: "+972-54-9990001",
       clientEmail: "ilan.p@company.co.il", title: "AC Unit Service & Repair",
       description: "Two AC units — one noisy, one needs cleaning.",
@@ -421,6 +457,7 @@ export async function seedDatabase(): Promise<void> {
   }
 
   const completedJob = await createJob({
+    companyId: DEMO_COMPANY_ID,
     clientName: "Noa Ben-David", clientPhone: "+972-52-7778889",
     clientEmail: "noa.bd@hotmail.com", title: "Bedroom Door Lock Replacement",
     description: "Door lock broken, full replacement with new keys.",
@@ -437,6 +474,7 @@ export async function seedDatabase(): Promise<void> {
   const vatAmount = subtotal * 0.17;
 
   await createInvoice({
+    companyId: DEMO_COMPANY_ID,
     jobId: completedJob.id,
     clientName: completedJob.clientName,
     clientEmail: completedJob.clientEmail,
@@ -454,5 +492,5 @@ export async function seedDatabase(): Promise<void> {
     status: "Sent",
   });
 
-  console.log("✅ Firebase seed complete");
+  console.log("✅ Firebase seed complete with DEMO company");
 }

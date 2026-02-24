@@ -14,8 +14,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam  = searchParams.get("page");
   const limitParam = searchParams.get("limit");
+  const companyId  = searchParams.get("companyId") || "DEMO";
 
-  const allInvoices = await getInvoices();
+  const allInvoices = await getInvoices(companyId);
   const total       = allInvoices.length;
 
   const page  = Math.max(1, parseInt(pageParam  ?? "1",  10) || 1);
@@ -40,10 +41,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const job = await getJob(body.jobId);
+    const companyId = body.companyId || "DEMO";
+    const job = await getJob(body.jobId, companyId);
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
     const invoice = await createInvoice({
+      companyId,
       jobId: body.jobId,
       clientName: job.clientName,
       clientEmail: job.clientEmail,

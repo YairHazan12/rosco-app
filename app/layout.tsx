@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import ServiceWorkerRegistrar from "@/components/service-worker-registrar";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -45,19 +46,21 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="antialiased">
-        <ServiceWorkerRegistrar />
-        {children}
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            style: {
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
-              borderRadius: "14px",
-              fontSize: "15px",
-              fontWeight: "500",
-            },
-          }}
-        />
+        <AuthProvider>
+          <ServiceWorkerRegistrar />
+          {children}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
+                borderRadius: "14px",
+                fontSize: "15px",
+                fontWeight: "500",
+              },
+            }}
+          />
+        </AuthProvider>
       </body>
     </html>
   );

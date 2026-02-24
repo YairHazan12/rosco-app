@@ -1,15 +1,48 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Wrench, Shield, CreditCard, ChevronRight } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { DemoModeBanner } from "@/components/demo-mode-banner";
 
 export default function Home() {
+  const router = useRouter();
+  const { user, firebaseUser, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && firebaseUser) {
+      if (!user?.onboardingComplete) {
+        router.push("/onboarding");
+      } else if (user.status === "pending") {
+        router.push("/pending");
+      } else if (user.role === "admin") {
+        router.push("/admin");
+      } else if (user.role === "handyman") {
+        router.push("/handyman");
+      }
+    }
+  }, [user, firebaseUser, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <main
-      className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-teal-50"
-      style={{
-        paddingTop: "env(safe-area-inset-top, 0px)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-      }}
-    >
+    <>
+      <DemoModeBanner />
+      <main
+        className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-teal-50"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
       {/* Brand hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Logo */}
@@ -184,5 +217,6 @@ export default function Home() {
         </p>
       </div>
     </main>
+    </>
   );
 }

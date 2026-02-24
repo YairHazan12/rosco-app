@@ -108,7 +108,9 @@ export default async function AdminDashboard() {
           <p className="text-[13px] font-medium" style={{ color: "var(--label-tertiary)" }}>
             {format(new Date(), "EEEE")}
           </p>
-          <h1 className="ios-large-title mt-0.5">{format(new Date(), "MMMM d")}</h1>
+          <h1 className="ios-large-title mt-0.5">
+            {format(new Date(), "MMMM d, yyyy")}
+          </h1>
         </div>
         <Link href="/admin/jobs/new">
           <button

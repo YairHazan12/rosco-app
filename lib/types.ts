@@ -3,11 +3,13 @@ export interface Handyman {
   name: string;
   phone?: string;
   email?: string;
+  companyId: string;
   createdAt: string;
 }
 
 export interface Job {
   id: string;
+  companyId: string;
   clientName: string;
   clientPhone?: string;
   clientEmail?: string;
@@ -33,6 +35,7 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id: string;
+  companyId: string;
   jobId: string;
   // Denormalized job fields for display
   clientName: string;
@@ -59,6 +62,7 @@ export interface Invoice {
 
 export interface ServicePreset {
   id: string;
+  companyId: string;
   name: string;
   description?: string;
   price: number;

@@ -1,0 +1,142 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: get user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Helper function: check if user belongs to a company
+    function belongsToCompany(companyId) {
+      return isAuthenticated() && getUserData().companyId == companyId;
+    }
+    
+    // Helper function: check if user is admin of a company
+    function isAdminOf(companyId) {
+      return isAuthenticated() 
+        && getUserData().companyId == companyId 
+        && getUserData().role == "admin";
+    }
+    
+    // Helper function: check if user is active
+    function isActive() {
+      return isAuthenticated() && getUserData().status == "active";
+    }
+    
+    // ─── Users ───────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Anyone can read their own user document
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can create their own document during signup
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can update their own document
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ─── Companies ───────────────────────────────────────────────────────────
+    match /companies/{companyId} {
+      // DEMO company is readable by everyone (for demo mode)
+      allow read: if companyId == "DEMO" || belongsToCompany(companyId);
+      
+      // Only admins can create companies (during onboarding)
+      allow create: if isAuthenticated();
+      
+      // Only company admin can update
+      allow update: if isAdminOf(companyId);
+    }
+    
+    // ─── Join Requests ───────────────────────────────────────────────────────
+    match /joinRequests/{requestId} {
+      // Handyman can read their own requests
+      // Company admin can read requests for their company
+      allow read: if isAuthenticated() && (
+        resource.data.handymanUid == request.auth.uid ||
+        isAdminOf(resource.data.companyId)
+      );
+      
+      // Handyman can create join requests
+      allow create: if isAuthenticated() && request.resource.data.handymanUid == request.auth.uid;
+      
+      // Only company admin can update (approve/reject)
+      allow update: if isAdminOf(resource.data.companyId);
+    }
+    
+    // ─── Jobs ────────────────────────────────────────────────────────────────
+    match /jobs/{jobId} {
+      // DEMO jobs are readable by everyone
+      // Company jobs are readable by company members
+      allow read: if resource.data.companyId == "DEMO" 
+        || (isActive() && belongsToCompany(resource.data.companyId));
+      
+      // Only admins can create jobs
+      allow create: if isActive() && isAdminOf(request.resource.data.companyId);
+      
+      // Admins can update any job in their company
+      // Handymen can update status of their assigned jobs
+      allow update: if isActive() && (
+        isAdminOf(resource.data.companyId) ||
+        (resource.data.handymanId == request.auth.uid && belongsToCompany(resource.data.companyId))
+      );
+      
+      // Only admins can delete jobs
+      allow delete: if isActive() && isAdminOf(resource.data.companyId);
+    }
+    
+    // ─── Invoices ────────────────────────────────────────────────────────────
+    match /invoices/{invoiceId} {
+      // DEMO invoices are readable by everyone
+      // Company invoices are readable by company members
+      // Public read allowed for payment page (anyone with link can pay)
+      allow read: if resource.data.companyId == "DEMO" 
+        || (isActive() && belongsToCompany(resource.data.companyId))
+        || true; // Allow public read for payment links
+      
+      // Only admins can create invoices
+      allow create: if isActive() && isAdminOf(request.resource.data.companyId);
+      
+      // Only admins can update invoices
+      allow update: if isActive() && isAdminOf(resource.data.companyId);
+    }
+    
+    // ─── Handymen ────────────────────────────────────────────────────────────
+    match /handymen/{handymanId} {
+      // DEMO handymen are readable by everyone
+      // Company handymen are readable by company members
+      allow read: if resource.data.companyId == "DEMO" 
+        || (isActive() && belongsToCompany(resource.data.companyId));
+      
+      // Only admins can create/update/delete handymen
+      allow create, update, delete: if isActive() && isAdminOf(request.resource.data.companyId);
+    }
+    
+    // ─── Service Presets ─────────────────────────────────────────────────────
+    match /servicePresets/{presetId} {
+      // DEMO presets are readable by everyone
+      // Company presets are readable by company members
+      allow read: if resource.data.companyId == "DEMO" 
+        || (isActive() && belongsToCompany(resource.data.companyId));
+      
+      // Only admins can create/update/delete presets
+      allow create, update, delete: if isActive() && isAdminOf(request.resource.data.companyId);
+    }
+    
+    // ─── Settings ────────────────────────────────────────────────────────────
+    match /settings/{companyId} {
+      // DEMO settings are readable by everyone
+      // Company settings are readable by company members
+      allow read: if companyId == "DEMO" || (isActive() && belongsToCompany(companyId));
+      
+      // Only admins can update settings
+      allow create, update: if isActive() && isAdminOf(companyId);
+    }
+  }
+}

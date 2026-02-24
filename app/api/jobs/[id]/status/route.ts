@@ -3,7 +3,8 @@ import { updateJob } from "@/lib/db";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { status } = await req.json();
-  await updateJob(id, { status });
+  const body = await req.json();
+  const companyId = body.companyId || "DEMO";
+  await updateJob(id, { status: body.status }, companyId);
   return NextResponse.json({ success: true });
 }
