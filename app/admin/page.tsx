@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { format, addDays, startOfDay } from "date-fns";
 import CreateInvoiceLink from "./_components/CreateInvoiceLink";
+import PaginatedInvoices from "./_components/PaginatedInvoices";
 
 export const dynamic = "force-dynamic";
 
@@ -645,47 +646,7 @@ export default async function AdminDashboard() {
               All →
             </Link>
           </div>
-          <div className="ios-group">
-            {outstanding.map((inv, i) => (
-              <Link key={inv.id} href={`/admin/invoices/${inv.id}`} className="block">
-                <div
-                  className="flex items-center px-4 py-3.5 min-h-[56px] transition-colors active:bg-[var(--bg-grouped)]"
-                  style={{
-                    borderBottom:
-                      i < outstanding.length - 1 ? "0.5px solid var(--separator)" : "none",
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[15px] truncate" style={{ color: "var(--label-primary)" }}>
-                      {inv.clientName}
-                    </p>
-                    <p className="text-[13px] truncate mt-0.5" style={{ color: "var(--label-tertiary)" }}>
-                      {inv.jobTitle}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="font-bold text-[15px] stat-number" style={{ color: "var(--ios-red)" }}>
-                        R{inv.total.toFixed(0)}
-                      </p>
-                      <p className="text-[11px]" style={{ color: "var(--label-quaternary)" }}>
-                        {inv.status}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4" style={{ color: "var(--label-quaternary)" }} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="flex justify-between items-center mt-2 px-1">
-            <p className="text-[12px]" style={{ color: "var(--label-tertiary)" }}>
-              {outstanding.length} invoice{outstanding.length > 1 ? "s" : ""}
-            </p>
-            <p className="font-bold text-[15px] stat-number" style={{ color: "var(--ios-red)" }}>
-              R{outstandingTotal.toFixed(0)}
-            </p>
-          </div>
+          <PaginatedInvoices invoices={outstanding} />
         </section>
       )}
 
