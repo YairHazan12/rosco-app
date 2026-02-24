@@ -21,9 +21,10 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading) {
+      const isDemoUser = firebaseUser?.email?.startsWith("demo-");
       if (!firebaseUser) {
         router.push("/login");
-      } else if (!user?.onboardingComplete) {
+      } else if (!user?.onboardingComplete && !isDemoUser) {
         router.push("/onboarding");
       } else if (user.status === "pending") {
         router.push("/pending");
