@@ -15,11 +15,11 @@ export default function Home() {
     if (!loading && firebaseUser) {
       if (!user?.onboardingComplete) {
         router.push("/onboarding");
-      } else if (user.status === "pending") {
+      } else if (user?.status === "pending") {
         router.push("/pending");
-      } else if (user.role === "admin") {
+      } else if (user?.role === "admin") {
         router.push("/admin");
-      } else if (user.role === "handyman") {
+      } else if (user?.role === "handyman") {
         router.push("/handyman");
       }
     }

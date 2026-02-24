@@ -27,15 +27,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.push("/login");
       } else if (!user?.onboardingComplete && !isDemoUser) {
         router.push("/onboarding");
-      } else if (user.status === "pending") {
+      } else if (user?.status === "pending") {
         router.push("/pending");
-      } else if (user.role !== "admin") {
+      } else if (user?.role !== "admin") {
         router.push("/handyman");
       }
     }
   }, [user, firebaseUser, loading, router]);
 
-  if (loading || !user || user.role !== "admin") {
+  if (loading || !user || user?.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>

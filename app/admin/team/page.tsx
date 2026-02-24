@@ -17,7 +17,7 @@ export default function TeamPage() {
     if (!authLoading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role !== "admin") {
+      } else if (user?.role !== "admin") {
         router.push("/");
       } else {
         loadRequests();
@@ -70,7 +70,7 @@ export default function TeamPage() {
     );
   }
 
-  if (!user || user.role !== "admin") {
+  if (!user || user?.role !== "admin") {
     return null;
   }
 

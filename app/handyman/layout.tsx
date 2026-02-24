@@ -26,15 +26,15 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
         router.push("/login");
       } else if (!user?.onboardingComplete && !isDemoUser) {
         router.push("/onboarding");
-      } else if (user.status === "pending") {
+      } else if (user?.status === "pending") {
         router.push("/pending");
-      } else if (user.role !== "handyman") {
+      } else if (user?.role !== "handyman") {
         router.push("/admin");
       }
     }
   }, [user, firebaseUser, loading, router]);
 
-  if (loading || !user || user.role !== "handyman") {
+  if (loading || !user || user?.role !== "handyman") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
