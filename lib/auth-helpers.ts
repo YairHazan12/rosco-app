@@ -4,6 +4,14 @@ import { doc, setDoc, collection, query, where, getDocs, updateDoc, addDoc, serv
 import { clientDb } from "./firebase";
 import type { User, Company, JoinRequest, OnboardingData } from "./auth-types";
 
+// Guard to ensure Firebase is initialized
+function ensureDb() {
+  if (!clientDb) {
+    throw new Error("Firebase not initialized. This should only run on the client.");
+  }
+  return clientDb;
+}
+
 // Generate a short company code (e.g., "ROSCO-A1B2")
 function generateCompanyCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude ambiguous chars
@@ -19,7 +27,8 @@ export async function createUserDocument(
   email: string | null,
   displayName: string | null
 ): Promise<void> {
-  const userRef = doc(clientDb, "users", uid);
+  const db = ensureDb();
+  const userRef = doc(db, "users", uid);
   const userData: User = {
     uid,
     email,
@@ -41,8 +50,9 @@ export async function completeAdminOnboarding(
   email: string | null,
   data: OnboardingData
 ): Promise<Company> {
+  const db = ensureDb();
   // Create company
-  const companyRef = doc(collection(clientDb, "companies"));
+  const companyRef = doc(collection(db, "companies"));
   const company: Company = {
     id: companyRef.id,
     name: data.companyName!,
@@ -60,7 +70,7 @@ export async function completeAdminOnboarding(
   await setDoc(companyRef, company);
 
   // Update user
-  const userRef = doc(clientDb, "users", uid);
+  const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     role: "admin",
     companyId: companyRef.id,
@@ -77,8 +87,9 @@ export async function completeAdminOnboarding(
 export async function searchCompaniesByName(searchTerm: string): Promise<Company[]> {
   if (!searchTerm || searchTerm.length < 2) return [];
   
+  const db = ensureDb();
   const lower = searchTerm.toLowerCase();
-  const companiesRef = collection(clientDb, "companies");
+  const companiesRef = collection(db, "companies");
   
   // Firestore doesn't support case-insensitive search, so we use companyNameLower
   // and filter locally for contains
@@ -98,7 +109,8 @@ export async function searchCompaniesByName(searchTerm: string): Promise<Company
 
 // Find company by code
 export async function findCompanyByCode(code: string): Promise<Company | null> {
-  const companiesRef = collection(clientDb, "companies");
+  const db = ensureDb();
+  const companiesRef = collection(db, "companies");
   const q = query(companiesRef, where("companyCode", "==", code.toUpperCase()));
   const snapshot = await getDocs(q);
   
@@ -116,7 +128,8 @@ export async function createJoinRequest(
   companyId: string,
   companyName: string
 ): Promise<JoinRequest> {
-  const requestRef = doc(collection(clientDb, "joinRequests"));
+  const db = ensureDb();
+  const requestRef = doc(collection(db, "joinRequests"));
   const request: JoinRequest = {
     id: requestRef.id,
     handymanUid: uid,
@@ -132,7 +145,7 @@ export async function createJoinRequest(
   await setDoc(requestRef, request);
   
   // Update user to mark as pending
-  const userRef = doc(clientDb, "users", uid);
+  const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     onboardingComplete: true,
     status: "pending",
@@ -148,7 +161,8 @@ export async function completeHandymanOnboarding(
   data: OnboardingData,
   companyId: string
 ): Promise<void> {
-  const userRef = doc(clientDb, "users", uid);
+  const db = ensureDb();
+  const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     role: "handyman",
     companyId,
@@ -161,7 +175,8 @@ export async function completeHandymanOnboarding(
 
 // Get pending join requests for a company
 export async function getPendingJoinRequests(companyId: string): Promise<JoinRequest[]> {
-  const requestsRef = collection(clientDb, "joinRequests");
+  const db = ensureDb();
+  const requestsRef = collection(db, "joinRequests");
   const q = query(
     requestsRef,
     where("companyId", "==", companyId),
@@ -179,8 +194,9 @@ export async function getPendingJoinRequests(companyId: string): Promise<JoinReq
 
 // Approve join request
 export async function approveJoinRequest(requestId: string): Promise<void> {
-  const requestRef = doc(clientDb, "joinRequests", requestId);
-  const requestSnap = await getDocs(query(collection(clientDb, "joinRequests"), where("__name__", "==", requestId)));
+  const db = ensureDb();
+  const requestRef = doc(db, "joinRequests", requestId);
+  const requestSnap = await getDocs(query(collection(db, "joinRequests"), where("__name__", "==", requestId)));
   
   if (requestSnap.empty) throw new Error("Request not found");
   
@@ -193,7 +209,7 @@ export async function approveJoinRequest(requestId: string): Promise<void> {
   });
   
   // Update user to active and assign company
-  const userRef = doc(clientDb, "users", request.handymanUid);
+  const userRef = doc(db, "users", request.handymanUid);
   await updateDoc(userRef, {
     companyId: request.companyId,
     status: "active",
@@ -203,7 +219,8 @@ export async function approveJoinRequest(requestId: string): Promise<void> {
 
 // Reject join request
 export async function rejectJoinRequest(requestId: string): Promise<void> {
-  const requestRef = doc(clientDb, "joinRequests", requestId);
+  const db = ensureDb();
+  const requestRef = doc(db, "joinRequests", requestId);
   
   await updateDoc(requestRef, {
     status: "rejected",

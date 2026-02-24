@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   User as FirebaseUser,
+  Auth,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { clientDb } from "./firebase";
@@ -32,11 +33,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
 
-  const auth = getAuth();
+  // Initialize auth only on client side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setAuth(getAuth());
+    }
+  }, []);
 
   // Fetch user data from Firestore
   const fetchUserData = async (uid: string): Promise<User | null> => {
+    if (!clientDb) return null;
     try {
       const userDoc = await getDoc(doc(clientDb, "users", uid));
       if (userDoc.exists()) {
@@ -58,6 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       
@@ -75,21 +88,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [auth]);
 
   const signIn = async (email: string, password: string) => {
+    if (!auth) throw new Error("Auth not initialized");
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUp = async (email: string, password: string): Promise<FirebaseUser> => {
+    if (!auth) throw new Error("Auth not initialized");
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     return credential.user;
   };
 
   const signInWithGoogle = async (): Promise<FirebaseUser> => {
+    if (!auth) throw new Error("Auth not initialized");
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(auth, provider);
     return credential.user;
   };
 
   const signOut = async () => {
+    if (!auth) throw new Error("Auth not initialized");
     await firebaseSignOut(auth);
   };
 
