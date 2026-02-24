@@ -24,11 +24,14 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
       const isDemoUser = firebaseUser?.email?.startsWith("demo-");
       if (!firebaseUser) {
         router.push("/login");
-      } else if (!user?.onboardingComplete && !isDemoUser) {
+      } else if (!user) {
+        // Firestore doc not loaded yet — wait (don't redirect)
+        return;
+      } else if (!user.onboardingComplete && !isDemoUser) {
         router.push("/onboarding");
-      } else if (user?.status === "pending") {
+      } else if (user.status === "pending") {
         router.push("/pending");
-      } else if (user?.role !== "handyman") {
+      } else if (user.role !== "handyman") {
         router.push("/admin");
       }
     }
