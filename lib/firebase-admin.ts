@@ -10,12 +10,22 @@ function getPrivateKey(): string {
 function createApp(): App {
   if (getApps().length > 0) return getApps()[0];
 
-  if (process.env.FIREBASE_CLIENT_EMAIL) {
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+
+  if (clientEmail) {
+    const privateKey = getPrivateKey();
+    if (!privateKey || !privateKey.includes("BEGIN PRIVATE KEY")) {
+      throw new Error(
+        "FIREBASE_PRIVATE_KEY is missing or malformed. " +
+        "Ensure it includes the full PEM block with -----BEGIN PRIVATE KEY----- header."
+      );
+    }
     return initializeApp({
       credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID!,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-        privateKey: getPrivateKey(),
+        projectId: projectId!,
+        clientEmail,
+        privateKey,
       }),
     });
   }
@@ -23,9 +33,19 @@ function createApp(): App {
   // Local dev fallback: Application Default Credentials
   return initializeApp({
     credential: applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID || "rosco-app-prod",
+    projectId: projectId || "rosco-app-prod",
   });
 }
 
-const app = createApp();
-export const db = getFirestore(app);
+let app: App;
+let _db: ReturnType<typeof getFirestore>;
+
+try {
+  app = createApp();
+  _db = getFirestore(app);
+} catch (error) {
+  console.error("❌ Firebase Admin initialization failed:", error);
+  throw error;
+}
+
+export const db = _db;
