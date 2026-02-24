@@ -31,8 +31,8 @@ export async function GET(req: Request) {
     { data, total, page: safePage, totalPages },
     {
       headers: {
-        // Allow CDN / browser to cache for 30 s; stale-while-revalidate another 30 s
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30",
+        // Match server-side cache: 5 min cache + 5 min stale-while-revalidate
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300",
       },
     },
   );

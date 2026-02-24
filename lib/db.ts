@@ -6,8 +6,8 @@
  *
  * Collection reads (getJobs, getInvoices, getHandymen, getServicePresets,
  * getSettings) are wrapped with Next.js unstable_cache so Firestore is only
- * hit ONCE per cache window (60 s for jobs/invoices, 5 min for settings,
- * 10 min for handymen/presets).
+ * hit ONCE per cache window (5 min for jobs/invoices/settings, 10 min for
+ * handymen/presets). Cache is immediately revalidated on mutations via tags.
  *
  * Single-doc lookups (getJob, getInvoice, getHandyman) are derived from the
  * already-cached collection, costing zero extra Firestore reads.
@@ -20,17 +20,18 @@
  *   "settings"  – revalidated by updateSettings
  *
  * ─── READ BUDGET PER PAGE LOAD ──────────────────────────────────────────────
- * Dashboard  : 3 collection reads  (jobs + invoices + handymen)  → cached
- * Jobs list  : 1 collection read   (jobs)                        → cached
- * Invoice list: 1 collection read  (invoices)                    → cached
- * Job detail : 0 extra reads       (derived from cached jobs)
- * Invoice detail: 0 extra reads    (derived from cached invoices)
- * Settings   : 1 doc read          (settings)                    → cached 5 min
- * Handyman   : 1 collection read   (jobs)                        → cached
- * Pay page   : 0 extra reads       (derived from cached invoices)
+ * Dashboard      : 3 collection reads (jobs + invoices + handymen) → cached 5-10min
+ * Jobs list      : 1 collection read  (jobs)                       → cached 5min
+ * Invoice list   : 1 collection read  (invoices)                   → cached 5min
+ * Job detail     : 0 extra reads      (derived from cached jobs)
+ * Invoice detail : 0 extra reads      (derived from cached invoices)
+ * Settings       : 1 doc read         (settings)                   → cached 5min
+ * Handyman       : 1 collection read  (jobs)                       → cached 5min
+ * Pay page       : 0 extra reads      (derived from cached invoices)
  *
  * Cache HIT  = 0 Firestore reads per page visit.
- * Cache MISS = reads above (first visit per 60s window).
+ * Cache MISS = reads above (first visit per 5min window for most data).
+ * Mutations  = immediate cache revalidation via tags (zero stale data).
  * ────────────────────────────────────────────────────────────────────────────
  */
 import { unstable_cache, revalidateTag } from "next/cache";
@@ -65,69 +66,76 @@ function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
 
 const _fetchJobs = async (): Promise<Job[]> => {
   // READ: 1 Firestore query, up to JOBS_LIMIT document reads
-  console.log("[Firestore READ] jobs collection — cache miss");
+  console.log(`[🔥 Firestore READ] jobs collection (limit: ${JOBS_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("jobs")
     .orderBy("date", "desc")
     .limit(JOBS_LIMIT)
     .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} jobs`);
   return snap.docs.map(docToJob);
 };
 
 const _fetchInvoices = async (): Promise<Invoice[]> => {
   // READ: 1 Firestore query, up to INVOICES_LIMIT document reads
-  console.log("[Firestore READ] invoices collection — cache miss");
+  console.log(`[🔥 Firestore READ] invoices collection (limit: ${INVOICES_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("invoices")
     .orderBy("createdAt", "desc")
     .limit(INVOICES_LIMIT)
     .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} invoices`);
   return snap.docs.map(docToInvoice);
 };
 
 const _fetchHandymen = async (): Promise<Handyman[]> => {
   // READ: 1 Firestore query, up to HANDYMEN_LIMIT document reads
-  console.log("[Firestore READ] handymen collection — cache miss");
+  console.log(`[🔥 Firestore READ] handymen collection (limit: ${HANDYMEN_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("handymen")
     .orderBy("name")
     .limit(HANDYMEN_LIMIT)
     .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} handymen`);
   return snap.docs.map(docToHandyman);
 };
 
 const _fetchServicePresets = async (): Promise<ServicePreset[]> => {
   // READ: 1 Firestore query, up to PRESETS_LIMIT document reads
-  console.log("[Firestore READ] servicePresets collection — cache miss");
+  console.log(`[🔥 Firestore READ] servicePresets collection (limit: ${PRESETS_LIMIT}) — CACHE MISS`);
   const snap = await db
     .collection("servicePresets")
     .orderBy("category")
     .limit(PRESETS_LIMIT)
     .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} presets`);
   return snap.docs.map(docToPreset);
 };
 
 const _fetchSettings = async (): Promise<AppSettings> => {
   // READ: 1 Firestore document read
-  console.log("[Firestore READ] settings/admin — cache miss");
+  console.log("[🔥 Firestore READ] settings/admin — CACHE MISS");
   const doc = await db.collection("settings").doc("admin").get();
-  if (!doc.exists) return DEFAULT_SETTINGS;
-  return { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) };
+  const result = doc.exists 
+    ? { ...DEFAULT_SETTINGS, ...(doc.data() as Partial<AppSettings>) }
+    : DEFAULT_SETTINGS;
+  console.log("[✅ Firestore] Loaded settings");
+  return result;
 };
 
 // ─── Cached wrappers — persistent Data Cache, revalidated by tag ─────────────
 // In production: cache persists across requests (zero Firestore reads on hit).
 // In dev (next dev): cache resets between requests — that's expected behaviour.
 
-/** All jobs, newest-first. Cached 60 s. Tag: "jobs". */
+/** All jobs, newest-first. Cached 5 min. Tag: "jobs". */
 export const getJobs = unstable_cache(_fetchJobs, ["jobs"], {
-  revalidate: 60,
+  revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
   tags: ["jobs"],
 });
 
-/** All invoices, newest-first. Cached 60 s. Tag: "invoices". */
+/** All invoices, newest-first. Cached 5 min. Tag: "invoices". */
 export const getInvoices = unstable_cache(_fetchInvoices, ["invoices"], {
-  revalidate: 60,
+  revalidate: 300, // 5 minutes - reduced from 60s to minimize reads
   tags: ["invoices"],
 });
 
@@ -267,6 +275,7 @@ export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt"
     updatedAt: now(),
   };
   await ref.set(job);
+  console.log(`[♻️ Cache] Revalidating "jobs" tag after CREATE`);
   revalidateTag("jobs", "max");   // bust cached collection so next read is fresh
   return job;
 }
@@ -276,11 +285,13 @@ export async function updateJob(id: string, data: Partial<Job>): Promise<void> {
     ...data,
     updatedAt: now(),
   });
+  console.log(`[♻️ Cache] Revalidating "jobs" tag after UPDATE`);
   revalidateTag("jobs", "max");
 }
 
 export async function deleteJob(id: string): Promise<void> {
   await db.collection("jobs").doc(id).delete();
+  console.log(`[♻️ Cache] Revalidating "jobs" tag after DELETE`);
   revalidateTag("jobs", "max");
 }
 
@@ -297,6 +308,7 @@ export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "up
   await ref.set(invoice);
   // Link invoice to job
   await updateJob(data.jobId, { invoiceId: ref.id });
+  console.log(`[♻️ Cache] Revalidating "invoices" tag after CREATE`);
   revalidateTag("invoices", "max");
   return invoice;
 }
@@ -306,6 +318,7 @@ export async function updateInvoice(id: string, data: Partial<Invoice>): Promise
     ...data,
     updatedAt: now(),
   });
+  console.log(`[♻️ Cache] Revalidating "invoices" tag after UPDATE`);
   revalidateTag("invoices", "max");
 }
 
@@ -321,6 +334,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 export async function updateSettings(data: Partial<AppSettings>): Promise<AppSettings> {
   const ref = db.collection("settings").doc("admin");
   await ref.set(data, { merge: true });
+  console.log(`[♻️ Cache] Revalidating "settings" tag after UPDATE`);
   revalidateTag("settings", "max");  // bust settings cache immediately
   const updated = await ref.get();
   return { ...DEFAULT_SETTINGS, ...(updated.data() as Partial<AppSettings>) };
