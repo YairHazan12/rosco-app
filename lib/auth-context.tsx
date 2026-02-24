@@ -89,7 +89,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth not initialized");
-    await signInWithEmailAndPassword(auth, email, password);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Wait for user document to be fetched
+    const uid = credential.user.uid;
+    const startTime = Date.now();
+    let userData = null;
+    
+    while (!userData && Date.now() - startTime < 5000) {
+      userData = await fetchUserData(uid);
+      if (!userData) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    
+    if (userData) {
+      setUser(userData);
+    }
   };
 
   const signUp = async (email: string, password: string): Promise<FirebaseUser> => {

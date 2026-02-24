@@ -35,14 +35,14 @@ export default function DemoPage() {
         throw new Error(err.error || "Failed to setup demo account");
       }
 
-      // Now sign in
+      // Sign in (this now waits for user data to be loaded)
       await signIn(email, password);
-      
-      // Give auth context time to fetch user data
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refreshUser();
 
       toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
+      
+      // Small delay to ensure state updates propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       router.push(role === "admin" ? "/admin" : "/handyman");
     } catch (error: any) {
       console.error("Demo login error:", error);

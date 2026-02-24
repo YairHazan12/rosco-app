@@ -21,20 +21,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, firebaseUser, loading, signOut } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      const isDemoUser = firebaseUser?.email?.startsWith("demo-");
-      if (!firebaseUser) {
-        router.push("/login");
-      } else if (!user) {
-        // Firestore doc not loaded yet — wait (don't redirect)
+    if (!loading && firebaseUser) {
+      if (!user) {
+        // Firestore doc not loaded yet — wait (don't redirect immediately)
+        // This prevents redirect loops during initial load
         return;
-      } else if (!user.onboardingComplete && !isDemoUser) {
+      }
+      
+      const isDemoUser = firebaseUser.email?.startsWith("demo-");
+      
+      if (!user.onboardingComplete && !isDemoUser) {
         router.push("/onboarding");
       } else if (user.status === "pending") {
         router.push("/pending");
       } else if (user.role !== "admin") {
         router.push("/handyman");
       }
+    } else if (!loading && !firebaseUser) {
+      // Only redirect to login if we're sure there's no user
+      router.push("/login");
     }
   }, [user, firebaseUser, loading, router]);
 
