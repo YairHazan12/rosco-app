@@ -15,8 +15,17 @@ let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 
 if (typeof window !== "undefined") {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  db = getFirestore(app);
+  try {
+    // Initialize Firebase app
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    
+    // Initialize Firestore (without persistence to avoid offline errors)
+    db = getFirestore(app);
+    
+    console.log("✅ Firebase initialized successfully");
+  } catch (error) {
+    console.error("❌ Firebase initialization error:", error);
+  }
 }
 
 export const clientDb = db as Firestore;

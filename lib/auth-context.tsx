@@ -25,6 +25,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  refreshUserWithRetry: (maxRetries?: number) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,15 +45,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch user data from Firestore
   const fetchUserData = async (uid: string): Promise<User | null> => {
-    if (!clientDb) return null;
+    if (!clientDb) {
+      console.warn("⚠️ Firestore not initialized, cannot fetch user data");
+      return null;
+    }
+    
     try {
       const userDoc = await getDoc(doc(clientDb, "users", uid));
       if (userDoc.exists()) {
         return userDoc.data() as User;
       }
       return null;
-    } catch (error) {
-      console.error("Error fetching user data:", error);
+    } catch (error: any) {
+      // Handle offline errors gracefully
+      if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        console.error("❌ Firestore offline - cannot fetch user data:", error.message);
+        // Return null and rely on cached data or retry
+        return null;
+      }
+      
+      console.error("❌ Error fetching user data:", error);
       return null;
     }
   };
@@ -63,6 +75,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await fetchUserData(firebaseUser.uid);
       setUser(userData);
     }
+  };
+  
+  // Refresh user data with retry logic
+  const refreshUserWithRetry = async (maxRetries = 3): Promise<boolean> => {
+    if (!firebaseUser) return false;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const userData = await fetchUserData(firebaseUser.uid);
+      if (userData) {
+        setUser(userData);
+        return true;
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`⏳ Retry ${attempt}/${maxRetries} - waiting 1s before retry...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    console.error(`❌ Failed to fetch user data after ${maxRetries} attempts`);
+    return false;
   };
 
   useEffect(() => {
@@ -135,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle,
     signOut,
     refreshUser,
+    refreshUserWithRetry,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
