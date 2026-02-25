@@ -45,7 +45,8 @@ service cloud.firestore {
     // ─── Companies ───────────────────────────────────────────────────────────
     match /companies/{companyId} {
       // DEMO company is readable by everyone (for demo mode)
-      allow read: if companyId == "DEMO" || belongsToCompany(companyId);
+      // Any authenticated user can read companies (needed for handyman onboarding/search)
+      allow read: if companyId == "DEMO" || isAuthenticated();
       
       // Only admins can create companies (during onboarding)
       allow create: if isAuthenticated();

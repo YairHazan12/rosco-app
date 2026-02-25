@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { getInvoice, updateInvoice } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Stripe from "stripe";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invoice = await getInvoice(id);
+  // Get companyId from cookie (server-side auth)
+  const companyId = await getCompanyIdFromCookie();
+  const invoice = await getInvoice(id, companyId);
   if (!invoice) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey || stripeKey === "sk_test_placeholder") {
     const mockLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/pay/${invoice.id}`;
-    await updateInvoice(id, { stripePaymentLink: mockLink, status: "Sent" });
+    await updateInvoice(id, { stripePaymentLink: mockLink, status: "Sent" }, companyId);
     return NextResponse.json({ paymentLink: mockLink });
   }
 
@@ -39,7 +42,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       stripePaymentLink: session.url!,
       stripeSessionId: session.id,
       status: "Sent",
-    });
+    }, companyId);
 
     return NextResponse.json({ paymentLink: session.url });
   } catch (e) {

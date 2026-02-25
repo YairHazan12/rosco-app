@@ -9,12 +9,14 @@
  */
 import { NextResponse } from "next/server";
 import { getInvoices, createInvoice, getJob } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam  = searchParams.get("page");
   const limitParam = searchParams.get("limit");
-  const companyId  = searchParams.get("companyId") || "DEMO";
+  // Get companyId from cookie (server-side auth), not from query params
+  const companyId = await getCompanyIdFromCookie();
 
   const allInvoices = await getInvoices(companyId);
   const total       = allInvoices.length;
@@ -41,7 +43,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const companyId = body.companyId || "DEMO";
+    // Get companyId from cookie (server-side auth), not from body
+    const companyId = await getCompanyIdFromCookie();
     const job = await getJob(body.jobId, companyId);
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 

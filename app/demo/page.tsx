@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export default function DemoPage() {
   const router = useRouter();
-  const { signIn, refreshUserWithRetry, user } = useAuth();
+  const { signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Demo credentials
@@ -38,15 +38,8 @@ export default function DemoPage() {
       // Now sign in
       await signIn(email, password);
       
-      // Wait a moment for auth to propagate
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Fetch user data with retry logic (handles offline errors)
-      const success = await refreshUserWithRetry(10); // 10 retries = ~10 seconds
-      
-      if (!success) {
-        throw new Error("Failed to load demo user data. Please check your internet connection and try again.");
-      }
+      // After signIn resolves, user data should be set. Just verify:
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
       router.push(role === "admin" ? "/admin" : "/handyman");

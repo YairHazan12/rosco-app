@@ -9,11 +9,12 @@
  */
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const companyId = searchParams.get("companyId") || "DEMO";
+    // Get companyId from cookie (server-side auth), not from query params
+    const companyId = await getCompanyIdFromCookie();
     const settings = await getSettings(companyId);
     return NextResponse.json(settings, {
       headers: {
@@ -30,9 +31,9 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const companyId = body.companyId || "DEMO";
-    const { companyId: _, ...settingsData } = body; // Remove companyId from settings data
-    const settings = await updateSettings(settingsData, companyId);
+    // Get companyId from cookie (server-side auth), not from body
+    const companyId = await getCompanyIdFromCookie();
+    const settings = await updateSettings(body, companyId);
     return NextResponse.json(settings);
   } catch (e) {
     console.error(e);

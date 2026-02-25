@@ -7,11 +7,12 @@
  */
 import { NextResponse } from "next/server";
 import { getJob, updateJob, deleteJob, getHandyman } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
-  const companyId = searchParams.get("companyId") || "DEMO";
+  // Get companyId from cookie (server-side auth), not from query params
+  const companyId = await getCompanyIdFromCookie();
   
   const job = await getJob(id, companyId); // derived from cached collection, 0 Firestore reads on hit
   if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -24,7 +25,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   try {
     const body = await req.json();
-    const companyId = body.companyId || "DEMO";
+    // Get companyId from cookie (server-side auth), not from body
+    const companyId = await getCompanyIdFromCookie();
 
     let handymanName: string | undefined;
     if (body.handymanId) {
@@ -55,8 +57,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
-  const companyId = searchParams.get("companyId") || "DEMO";
+  // Get companyId from cookie (server-side auth), not from query params
+  const companyId = await getCompanyIdFromCookie();
   
   await deleteJob(id, companyId);
   return NextResponse.json({ success: true });

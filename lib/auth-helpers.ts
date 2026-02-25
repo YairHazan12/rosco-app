@@ -1,6 +1,6 @@
 "use client";
 
-import { doc, setDoc, collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs, getDoc, updateDoc, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { clientDb } from "./firebase";
 import type { User, Company, JoinRequest, OnboardingData } from "./auth-types";
 
@@ -22,13 +22,22 @@ function generateCompanyCode(): string {
 }
 
 // Create a new user document after signup
+// Returns true if user was created, false if user already exists
 export async function createUserDocument(
   uid: string,
   email: string | null,
   displayName: string | null
-): Promise<void> {
+): Promise<boolean> {
   const db = ensureDb();
   const userRef = doc(db, "users", uid);
+  
+  // Check if user already exists
+  const existingDoc = await getDoc(userRef);
+  if (existingDoc.exists()) {
+    console.log("User already exists, skipping creation");
+    return false;
+  }
+  
   const userData: User = {
     uid,
     email,
@@ -42,6 +51,18 @@ export async function createUserDocument(
   };
   
   await setDoc(userRef, userData);
+  return true;
+}
+
+// Get user document (for checking if user exists)
+export async function getUserDocument(uid: string): Promise<User | null> {
+  const db = ensureDb();
+  const userRef = doc(db, "users", uid);
+  const snapshot = await getDoc(userRef);
+  
+  if (!snapshot.exists()) return null;
+  
+  return snapshot.data() as User;
 }
 
 // Complete admin onboarding

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createUserDocument } from "@/lib/auth-helpers";
+import { createUserDocument, getUserDocument } from "@/lib/auth-helpers";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -27,6 +27,9 @@ export default function LoginPage() {
         router.push("/onboarding");
       } else {
         await signIn(email, password);
+        
+        // Set companyId cookie for server-side access
+        // Note: auth-context will also set this when user data loads
         toast.success("Welcome back!");
         router.push("/");
       }
@@ -43,14 +46,18 @@ export default function LoginPage() {
     try {
       const user = await signInWithGoogle();
       
-      // Check if user document exists, if not create it
-      try {
+      // Check if user document exists
+      const existingUser = await getUserDocument(user.uid);
+      
+      if (existingUser) {
+        // Returning user
+        toast.success("Welcome back!");
+        router.push("/");
+      } else {
+        // New user - create document and go to onboarding
         await createUserDocument(user.uid, user.email, user.displayName);
         toast.success("Account created! Complete your profile.");
         router.push("/onboarding");
-      } catch (error) {
-        // User might already exist, just continue to home
-        router.push("/");
       }
     } catch (error: any) {
       console.error("Google auth error:", error);

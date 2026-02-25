@@ -10,12 +10,14 @@
  */
 import { NextResponse } from "next/server";
 import { getJobs, createJob } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam  = searchParams.get("page");
   const limitParam = searchParams.get("limit");
-  const companyId  = searchParams.get("companyId") || "DEMO";
+  // Get companyId from cookie (server-side auth), not from query params (security!)
+  const companyId = await getCompanyIdFromCookie();
 
   const allJobs = await getJobs(companyId);
   const total   = allJobs.length;
@@ -42,7 +44,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const companyId = body.companyId || "DEMO";
+    // Get companyId from cookie (server-side auth), not from body (security!)
+    const companyId = await getCompanyIdFromCookie();
+    
     const job = await createJob({
       companyId,
       clientName: body.clientName,

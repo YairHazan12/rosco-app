@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getInvoice, updateInvoice } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
-  const companyId = searchParams.get("companyId") || "DEMO";
+  // Get companyId from cookie (server-side auth), not from query params
+  const companyId = await getCompanyIdFromCookie();
   
   const invoice = await getInvoice(id, companyId);
   if (!invoice) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -15,7 +16,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   try {
     const body = await req.json();
-    const companyId = body.companyId || "DEMO";
+    // Get companyId from cookie (server-side auth), not from body
+    const companyId = await getCompanyIdFromCookie();
     const update: Record<string, unknown> = {};
     if (body.status) update.status = body.status;
     if (body.status === "Paid") update.paidAt = new Date().toISOString();

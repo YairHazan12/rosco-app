@@ -4,6 +4,8 @@ export interface Handyman {
   phone?: string;
   email?: string;
   companyId: string;
+  specialties?: string[];
+  status?: string;
   createdAt: string;
 }
 
