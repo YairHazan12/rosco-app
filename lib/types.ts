@@ -81,3 +81,18 @@ export interface AppSettings {
     push: boolean;
   };
 }
+
+export interface OffDayRequest {
+  id: string;
+  companyId: string;
+  handymanId: string;
+  handymanName: string;
+  date: string; // ISO date string
+  reason?: string;
+  status: "pending" | "approved" | "rejected";
+  requestedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string; // admin user ID
+  createdAt: string;
+  updatedAt: string;
+}

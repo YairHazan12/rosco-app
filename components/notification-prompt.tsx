@@ -24,12 +24,15 @@ export default function NotificationPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Skip if: notifications not supported, already decided, or already granted
+    // Skip if: notifications not supported, already decided, already granted,
+    // or on iOS (notifications not properly supported in PWA/Safari)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     if (
       typeof Notification === "undefined" ||
       Notification.permission === "granted" ||
       Notification.permission === "denied" ||
-      hasDecided()
+      hasDecided() ||
+      isIOS
     ) {
       return;
     }
@@ -68,11 +71,13 @@ export default function NotificationPrompt() {
         transform: "translateX(-50%)",
         width: "min(calc(100vw - 32px), 398px)",
         zIndex: 51,
+        pointerEvents: "none" as const,
         animation: "fade-up 0.35s ease forwards",
       }}
     >
       <div
         style={{
+          pointerEvents: "auto" as const,
           background: "var(--bg-card)",
           borderRadius: "18px",
           padding: "14px 16px",

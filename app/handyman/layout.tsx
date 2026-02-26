@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { CalendarDays, Briefcase, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PWAPrompt from "@/components/pwa-prompt";
-import NotificationPrompt from "@/components/notification-prompt";
+// notification prompt removed - was blocking mobile UI
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
@@ -93,9 +93,8 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
         </div>
       </header>
 
-      {/* PWA + Notification prompts */}
+      {/* PWA prompt */}
       <PWAPrompt />
-      <NotificationPrompt />
 
       {/* iOS-style frosted bottom tab bar */}
       <nav
