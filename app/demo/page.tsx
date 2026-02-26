@@ -23,7 +23,24 @@ export default function DemoPage() {
       const email = role === "admin" ? DEMO_ADMIN_EMAIL : DEMO_HANDYMAN_EMAIL;
       const password = role === "admin" ? DEMO_ADMIN_PASSWORD : DEMO_HANDYMAN_PASSWORD;
 
-      // Always ensure demo account + Firestore doc exist first
+      // Check if demo was already seeded (localStorage cache)
+      const demoSeeded = typeof window !== "undefined" && localStorage.getItem("rosco-demo-seeded") === "true";
+
+      if (demoSeeded) {
+        // Demo already set up, just sign in directly
+        try {
+          await signIn(email, password);
+          toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
+          router.replace(role === "admin" ? "/admin" : "/handyman");
+          return;
+        } catch (signInError: any) {
+          // Sign in failed - maybe demo was cleared. Fall through to setup.
+          console.warn("Cached demo sign-in failed, will run setup:", signInError.message);
+          localStorage.removeItem("rosco-demo-seeded");
+        }
+      }
+
+      // Setup demo (first time or after cache miss)
       const response = await fetch("/api/setup-demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,14 +52,16 @@ export default function DemoPage() {
         throw new Error(err.error || "Failed to setup demo account");
       }
 
+      // Mark demo as seeded
+      if (typeof window !== "undefined") {
+        localStorage.setItem("rosco-demo-seeded", "true");
+      }
+
       // Now sign in
       await signIn(email, password);
-      
-      // After signIn resolves, user data should be set. Just verify:
-      await new Promise(resolve => setTimeout(resolve, 300));
 
       toast.success(`Signed in as ${role === "admin" ? "Admin" : "Handyman"}`);
-      router.push(role === "admin" ? "/admin" : "/handyman");
+      router.replace(role === "admin" ? "/admin" : "/handyman");
     } catch (error: any) {
       console.error("Demo login error:", error);
       toast.error(error.message || "Demo login failed. Please try again.");

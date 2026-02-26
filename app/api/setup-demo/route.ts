@@ -41,23 +41,27 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create or update Firestore user document
+    // OPTIMIZATION: Early return if user doc already exists
     const userRef = db.collection("users").doc(userRecord.uid);
     const userDoc = await userRef.get();
 
-    if (!userDoc.exists) {
-      await userRef.set({
-        uid: userRecord.uid,
-        email,
-        displayName,
-        role,
-        companyId: DEMO_COMPANY_ID,
-        onboardingComplete: true,
-        status: "active",
-        createdAt: now(),
-        updatedAt: now(),
-      });
+    if (userDoc.exists) {
+      // User already fully set up, return immediately
+      return NextResponse.json({ success: true, uid: userRecord.uid, cached: true });
     }
+
+    // Create Firestore user document (only if doesn't exist)
+    await userRef.set({
+      uid: userRecord.uid,
+      email,
+      displayName,
+      role,
+      companyId: DEMO_COMPANY_ID,
+      onboardingComplete: true,
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    });
 
     // Ensure demo company exists
     const companyRef = db.collection("companies").doc(DEMO_COMPANY_ID);
@@ -109,12 +113,15 @@ async function seedDemoData() {
 
   console.log("Seeding demo data for Cape Town Handyman Services...");
 
+  // Use batch writes for better performance
+  const batch = db.batch();
+
   // Create settings
   const settingsRef = db.collection("settings").doc(DEMO_COMPANY_ID);
   const settingsDoc = await settingsRef.get();
   
   if (!settingsDoc.exists) {
-    await settingsRef.set({
+    batch.set(settingsRef, {
       companyId: DEMO_COMPANY_ID,
       currency: "ZAR",
       language: "en",
@@ -144,7 +151,7 @@ async function seedDemoData() {
 
   for (const p of presets) {
     const ref = db.collection("servicePresets").doc();
-    await ref.set({ ...p, id: ref.id, companyId: DEMO_COMPANY_ID, createdAt: now() });
+    batch.set(ref, { ...p, id: ref.id, companyId: DEMO_COMPANY_ID, createdAt: now() });
   }
 
   // Create handymen with South African names and specialties
@@ -190,7 +197,7 @@ async function seedDemoData() {
   
   for (const hm of handymen) {
     const ref = db.collection("handymen").doc();
-    await ref.set({
+    batch.set(ref, {
       ...hm,
       id: ref.id,
       companyId: DEMO_COMPANY_ID,
@@ -199,6 +206,12 @@ async function seedDemoData() {
     });
     handymanRefs.push({ id: ref.id, name: hm.name });
   }
+
+  // Commit first batch (settings + presets + handymen)
+  await batch.commit();
+
+  // Create second batch for jobs and invoice
+  const batch2 = db.batch();
 
   // Create a few sample jobs
   const sampleJobs = [
@@ -246,11 +259,11 @@ async function seedDemoData() {
     },
   ];
 
-  const jobRefs: Array<{ id: string; status: string; actualCost: number; clientName: string; clientPhone: string; clientEmail: string; title: string; date: string; location: string; handymanName: string }> = [];
+  const jobRefs: Array<{ id: string; ref: FirebaseFirestore.DocumentReference; status: string; actualCost: number; clientName: string; clientPhone: string; clientEmail: string; title: string; date: string; location: string; handymanName: string }> = [];
 
   for (const job of sampleJobs) {
     const jobRef = db.collection("jobs").doc();
-    await jobRef.set({
+    batch2.set(jobRef, {
       ...job,
       id: jobRef.id,
       companyId: DEMO_COMPANY_ID,
@@ -259,6 +272,7 @@ async function seedDemoData() {
     });
     jobRefs.push({
       id: jobRef.id,
+      ref: jobRef,
       status: job.status,
       actualCost: job.actualCost,
       clientName: job.clientName,
@@ -296,7 +310,7 @@ async function seedDemoData() {
     const total = subtotal + vatAmount;
 
     const invoiceRef = db.collection("invoices").doc();
-    await invoiceRef.set({
+    batch2.set(invoiceRef, {
       id: invoiceRef.id,
       companyId: DEMO_COMPANY_ID,
       jobId: completedJob.id,
@@ -319,8 +333,11 @@ async function seedDemoData() {
     });
 
     // Link invoice to job
-    await db.collection("jobs").doc(completedJob.id).update({ invoiceId: invoiceRef.id });
+    batch2.update(completedJob.ref, { invoiceId: invoiceRef.id });
   }
+
+  // Commit second batch
+  await batch2.commit();
 
   console.log("Demo data seeding complete!");
 }

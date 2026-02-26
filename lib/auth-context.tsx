@@ -158,20 +158,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!auth) throw new Error("Auth not initialized");
     const credential = await signInWithEmailAndPassword(auth, email, password);
     
-    // Wait for user document to be fetched
+    // Fetch user data once immediately after sign in
+    // onAuthStateChanged will also trigger and handle any edge cases
     const uid = credential.user.uid;
-    const startTime = Date.now();
-    let userData = null;
-    
-    while (!userData && Date.now() - startTime < 5000) {
-      userData = await fetchUserData(uid);
-      if (!userData) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    }
+    const userData = await fetchUserData(uid);
     
     if (userData) {
       setUser(userData);
+      
+      // Update cookie when user data changes
+      if (userData.companyId) {
+        setCompanyIdCookie(userData.companyId);
+      }
     }
   };
 
