@@ -1,4 +1,5 @@
 import { getJob, getServicePresets } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound, redirect } from "next/navigation";
 import InvoiceEditor from "../_components/InvoiceEditor";
 import Link from "next/link";
@@ -14,7 +15,8 @@ export default async function NewInvoicePage({
   const { jobId } = await searchParams;
   if (!jobId) redirect("/admin/invoices");
 
-  const [job, presets] = await Promise.all([getJob(jobId), getServicePresets()]);
+  const companyId = await getCompanyIdFromCookie();
+  const [job, presets] = await Promise.all([getJob(jobId, companyId), getServicePresets(companyId)]);
   if (!job) notFound();
 
   return (

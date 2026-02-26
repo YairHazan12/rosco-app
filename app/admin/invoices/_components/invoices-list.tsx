@@ -1,4 +1,5 @@
 import { getInvoices, filterOutstandingInvoices, filterPaidInvoices } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, TrendingDown, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
@@ -13,7 +14,8 @@ const statusConfig: Record<string, { cls: string }> = {
 };
 
 export default async function InvoicesList({ page }: { page: number }) {
-  const allInvoices = await getInvoices();
+  const companyId = await getCompanyIdFromCookie();
+  const allInvoices = await getInvoices(companyId);
 
   const total = allInvoices.length;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));

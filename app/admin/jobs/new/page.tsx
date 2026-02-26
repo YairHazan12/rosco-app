@@ -1,4 +1,5 @@
 import { getHandymen } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import JobForm from "../_components/JobForm";
@@ -6,7 +7,8 @@ import JobForm from "../_components/JobForm";
 export const dynamic = "force-dynamic";
 
 export default async function NewJobPage() {
-  const handymen = await getHandymen();
+  const companyId = await getCompanyIdFromCookie();
+  const handymen = await getHandymen(companyId);
   return (
     <div>
       <Link

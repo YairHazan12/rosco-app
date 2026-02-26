@@ -1,4 +1,5 @@
 import { getJob } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Phone, Mail, Calendar, Clock, ChevronLeft, ExternalLink } from "lucide-react";
@@ -50,7 +51,8 @@ export default async function HandymanJobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const job = await getJob(id);
+  const companyId = await getCompanyIdFromCookie();
+  const job = await getJob(id, companyId);
   if (!job) notFound();
 
   const isCompleted = job.status === "Completed";

@@ -1,4 +1,5 @@
 import { getJob, getHandymen } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import JobForm from "../../_components/JobForm";
 import Link from "next/link";
@@ -12,7 +13,8 @@ export default async function EditJobPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [job, handymen] = await Promise.all([getJob(id), getHandymen()]);
+  const companyId = await getCompanyIdFromCookie();
+  const [job, handymen] = await Promise.all([getJob(id, companyId), getHandymen(companyId)]);
   if (!job) notFound();
 
   return (

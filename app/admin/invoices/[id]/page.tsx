@@ -1,4 +1,5 @@
 import { getInvoice } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -20,7 +21,8 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const invoice = await getInvoice(id);
+  const companyId = await getCompanyIdFromCookie();
+  const invoice = await getInvoice(id, companyId);
   if (!invoice) notFound();
 
   const cfg = statusConfig[invoice.status] ?? statusConfig.Draft;

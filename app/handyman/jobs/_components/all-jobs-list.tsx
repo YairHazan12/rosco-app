@@ -1,4 +1,5 @@
 import { getJobs } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { format } from "date-fns";
 import { MapPin, Clock, ChevronRight, ChevronLeft } from "lucide-react";
@@ -18,7 +19,8 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
 };
 
 export default async function AllJobsList({ page }: { page: number }) {
-  const allJobs = await getJobs();
+  const companyId = await getCompanyIdFromCookie();
+  const allJobs = await getJobs(companyId);
 
   // Sort: status priority, then newest-first within each group
   const sorted = [...allJobs].sort((a, b) => {

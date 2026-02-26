@@ -1,4 +1,5 @@
 import { getJob } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const job = await getJob(id);
+  const companyId = await getCompanyIdFromCookie();
+  const job = await getJob(id, companyId);
   if (!job) notFound();
 
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(job.location)}&navigate=yes`;

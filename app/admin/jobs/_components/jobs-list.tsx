@@ -1,4 +1,5 @@
 import { getJobs } from "@/lib/db";
+import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, MapPin, Clock, FileText } from "lucide-react";
 import { format } from "date-fns";
@@ -12,7 +13,8 @@ const statusConfig: Record<string, { cls: string; bar: string }> = {
 };
 
 export default async function JobsList({ page }: { page: number }) {
-  const allJobs = await getJobs();
+  const companyId = await getCompanyIdFromCookie();
+  const allJobs = await getJobs(companyId);
 
   const total = allJobs.length;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
