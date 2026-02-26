@@ -3,9 +3,10 @@ import { updateOffDayRequest, deleteOffDayRequest } from "@/lib/db";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const { status, reviewedBy, companyId } = body;
 
@@ -17,7 +18,7 @@ export async function PATCH(
     }
 
     await updateOffDayRequest(
-      params.id,
+      id,
       {
         status,
         reviewedBy,
@@ -38,13 +39,14 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const searchParams = req.nextUrl.searchParams;
     const companyId = searchParams.get("companyId") || "DEMO";
 
-    await deleteOffDayRequest(params.id, companyId);
+    await deleteOffDayRequest(id, companyId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting off-day request:", error);

@@ -139,5 +139,32 @@ service cloud.firestore {
       // Only admins can update settings
       allow create, update: if isActive() && isAdminOf(companyId);
     }
+    
+    // ─── Off-Day Requests ────────────────────────────────────────────────────
+    match /offDayRequests/{requestId} {
+      // Handyman can read their own requests
+      // Company admin can read all requests for their company
+      allow read: if isAuthenticated() && (
+        resource.data.handymanId == request.auth.uid ||
+        isAdminOf(resource.data.companyId)
+      );
+      
+      // Handyman can create their own off-day requests
+      allow create: if isActive() && 
+        request.resource.data.handymanId == request.auth.uid &&
+        belongsToCompany(request.resource.data.companyId);
+      
+      // Handyman can delete their own pending requests
+      // Admin can update (approve/reject) any request in their company
+      allow update: if isActive() && (
+        (resource.data.handymanId == request.auth.uid && resource.data.status == "pending") ||
+        isAdminOf(resource.data.companyId)
+      );
+      
+      // Handyman can delete their own pending requests
+      allow delete: if isActive() && 
+        resource.data.handymanId == request.auth.uid && 
+        resource.data.status == "pending";
+    }
   }
 }

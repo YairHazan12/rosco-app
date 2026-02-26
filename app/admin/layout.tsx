@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LayoutDashboard, Briefcase, FileText, Settings, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, Settings, Users, LogOut, CalendarX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/jobs",      label: "Jobs",      icon: Briefcase },
-  { href: "/admin/invoices",  label: "Invoices",  icon: FileText },
+  { href: "/admin/off-days",  label: "Off Days",  icon: CalendarX },
   { href: "/admin/team",      label: "Team",      icon: Users },
   { href: "/admin/settings",  label: "Settings",  icon: Settings },
 ];
