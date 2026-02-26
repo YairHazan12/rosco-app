@@ -6,6 +6,27 @@ import { format } from "date-fns";
 
 const ITEMS_PER_PAGE = 15;
 
+function safeInvoiceDate(createdAt: unknown): Date | null {
+  if (!createdAt) return null;
+
+  try {
+    if (createdAt instanceof Date) {
+      return isNaN(createdAt.getTime()) ? null : createdAt;
+    }
+
+    // Firestore Timestamp-like object
+    if (typeof createdAt === "object" && createdAt !== null && "toDate" in createdAt) {
+      const d = (createdAt as { toDate: () => Date }).toDate();
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(createdAt as any);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+}
+
 const statusConfig: Record<string, { cls: string }> = {
   Draft: { cls: "badge-pending" },
   Sent: { cls: "badge-in-progress" },
@@ -102,6 +123,7 @@ export default async function InvoicesList({ page }: { page: number }) {
       <div className="space-y-2.5">
         {pageInvoices.map((inv) => {
           const cfg = statusConfig[inv.status] ?? statusConfig.Draft;
+          const createdDate = safeInvoiceDate(inv.createdAt);
           return (
             <Link key={inv.id} href={`/admin/invoices/${inv.id}`} className="block touch-scale">
               <div className="ios-card p-4">
@@ -126,7 +148,7 @@ export default async function InvoicesList({ page }: { page: number }) {
                       {inv.jobTitle}
                     </p>
                     <p className="text-[12px] mt-1" style={{ color: "var(--label-quaternary)" }}>
-                      {format(new Date(inv.createdAt), "MMM d, yyyy")}
+                      {createdDate ? format(createdDate, "MMM d, yyyy") : "—"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
