@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { CalendarDays, Briefcase, LogOut } from "lucide-react";
+import { CalendarDays, Briefcase, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PWAPrompt from "@/components/pwa-prompt";
 import NotificationPrompt from "@/components/notification-prompt";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
-  { href: "/handyman",      label: "Schedule", icon: CalendarDays },
-  { href: "/handyman/jobs", label: "Jobs",     icon: Briefcase   },
+  { href: "/handyman",          label: "Schedule", icon: CalendarDays },
+  { href: "/handyman/jobs",     label: "Jobs",     icon: Briefcase   },
+  { href: "/handyman/settings", label: "Settings", icon: Settings    },
 ];
 
 export default function HandymanLayout({ children }: { children: React.ReactNode }) {
@@ -89,15 +90,6 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
               ROSCO
             </span>
           </div>
-
-          {/* Logout button */}
-          <button
-            onClick={() => signOut()}
-            className="flex items-center gap-1 px-2 py-1 text-[13px] font-medium"
-            style={{ color: "var(--ios-red)" }}
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </header>
 
@@ -115,7 +107,7 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
             const isActive =
               href === "/handyman"
                 ? pathname === "/handyman"
-                : pathname.startsWith(href);
+                : pathname?.startsWith(href);
 
             return (
               <Link
