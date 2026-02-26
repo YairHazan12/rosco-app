@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOffDayRequest, getOffDayRequests } from "@/lib/db";
+import { createOffDayRequest, getOffDayRequests, getHandymanOffDayRequests } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +37,15 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const companyId = searchParams.get("companyId") || "DEMO";
+    const handymanId = searchParams.get("handymanId");
 
+    // If handymanId is provided, fetch handyman-specific requests (uncached)
+    if (handymanId) {
+      const requests = await getHandymanOffDayRequests(companyId, handymanId);
+      return NextResponse.json(requests);
+    }
+
+    // Otherwise, fetch all company requests (cached)
     const requests = await getOffDayRequests(companyId);
     return NextResponse.json(requests);
   } catch (error) {

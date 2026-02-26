@@ -36,7 +36,7 @@
  */
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
-import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, OffDayRequest } from "./types";
+import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, OffDayRequest, HandymanSettings } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -405,6 +405,42 @@ export async function deleteOffDayRequest(id: string, companyId: string = "DEMO"
   await db.collection("offDayRequests").doc(id).delete();
   console.log(`[♻️ Cache] Revalidating "offDayRequests-${companyId}" tag after DELETE`);
   revalidateTag(`offDayRequests-${companyId}`, "max");
+}
+
+/**
+ * Fetch off-day requests for a specific handyman (uncached).
+ * Used by handyman settings page where per-handyman caching is not needed.
+ */
+export async function getHandymanOffDayRequests(companyId: string, handymanId: string): Promise<OffDayRequest[]> {
+  console.log(`[🔥 Firestore READ] offDayRequests for handyman ${handymanId} in company ${companyId}`);
+  const snap = await db
+    .collection("offDayRequests")
+    .where("companyId", "==", companyId)
+    .where("handymanId", "==", handymanId)
+    .orderBy("requestedAt", "desc")
+    .limit(100)
+    .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} off-day requests for handyman ${handymanId}`);
+  return snap.docs.map(docToOffDayRequest);
+}
+
+// ─── Handyman Settings ───────────────────────────────────────────────────────
+
+export async function getHandymanSettings(handymanId: string): Promise<HandymanSettings> {
+  console.log(`[🔥 Firestore READ] handymanSettings/${handymanId}`);
+  const doc = await db.collection("handymanSettings").doc(handymanId).get();
+  if (!doc.exists) {
+    return { pushNotifications: true }; // Default settings
+  }
+  return doc.data() as HandymanSettings;
+}
+
+export async function updateHandymanSettings(handymanId: string, settings: HandymanSettings): Promise<HandymanSettings> {
+  console.log(`[🔥 Firestore WRITE] handymanSettings/${handymanId}`);
+  const ref = db.collection("handymanSettings").doc(handymanId);
+  await ref.set(settings, { merge: true });
+  const updated = await ref.get();
+  return updated.data() as HandymanSettings;
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────

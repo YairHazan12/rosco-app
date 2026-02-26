@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { doc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,36 +35,88 @@ export default function SettingsPage() {
   const [offDayRequests, setOffDayRequests] = useState<OffDayRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
   
   // Add off day form
   const [newOffDay, setNewOffDay] = useState("");
   const [offDayReason, setOffDayReason] = useState("");
 
-  // Load off-day requests from Firestore
+  const companyId = user?.companyId || "DEMO";
+
+  // Load off-day requests and settings from API
   useEffect(() => {
-    const loadOffDayRequests = async () => {
+    const loadData = async () => {
       if (!firebaseUser?.uid) return;
       
       try {
-        const requestsRef = collection(clientDb, "offDayRequests");
-        const q = query(
-          requestsRef,
-          where("handymanId", "==", firebaseUser.uid),
-          orderBy("requestedAt", "desc")
+        // Load off-day requests
+        const requestsResponse = await fetch(
+          `/api/off-day-requests?companyId=${companyId}&handymanId=${firebaseUser.uid}`
         );
-        const snap = await getDocs(q);
-        const requests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as OffDayRequest));
-        setOffDayRequests(requests);
+        if (requestsResponse.ok) {
+          const requests = await requestsResponse.json();
+          setOffDayRequests(requests);
+        } else {
+          console.error("Failed to load off-day requests");
+          toast.error("Failed to load off-day requests");
+        }
+
+        // Load settings
+        const settingsResponse = await fetch(
+          `/api/handyman-settings?handymanId=${firebaseUser.uid}`
+        );
+        if (settingsResponse.ok) {
+          const loadedSettings = await settingsResponse.json();
+          setSettings(loadedSettings);
+        } else {
+          console.error("Failed to load settings");
+          // Continue with default settings
+        }
       } catch (error) {
-        console.error("Error loading off-day requests:", error);
-        toast.error("Failed to load off-day requests");
+        console.error("Error loading data:", error);
+        toast.error("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
     
-    loadOffDayRequests();
-  }, [firebaseUser?.uid]);
+    loadData();
+  }, [firebaseUser?.uid, companyId]);
+
+  // Save settings to API
+  const saveSettings = async (newSettings: HandymanSettings) => {
+    if (!firebaseUser?.uid) return;
+    
+    setSavingSettings(true);
+    try {
+      const response = await fetch(
+        `/api/handyman-settings?handymanId=${firebaseUser.uid}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSettings),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to save settings");
+      }
+
+      toast.success("Settings saved");
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // Handle settings change
+  const handleSettingsChange = (key: keyof HandymanSettings, value: boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
 
   // Submit off-day request
   const submitOffDayRequest = async () => {
@@ -82,7 +132,7 @@ export default function SettingsPage() {
           handymanName: user?.displayName || firebaseUser.displayName || "Unknown",
           date: newOffDay,
           reason: offDayReason.trim() || undefined,
-          companyId: "DEMO",
+          companyId,
         }),
       });
 
@@ -321,7 +371,8 @@ export default function SettingsPage() {
           </div>
           <Switch
             checked={settings.pushNotifications ?? true}
-            onCheckedChange={(checked) => setSettings(prev => ({ ...prev, pushNotifications: checked }))}
+            onCheckedChange={(checked) => handleSettingsChange("pushNotifications", checked)}
+            disabled={savingSettings}
           />
         </div>
       </section>

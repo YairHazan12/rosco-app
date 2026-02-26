@@ -96,3 +96,8 @@ export interface OffDayRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface HandymanSettings {
+  pushNotifications?: boolean;
+  // Add more settings fields as needed
+}
