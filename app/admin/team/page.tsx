@@ -7,8 +7,18 @@ import { getPendingJoinRequests, approveJoinRequest, rejectJoinRequest } from "@
 import type { JoinRequest } from "@/lib/auth-types";
 import type { Handyman } from "@/lib/types";
 import { toast } from "sonner";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
 import { clientDb } from "@/lib/firebase";
+import { 
+  Users, 
+  Copy, 
+  Check, 
+  UserMinus, 
+  UserCheck, 
+  UserX,
+  Share2,
+  AlertCircle 
+} from "lucide-react";
 
 export default function TeamPage() {
   const router = useRouter();
@@ -16,6 +26,9 @@ export default function TeamPage() {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [teamMembers, setTeamMembers] = useState<Handyman[]>([]);
   const [loading, setLoading] = useState(true);
+  const [teamCode, setTeamCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading) {
@@ -37,10 +50,24 @@ export default function TeamPage() {
       // Load join requests
       const pendingRequests = await getPendingJoinRequests(user.companyId);
       setRequests(pendingRequests);
+
+      // Load company code from company document
+      const companyRef = doc(clientDb, "companies", user.companyId);
+      const companySnap = await getDoc(companyRef);
+      if (companySnap.exists()) {
+        const companyData = companySnap.data() as { companyCode?: string };
+        if (companyData.companyCode) {
+          setTeamCode(companyData.companyCode);
+        }
+      }
       
       // Load team members (handymen)
       const handymenRef = collection(clientDb, "handymen");
-      const q = query(handymenRef, where("companyId", "==", user.companyId));
+      const q = query(
+        handymenRef, 
+        where("companyId", "==", user.companyId),
+        where("status", "==", "active")
+      );
       const querySnapshot = await getDocs(q);
       
       const handymen: Handyman[] = [];
@@ -60,15 +87,65 @@ export default function TeamPage() {
     }
   };
 
-  const loadRequests = async () => {
-    if (!user?.companyId) return;
-    
+  const handleCopyCode = async () => {
+    if (!teamCode) {
+      toast.error("Team code not available");
+      return;
+    }
+
     try {
-      const pendingRequests = await getPendingJoinRequests(user.companyId);
-      setRequests(pendingRequests);
+      await navigator.clipboard.writeText(teamCode);
+      setCopied(true);
+      toast.success("Team code copied!");
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error("Failed to load requests:", error);
-      toast.error("Failed to load join requests");
+      toast.error("Failed to copy code");
+    }
+  };
+
+  const handleShareCode = async () => {
+    if (!teamCode) {
+      toast.error("Team code not available");
+      return;
+    }
+
+    const shareText = `Join our team on ROSCO!\n\nTeam Code: ${teamCode}\n\nDownload the ROSCO app and use this code to join.`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join Our Team",
+          text: shareText,
+        });
+      } catch (error) {
+        // User cancelled or error - fallback to copy
+        handleCopyCode();
+      }
+    } else {
+      handleCopyCode();
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (!confirm(`Are you sure you want to remove ${memberName} from the team? They will need to rejoin to access jobs.`)) {
+      return;
+    }
+
+    setRemovingId(memberId);
+    try {
+      const handymanRef = doc(clientDb, "handymen", memberId);
+      await updateDoc(handymanRef, {
+        status: "inactive",
+        updatedAt: new Date().toISOString(),
+      });
+      
+      toast.success(`${memberName} removed from team`);
+      loadData(); // Reload data
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      toast.error("Failed to remove team member");
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -76,7 +153,7 @@ export default function TeamPage() {
     try {
       await approveJoinRequest(requestId);
       toast.success("Request approved!");
-      loadData(); // Reload all data
+      loadData();
     } catch (error) {
       console.error("Failed to approve:", error);
       toast.error("Failed to approve request");
@@ -87,7 +164,7 @@ export default function TeamPage() {
     try {
       await rejectJoinRequest(requestId);
       toast.success("Request rejected");
-      loadData(); // Reload all data
+      loadData();
     } catch (error) {
       console.error("Failed to reject:", error);
       toast.error("Failed to reject request");
@@ -97,7 +174,7 @@ export default function TeamPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div style={{ color: "var(--label-secondary)" }}>Loading...</div>
       </div>
     );
   }
@@ -107,124 +184,314 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <button
-            onClick={() => router.push("/admin")}
-            className="text-sm text-gray-600 hover:text-gray-900 mb-4"
+    <div className="space-y-6">
+      {/* ── Page Header ─────────────────────────────── */}
+      <div>
+        <h1 className="ios-large-title">Team</h1>
+        <p className="text-[15px] mt-1" style={{ color: "var(--label-secondary)" }}>
+          Manage your team and join requests
+        </p>
+      </div>
+
+      {/* ── Team Code Card ─────────────────────────── */}
+      <div className="ios-card" style={{ 
+        background: "linear-gradient(145deg, var(--brand-light), #ffffff)",
+        borderColor: "var(--brand)",
+        borderWidth: "1.5px"
+      }}>
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: "var(--brand)",
+                  boxShadow: "0 4px 12px rgba(15, 156, 140, 0.25)"
+                }}
+              >
+                <Users className="w-6 h-6 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="ios-headline">Team Code</h2>
+                <p className="text-[13px] mt-0.5" style={{ color: "var(--label-secondary)" }}>
+                  Share this code with handymen to join
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Code Display */}
+          <div 
+            className="rounded-xl p-4 mb-3"
+            style={{ 
+              background: "white",
+              border: "1px solid var(--separator)"
+            }}
           >
-            ← Back to Dashboard
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
-          <p className="text-gray-600 mt-2">Manage join requests and team members</p>
+            <div className="text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" 
+                 style={{ color: "var(--label-tertiary)" }}>
+                Team Code
+              </p>
+              <p className="text-[32px] font-bold tracking-tight" 
+                 style={{ 
+                   color: "var(--brand)",
+                   fontVariantNumeric: "tabular-nums",
+                   letterSpacing: "1px"
+                 }}>
+                {teamCode ?? "N/A"}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={handleCopyCode}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              style={{
+                background: copied ? "var(--green)" : "var(--brand)",
+                color: "white",
+                boxShadow: copied 
+                  ? "0 2px 8px rgba(16, 185, 129, 0.25)"
+                  : "0 2px 8px rgba(15, 156, 140, 0.25)"
+              }}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" strokeWidth={2.5} />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" strokeWidth={2.5} />
+                  Copy
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleShareCode}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              style={{
+                background: "white",
+                color: "var(--brand)",
+                border: "1.5px solid var(--brand)",
+                boxShadow: "0 1px 3px rgba(15, 156, 140, 0.1)"
+              }}
+            >
+              <Share2 className="w-4 h-4" strokeWidth={2.5} />
+              Share
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team Members Section ───────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="ios-section-header">Team Members</h2>
+          <span 
+            className="text-[13px] font-semibold px-2.5 py-1 rounded-full"
+            style={{ 
+              background: "var(--brand-light)",
+              color: "var(--brand)"
+            }}
+          >
+            {teamMembers.length}
+          </span>
         </div>
 
-        {/* Team Members Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Members</h2>
-          {teamMembers.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-              <div className="text-4xl mb-3">👥</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No team members yet</h3>
-              <p className="text-gray-600">Team members will appear here once they join.</p>
+        {teamMembers.length === 0 ? (
+          <div className="ios-card text-center py-12">
+            <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                 style={{ background: "var(--bg-grouped)" }}>
+              <Users className="w-8 h-8" style={{ color: "var(--label-tertiary)" }} />
             </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="ios-headline mb-2">No team members yet</h3>
+            <p className="text-[15px]" style={{ color: "var(--label-secondary)" }}>
+              Share your team code to invite handymen
+            </p>
+          </div>
+        ) : (
+          <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
+            {teamMembers.map((member, index) => (
+              <div
+                key={member.id}
+                className="p-4 hover:bg-opacity-50 transition-colors"
+                style={{ 
+                  background: index % 2 === 0 ? "transparent" : "var(--bg-grouped)",
+                  opacity: 1
+                }}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    {/* Name & Status */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="ios-headline truncate">
                         {member.name}
                       </h3>
-                      {member.phone && (
-                        <p className="text-sm text-gray-600 mt-1">{member.phone}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          member.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                        style={{
+                          background: "var(--green-light)",
+                          color: "var(--green)"
+                        }}
                       >
-                        {member.status || "active"}
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--green)" }} />
+                        Active
                       </span>
                     </div>
+
+                    {/* Phone */}
+                    {member.phone && (
+                      <p className="text-[14px] mb-2" style={{ color: "var(--label-secondary)" }}>
+                        {member.phone}
+                      </p>
+                    )}
+
+                    {/* Specialties */}
+                    {member.specialties && member.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {member.specialties.map((specialty, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2.5 py-1 rounded-lg text-[12px] font-medium"
+                            style={{
+                              background: "var(--brand-light)",
+                              color: "var(--brand)",
+                              border: "1px solid var(--brand)"
+                            }}
+                          >
+                            {specialty}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Specialties */}
-                  {member.specialties && member.specialties.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {member.specialties.map((specialty, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200"
-                          style={{ borderColor: "#0F9C8C20", color: "#0F9C8C", backgroundColor: "#0F9C8C10" }}
-                        >
-                          {specialty}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {/* Remove Button */}
+                  <button
+                    onClick={() => handleRemoveMember(member.id, member.name)}
+                    disabled={removingId === member.id}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all active:scale-95"
+                    style={{
+                      background: "var(--red-light)",
+                      color: "var(--red)",
+                      border: "1px solid var(--red)",
+                      opacity: removingId === member.id ? 0.5 : 1
+                    }}
+                  >
+                    <UserMinus className="w-4 h-4" strokeWidth={2.5} />
+                    {removingId === member.id ? "..." : "Remove"}
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Pending Join Requests ──────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="ios-section-header">Join Requests</h2>
+          {requests.length > 0 && (
+            <span 
+              className="text-[13px] font-semibold px-2.5 py-1 rounded-full"
+              style={{ 
+                background: "var(--amber-light)",
+                color: "#B45309"
+              }}
+            >
+              {requests.length}
+            </span>
           )}
         </div>
 
-        {/* Join Requests Section */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Join Requests</h2>
-          {requests.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-              <div className="text-4xl mb-3">✅</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No pending requests</h3>
-              <p className="text-gray-600">All caught up! New join requests will appear here.</p>
+        {requests.length === 0 ? (
+          <div className="ios-card text-center py-12">
+            <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                 style={{ background: "var(--green-light)" }}>
+              <UserCheck className="w-8 h-8" style={{ color: "var(--green)" }} />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {requests.map((request) => (
-                <div
-                  key={request.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {request.handymanName}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">{request.handymanEmail}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Requested {new Date(request.createdAt).toLocaleDateString()}
+            <h3 className="ios-headline mb-2">All caught up!</h3>
+            <p className="text-[15px]" style={{ color: "var(--label-secondary)" }}>
+              No pending join requests at the moment
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {requests.map((request) => (
+              <div
+                key={request.id}
+                className="ios-card"
+                style={{
+                  borderLeftWidth: "4px",
+                  borderLeftColor: "var(--amber)"
+                }}
+              >
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ background: "var(--amber-light)" }}
+                        >
+                          <AlertCircle className="w-5 h-5" style={{ color: "#B45309" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="ios-headline truncate">
+                            {request.handymanName}
+                          </h3>
+                          <p className="text-[13px] truncate" style={{ color: "var(--label-secondary)" }}>
+                            {request.handymanEmail}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-[12px] mt-2" style={{ color: "var(--label-tertiary)" }}>
+                        Requested {new Date(request.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric"
+                        })}
                       </p>
                     </div>
+                  </div>
 
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => handleApprove(request.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleReject(request.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-                      >
-                        Reject
-                      </button>
-                    </div>
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleApprove(request.id)}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-[14px] transition-all active:scale-[0.97]"
+                      style={{
+                        background: "var(--green)",
+                        color: "white",
+                        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)"
+                      }}
+                    >
+                      <UserCheck className="w-4 h-4" strokeWidth={2.5} />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(request.id)}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-[14px] transition-all active:scale-[0.97]"
+                      style={{
+                        background: "white",
+                        color: "var(--red)",
+                        border: "1.5px solid var(--red)",
+                        boxShadow: "0 1px 3px rgba(239, 68, 68, 0.1)"
+                      }}
+                    >
+                      <UserX className="w-4 h-4" strokeWidth={2.5} />
+                      Reject
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
