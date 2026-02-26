@@ -40,6 +40,12 @@ service cloud.firestore {
       
       // Users can update their own document
       allow update: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Allow admin to update users joining their company (for approving join requests)
+      allow update: if isAuthenticated() && getUserData().role == "admin" && (
+        resource.data.companyId == getUserData().companyId || 
+        request.resource.data.companyId == getUserData().companyId
+      );
     }
     
     // ─── Companies ───────────────────────────────────────────────────────────

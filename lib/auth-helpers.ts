@@ -217,11 +217,11 @@ export async function getPendingJoinRequests(companyId: string): Promise<JoinReq
 export async function approveJoinRequest(requestId: string): Promise<void> {
   const db = ensureDb();
   const requestRef = doc(db, "joinRequests", requestId);
-  const requestSnap = await getDocs(query(collection(db, "joinRequests"), where("__name__", "==", requestId)));
+  const requestSnap = await getDoc(requestRef);
   
-  if (requestSnap.empty) throw new Error("Request not found");
+  if (!requestSnap.exists()) throw new Error("Request not found");
   
-  const request = requestSnap.docs[0].data() as JoinRequest;
+  const request = requestSnap.data() as JoinRequest;
   
   // Update request status
   await updateDoc(requestRef, {
@@ -235,6 +235,19 @@ export async function approveJoinRequest(requestId: string): Promise<void> {
     companyId: request.companyId,
     status: "active",
     updatedAt: new Date().toISOString(),
+  });
+  
+  // Create handyman document in the handymen collection
+  const handymanRef = doc(db, "handymen", request.handymanUid);
+  await setDoc(handymanRef, {
+    id: request.handymanUid,
+    name: request.handymanName,
+    email: request.handymanEmail || "",
+    phone: "",
+    companyId: request.companyId,
+    specialties: [],
+    status: "active",
+    createdAt: new Date().toISOString(),
   });
 }
 
