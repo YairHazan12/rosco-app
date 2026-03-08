@@ -1,5 +1,5 @@
 import { getJobs } from "@/lib/db";
-import { getCompanyIdFromCookie } from "@/lib/server-auth";
+import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { MapPin, Clock, ChevronRight } from "lucide-react";
@@ -14,7 +14,14 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
 
 export default async function ScheduleContent() {
   const companyId = await getCompanyIdFromCookie();
-  const allJobs = await getJobs(companyId);
+  const userRole = await getUserRoleFromCookie();
+  const userUid = await getUserUidFromCookie();
+  
+  // RBAC: Handymen only see their own jobs
+  let allJobs = await getJobs(companyId);
+  if (userRole === "handyman" && userUid) {
+    allJobs = allJobs.filter(job => job.handymanId === userUid);
+  }
 
   const today = startOfDay(new Date());
   const weekEnd = addDays(today, 7);

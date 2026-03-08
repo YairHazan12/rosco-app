@@ -10,7 +10,7 @@
  */
 import { NextResponse } from "next/server";
 import { getJobs, createJob } from "@/lib/db";
-import { getCompanyIdFromCookie } from "@/lib/server-auth";
+import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -18,8 +18,14 @@ export async function GET(req: Request) {
   const limitParam = searchParams.get("limit");
   // Get companyId from cookie (server-side auth), not from query params (security!)
   const companyId = await getCompanyIdFromCookie();
+  const userRole = await getUserRoleFromCookie();
+  const userUid = await getUserUidFromCookie();
 
-  const allJobs = await getJobs(companyId);
+  // RBAC: Handymen only see their own jobs, admins see all
+  let allJobs = await getJobs(companyId);
+  if (userRole === "handyman" && userUid) {
+    allJobs = allJobs.filter(job => job.handymanId === userUid);
+  }
   const total   = allJobs.length;
 
   const page  = Math.max(1, parseInt(pageParam  ?? "1",  10) || 1);

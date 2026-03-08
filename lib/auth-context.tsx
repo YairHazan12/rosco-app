@@ -15,7 +15,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { clientDb } from "./firebase";
 import type { User } from "./auth-types";
-import { COMPANY_ID_COOKIE_NAME } from "./auth-constants";
+import { COMPANY_ID_COOKIE_NAME, USER_UID_COOKIE_NAME, USER_ROLE_COOKIE_NAME } from "./auth-constants";
 
 interface AuthContextType {
   user: User | null;
@@ -44,19 +44,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Helper to set companyId cookie
-  const setCompanyIdCookie = (companyId: string | null) => {
-    if (typeof window !== "undefined") {
-      if (companyId) {
-        // Set cookie with 30-day expiry
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30);
-        document.cookie = `${COMPANY_ID_COOKIE_NAME}=${companyId}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-      } else {
-        // Clear cookie (for demo mode or sign out)
-        document.cookie = `${COMPANY_ID_COOKIE_NAME}=DEMO; path=/; max-age=0; SameSite=Lax`;
-      }
+  // Helper to set auth cookies (companyId, uid, role)
+  const setAuthCookies = (userData: User | null) => {
+    if (typeof window === "undefined") return;
+    
+    if (userData?.companyId) {
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 30);
+      const expStr = expires.toUTCString();
+      document.cookie = `${COMPANY_ID_COOKIE_NAME}=${userData.companyId}; path=/; expires=${expStr}; SameSite=Lax`;
+      document.cookie = `${USER_UID_COOKIE_NAME}=${userData.uid}; path=/; expires=${expStr}; SameSite=Lax`;
+      document.cookie = `${USER_ROLE_COOKIE_NAME}=${userData.role}; path=/; expires=${expStr}; SameSite=Lax`;
+    } else {
+      // Clear all auth cookies on sign out
+      document.cookie = `${COMPANY_ID_COOKIE_NAME}=DEMO; path=/; max-age=0; SameSite=Lax`;
+      document.cookie = `${USER_UID_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+      document.cookie = `${USER_ROLE_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
     }
+  };
+
+  // Legacy alias
+  const setCompanyIdCookie = (companyId: string | null) => {
+    if (!companyId) {
+      setAuthCookies(null);
+    }
+    // When called with just companyId (no full user), handled by setAuthCookies via user data
   };
 
   // Fetch user data from Firestore
@@ -91,10 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await fetchUserData(firebaseUser.uid);
       setUser(userData);
       
-      // Update cookie when user data changes (e.g., after onboarding)
-      if (userData?.companyId) {
-        setCompanyIdCookie(userData.companyId);
-      }
+      // Update all auth cookies when user data changes (e.g., after onboarding)
+      setAuthCookies(userData);
     }
   };
   
@@ -106,12 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await fetchUserData(firebaseUser.uid);
       if (userData) {
         setUser(userData);
-        
-        // Update cookie when user data changes
-        if (userData.companyId) {
-          setCompanyIdCookie(userData.companyId);
-        }
-        
+        setAuthCookies(userData);
         return true;
       }
       
@@ -137,15 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (fbUser) {
         const userData = await fetchUserData(fbUser.uid);
         setUser(userData);
-        
-        // Set companyId cookie for server-side access
-        if (userData?.companyId) {
-          setCompanyIdCookie(userData.companyId);
-        }
+        setAuthCookies(userData);
       } else {
         setUser(null);
-        // Clear cookie on sign out, set to DEMO for guest mode
-        setCompanyIdCookie(null);
+        setAuthCookies(null);
       }
       
       setLoading(false);
@@ -165,11 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (userData) {
       setUser(userData);
-      
-      // Update cookie when user data changes
-      if (userData.companyId) {
-        setCompanyIdCookie(userData.companyId);
-      }
+      setAuthCookies(userData);
     }
   };
 

@@ -7,15 +7,22 @@
  */
 import { NextResponse } from "next/server";
 import { getJob, updateJob, deleteJob, getHandyman } from "@/lib/db";
-import { getCompanyIdFromCookie } from "@/lib/server-auth";
+import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Get companyId from cookie (server-side auth), not from query params
   const companyId = await getCompanyIdFromCookie();
+  const userRole = await getUserRoleFromCookie();
+  const userUid = await getUserUidFromCookie();
   
-  const job = await getJob(id, companyId); // derived from cached collection, 0 Firestore reads on hit
+  const job = await getJob(id, companyId);
   if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  
+  // RBAC: Handymen can only access their own jobs
+  if (userRole === "handyman" && userUid && job.handymanId !== userUid) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  
   return NextResponse.json(job, {
     headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30" },
   });

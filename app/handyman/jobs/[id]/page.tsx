@@ -1,5 +1,5 @@
 import { getJob } from "@/lib/db";
-import { getCompanyIdFromCookie } from "@/lib/server-auth";
+import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Phone, Mail, Calendar, Clock, ChevronLeft, ExternalLink } from "lucide-react";
@@ -52,8 +52,14 @@ export default async function HandymanJobDetailPage({
 }) {
   const { id } = await params;
   const companyId = await getCompanyIdFromCookie();
+  const userRole = await getUserRoleFromCookie();
+  const userUid = await getUserUidFromCookie();
   const job = await getJob(id, companyId);
-  if (!job) notFound();
+  
+  // RBAC: Handymen can only view their own jobs
+  if (!job || (userRole === "handyman" && userUid && job.handymanId !== userUid)) {
+    notFound();
+  }
 
   const isCompleted = job.status === "Completed";
   const status      = statusConfig[job.status] ?? { label: job.status, cls: "badge-pending" };
