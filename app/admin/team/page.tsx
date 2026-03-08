@@ -193,6 +193,15 @@ export default function TeamPage() {
     try {
       await approveJoinRequest(requestId);
       
+      // Revalidate server cache so new jobs will see the handyman
+      if (user?.companyId) {
+        await fetch('/api/revalidate-handymen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId: user.companyId }),
+        });
+      }
+      
       // After animation, remove from state and reload team members
       setTimeout(async () => {
         setRequests(prev => prev.filter(r => r.id !== requestId));

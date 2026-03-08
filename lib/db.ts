@@ -96,6 +96,7 @@ const _fetchHandymen = async (companyId: string = "DEMO"): Promise<Handyman[]> =
   const snap = await db
     .collection("handymen")
     .where("companyId", "==", companyId)
+    .where("status", "==", "active")
     .orderBy("name")
     .limit(HANDYMEN_LIMIT)
     .get();
