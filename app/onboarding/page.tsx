@@ -60,6 +60,24 @@ export default function OnboardingPage() {
     }
   }, [companySearch, searchMethod]);
 
+  // Check for pending team invite
+  const [pendingInvite, setPendingInvite] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pending = localStorage.getItem("pendingTeamInvite");
+      if (pending) {
+        setPendingInvite(pending);
+        // Auto-select handyman role if there's a pending invite
+        setRole("handyman");
+        setStep("form");
+        // Pre-fill the code
+        setSearchMethod("code");
+        setCompanyCode(pending);
+      }
+    }
+  }, []);
+
   const handleRoleSelect = (selectedRole: "admin" | "handyman") => {
     setRole(selectedRole);
     setStep("form");
@@ -123,6 +141,9 @@ export default function OnboardingPage() {
         company.id,
         company.name
       );
+      
+      // Clear pending invite if any
+      localStorage.removeItem("pendingTeamInvite");
       
       await refreshUser();
       toast.success("Join request sent! Waiting for admin approval.");

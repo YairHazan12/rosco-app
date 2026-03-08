@@ -103,26 +103,42 @@ export default function TeamPage() {
     }
   };
 
-  const handleShareCode = async () => {
+  const handleShareLink = async () => {
     if (!teamCode) {
       toast.error("Team code not available");
       return;
     }
 
-    const shareText = `Join our team on ROSCO!\n\nTeam Code: ${teamCode}\n\nDownload the ROSCO app and use this code to join.`;
+    const inviteUrl = `${window.location.origin}/join/${teamCode}`;
+    const shareText = `Join our team on ROSCO! 🔧\n\nTap this link to get started:\n${inviteUrl}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join Our Team",
+          title: "Join Our Team on ROSCO",
           text: shareText,
+          url: inviteUrl,
         });
       } catch (error) {
-        // User cancelled or error - fallback to copy
-        handleCopyCode();
+        // User cancelled or error - fallback to copy link
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+          setCopied(true);
+          toast.success("Invite link copied!");
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          toast.error("Failed to copy link");
+        }
       }
     } else {
-      handleCopyCode();
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+        setCopied(true);
+        toast.success("Invite link copied!");
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast.error("Failed to copy link");
+      }
     }
   };
 
@@ -270,7 +286,7 @@ export default function TeamPage() {
               )}
             </button>
             <button
-              onClick={handleShareCode}
+              onClick={handleShareLink}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
               style={{
                 background: "white",
@@ -280,7 +296,7 @@ export default function TeamPage() {
               }}
             >
               <Share2 className="w-4 h-4" strokeWidth={2.5} />
-              Share
+              Share Link
             </button>
           </div>
         </div>

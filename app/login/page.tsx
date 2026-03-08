@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { createUserDocument, getUserDocument } from "@/lib/auth-helpers";
 import { toast } from "sonner";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const { signIn, signUp, signInWithGoogle } = useAuth();
   
   const [isSignUp, setIsSignUp] = useState(false);
@@ -24,14 +27,14 @@ export default function LoginPage() {
         const user = await signUp(email, password);
         await createUserDocument(user.uid, user.email, user.displayName);
         toast.success("Account created! Complete your profile.");
-        router.push("/onboarding");
+        router.push(returnUrl || "/onboarding");
       } else {
         await signIn(email, password);
         
         // Set companyId cookie for server-side access
         // Note: auth-context will also set this when user data loads
         toast.success("Welcome back!");
-        router.push("/");
+        router.push(returnUrl || "/");
       }
     } catch (error: any) {
       console.error("Auth error:", error);
@@ -52,12 +55,12 @@ export default function LoginPage() {
       if (existingUser) {
         // Returning user
         toast.success("Welcome back!");
-        router.push("/");
+        router.push(returnUrl || "/");
       } else {
         // New user - create document and go to onboarding
         await createUserDocument(user.uid, user.email, user.displayName);
         toast.success("Account created! Complete your profile.");
-        router.push("/onboarding");
+        router.push(returnUrl || "/onboarding");
       }
     } catch (error: any) {
       console.error("Google auth error:", error);
@@ -178,5 +181,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
