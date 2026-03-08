@@ -36,7 +36,7 @@
  */
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
-import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, OffDayRequest, HandymanSettings } from "./types";
+import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, HandymanSettings } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -350,78 +350,6 @@ export async function updateSettings(data: Partial<AppSettings>, companyId: stri
   revalidateTag(`settings-${companyId}`, "max");  // bust settings cache immediately
   const updated = await ref.get();
   return { ...DEFAULT_SETTINGS, ...(updated.data() as Partial<AppSettings>) };
-}
-
-// ─── Off-Day Requests ────────────────────────────────────────────────────────
-
-function docToOffDayRequest(doc: FirebaseFirestore.DocumentSnapshot): OffDayRequest {
-  return { id: doc.id, ...doc.data() } as OffDayRequest;
-}
-
-const _fetchOffDayRequests = async (companyId: string = "DEMO"): Promise<OffDayRequest[]> => {
-  console.log(`[🔥 Firestore READ] offDayRequests collection (companyId: ${companyId}) — CACHE MISS`);
-  const snap = await db
-    .collection("offDayRequests")
-    .where("companyId", "==", companyId)
-    .orderBy("requestedAt", "desc")
-    .limit(200)
-    .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} off-day requests for company ${companyId}`);
-  return snap.docs.map(docToOffDayRequest);
-};
-
-/** All off-day requests, newest-first. Cached 2 min. Tag: "offDayRequests-{companyId}". */
-export const getOffDayRequests = (companyId: string = "DEMO") =>
-  unstable_cache(() => _fetchOffDayRequests(companyId), [`offDayRequests-${companyId}`], {
-    revalidate: 120, // 2 minutes
-    tags: [`offDayRequests-${companyId}`],
-  })();
-
-export async function createOffDayRequest(data: Omit<OffDayRequest, "id" | "createdAt" | "updatedAt">): Promise<OffDayRequest> {
-  const ref = db.collection("offDayRequests").doc();
-  const request: OffDayRequest = {
-    ...data,
-    id: ref.id,
-    createdAt: now(),
-    updatedAt: now(),
-  };
-  await ref.set(request);
-  console.log(`[♻️ Cache] Revalidating "offDayRequests-${data.companyId}" tag after CREATE`);
-  revalidateTag(`offDayRequests-${data.companyId}`, "max");
-  return request;
-}
-
-export async function updateOffDayRequest(id: string, data: Partial<OffDayRequest>, companyId?: string): Promise<void> {
-  await db.collection("offDayRequests").doc(id).update({
-    ...data,
-    updatedAt: now(),
-  });
-  const cid = data.companyId || companyId || "DEMO";
-  console.log(`[♻️ Cache] Revalidating "offDayRequests-${cid}" tag after UPDATE`);
-  revalidateTag(`offDayRequests-${cid}`, "max");
-}
-
-export async function deleteOffDayRequest(id: string, companyId: string = "DEMO"): Promise<void> {
-  await db.collection("offDayRequests").doc(id).delete();
-  console.log(`[♻️ Cache] Revalidating "offDayRequests-${companyId}" tag after DELETE`);
-  revalidateTag(`offDayRequests-${companyId}`, "max");
-}
-
-/**
- * Fetch off-day requests for a specific handyman (uncached).
- * Used by handyman settings page where per-handyman caching is not needed.
- */
-export async function getHandymanOffDayRequests(companyId: string, handymanId: string): Promise<OffDayRequest[]> {
-  console.log(`[🔥 Firestore READ] offDayRequests for handyman ${handymanId} in company ${companyId}`);
-  const snap = await db
-    .collection("offDayRequests")
-    .where("companyId", "==", companyId)
-    .where("handymanId", "==", handymanId)
-    .orderBy("requestedAt", "desc")
-    .limit(100)
-    .get();
-  console.log(`[✅ Firestore] Loaded ${snap.docs.length} off-day requests for handyman ${handymanId}`);
-  return snap.docs.map(docToOffDayRequest);
 }
 
 // ─── Handyman Settings ───────────────────────────────────────────────────────

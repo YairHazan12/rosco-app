@@ -82,21 +82,6 @@ export interface AppSettings {
   };
 }
 
-export interface OffDayRequest {
-  id: string;
-  companyId: string;
-  handymanId: string;
-  handymanName: string;
-  date: string; // ISO date string
-  reason?: string;
-  status: "pending" | "approved" | "rejected";
-  requestedAt: string;
-  reviewedAt?: string;
-  reviewedBy?: string; // admin user ID
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface HandymanSettings {
   pushNotifications?: boolean;
   // Add more settings fields as needed

@@ -110,13 +110,12 @@ export default function TeamPage() {
     }
 
     const inviteUrl = `${window.location.origin}/join/${teamCode}`;
-    const shareText = `Join our team on ROSCO! 🔧\n\nTap this link to get started:\n${inviteUrl}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Join Our Team on ROSCO",
-          text: shareText,
+          text: "Join our team on ROSCO! 🔧 Tap this link to get started:",
           url: inviteUrl,
         });
       } catch (error) {
