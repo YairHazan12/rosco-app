@@ -9,7 +9,7 @@
  * POST — Creates a new job and revalidates the "jobs" cache tag.
  */
 import { NextResponse } from "next/server";
-import { getJobs, createJob } from "@/lib/db";
+import { getJobs, createJob, getHandyman } from "@/lib/db";
 import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
@@ -53,19 +53,29 @@ export async function POST(req: Request) {
     // Get companyId from cookie (server-side auth), not from body (security!)
     const companyId = await getCompanyIdFromCookie();
     
-    const job = await createJob({
+    // Look up handyman name from the selected handyman
+    let handymanName: string | undefined;
+    if (body.handymanId) {
+      const handyman = await getHandyman(body.handymanId, companyId);
+      handymanName = handyman?.name || undefined;
+    }
+
+    // Build job data, excluding undefined values to avoid Firestore errors
+    const jobData: Parameters<typeof createJob>[0] = {
       companyId,
       clientName: body.clientName,
-      clientPhone: body.clientPhone || undefined,
-      clientEmail: body.clientEmail || undefined,
       title: body.title,
-      description: body.description || undefined,
       date: new Date(body.date).toISOString(),
       location: body.location,
       status: body.status || "Pending",
-      handymanId: body.handymanId || undefined,
-      handymanName: body.handymanName || undefined,
-    });
+    };
+    if (body.clientPhone) jobData.clientPhone = body.clientPhone;
+    if (body.clientEmail) jobData.clientEmail = body.clientEmail;
+    if (body.description) jobData.description = body.description;
+    if (body.handymanId) jobData.handymanId = body.handymanId;
+    if (handymanName) jobData.handymanName = handymanName;
+
+    const job = await createJob(jobData);
     return NextResponse.json(job, { status: 201 });
   } catch (e) {
     console.error(e);
