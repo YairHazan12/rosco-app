@@ -49,17 +49,47 @@ const INVOICES_LIMIT = 500;
 const HANDYMEN_LIMIT = 50;
 const PRESETS_LIMIT  = 100;
 
+/**
+ * Serialize Firestore data for Client Components.
+ * Converts Timestamp objects to ISO strings so they can be passed to RSC boundaries.
+ */
+function serializeFirestoreData<T>(data: any): T {
+  if (!data) return data;
+  
+  const serialized: any = {};
+  for (const [key, value] of Object.entries(data)) {
+    // Convert Firestore Timestamp to ISO string
+    if (value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+      serialized[key] = value.toDate().toISOString();
+    } 
+    // Recursively serialize nested objects
+    else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      serialized[key] = serializeFirestoreData(value);
+    }
+    // Handle arrays
+    else if (Array.isArray(value)) {
+      serialized[key] = value.map(item => 
+        item && typeof item === 'object' ? serializeFirestoreData(item) : item
+      );
+    }
+    else {
+      serialized[key] = value;
+    }
+  }
+  return serialized as T;
+}
+
 function docToJob(doc: FirebaseFirestore.DocumentSnapshot): Job {
-  return { id: doc.id, ...doc.data() } as Job;
+  return { id: doc.id, ...serializeFirestoreData<Job>(doc.data()) };
 }
 function docToInvoice(doc: FirebaseFirestore.DocumentSnapshot): Invoice {
-  return { id: doc.id, ...doc.data() } as Invoice;
+  return { id: doc.id, ...serializeFirestoreData<Invoice>(doc.data()) };
 }
 function docToHandyman(doc: FirebaseFirestore.DocumentSnapshot): Handyman {
-  return { id: doc.id, ...doc.data() } as Handyman;
+  return { id: doc.id, ...serializeFirestoreData<Handyman>(doc.data()) };
 }
 function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
-  return { id: doc.id, ...doc.data() } as ServicePreset;
+  return { id: doc.id, ...serializeFirestoreData<ServicePreset>(doc.data()) };
 }
 
 // ─── Base Firestore reads (UNCACHED — only called by the cache wrappers) ─────

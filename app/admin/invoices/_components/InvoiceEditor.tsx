@@ -76,7 +76,11 @@ export default function InvoiceEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobId: job.id,
-          items: items.map((item) => ({ ...item, total: item.quantity * item.unitPrice })),
+          items: items.map((item, idx) => ({ 
+            id: crypto.randomUUID(), 
+            ...item, 
+            total: item.quantity * item.unitPrice 
+          })),
           vatEnabled,
           vatRate: VAT_RATE,
           subtotal,
@@ -179,7 +183,7 @@ export default function InvoiceEditor({
               <div className="space-y-2">
                 <Input
                   placeholder="Description"
-                  value={item.description}
+                  value={item.description || ""}
                   onChange={(e) => updateItem(i, "description", e.target.value)}
                   className="h-11 text-[16px] rounded-xl"
                   style={{
@@ -199,7 +203,7 @@ export default function InvoiceEditor({
                     <Input
                       type="number"
                       min={1}
-                      value={item.quantity}
+                      value={item.quantity ?? 1}
                       onChange={(e) => updateItem(i, "quantity", parseInt(e.target.value) || 1)}
                       className="h-11 text-[16px] rounded-xl mt-1"
                       style={{
@@ -220,7 +224,7 @@ export default function InvoiceEditor({
                       type="number"
                       min={0}
                       step={0.01}
-                      value={item.unitPrice}
+                      value={item.unitPrice ?? 0}
                       onChange={(e) => updateItem(i, "unitPrice", parseFloat(e.target.value) || 0)}
                       className="h-11 text-[16px] rounded-xl mt-1"
                       style={{

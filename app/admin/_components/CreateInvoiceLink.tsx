@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CSSProperties } from "react";
 
 interface CreateInvoiceLinkProps {
@@ -16,14 +16,22 @@ export default function CreateInvoiceLink({
   style,
   children,
 }: CreateInvoiceLinkProps) {
+  const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    router.push(`/admin/invoices/new?jobId=${jobId}`);
+  };
+
   return (
-    <Link
-      href={`/admin/invoices/new?jobId=${jobId}`}
-      onClick={(e) => e.stopPropagation()}
+    <button
+      onClick={handleClick}
       className={className}
       style={style}
+      type="button"
     >
       {children}
-    </Link>
+    </button>
   );
 }
