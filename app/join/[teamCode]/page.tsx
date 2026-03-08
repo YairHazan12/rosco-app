@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { findCompanyByCode, createJoinRequest } from "@/lib/auth-helpers";
+import { findCompanyByCode, createJoinRequest, getExistingJoinRequest } from "@/lib/auth-helpers";
 import type { Company } from "@/lib/auth-types";
 import { toast } from "sonner";
 import {
@@ -125,7 +125,33 @@ export default function JoinTeamPage() {
       }
       setCompany(foundCompany);
 
-      // Auto-send join request
+      // Check for existing join request
+      const existing = await getExistingJoinRequest(user.uid, foundCompany.id);
+      if (existing) {
+        // Already has a request — show appropriate state
+        if (existing.status === "pending") {
+          setState("request-sent");
+          toast.info("You already have a pending request for this team.");
+        } else if (existing.status === "approved") {
+          setState("already-in-team");
+        } else {
+          // Rejected — allow re-request
+          setState("joining");
+          await createJoinRequest(
+            user.uid,
+            user.displayName || firebaseUser.email || "Unknown",
+            user.email || firebaseUser.email,
+            foundCompany.id,
+            foundCompany.name
+          );
+          setState("request-sent");
+          toast.success("Join request sent!");
+        }
+        localStorage.removeItem("pendingTeamInvite");
+        return;
+      }
+
+      // No existing request — send new one
       setState("joining");
       await createJoinRequest(
         user.uid,
@@ -142,15 +168,8 @@ export default function JoinTeamPage() {
       localStorage.removeItem("pendingTeamInvite");
     } catch (error: any) {
       console.error("Join error:", error);
-      if (error.message?.includes("already")) {
-        setState("request-sent");
-        // They already sent a request
-        const foundCompany = await findCompanyByCode(teamCode);
-        if (foundCompany) setCompany(foundCompany);
-      } else {
-        setErrorMsg(error.message || "Something went wrong");
-        setState("error");
-      }
+      setErrorMsg(error.message || "Something went wrong");
+      setState("error");
     }
   }, [authLoading, firebaseUser, user, teamCode]);
 

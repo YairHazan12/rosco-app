@@ -251,6 +251,23 @@ export async function approveJoinRequest(requestId: string): Promise<void> {
   });
 }
 
+// Check if a join request already exists for this user + company
+export async function getExistingJoinRequest(
+  uid: string,
+  companyId: string
+): Promise<JoinRequest | null> {
+  const db = ensureDb();
+  const requestsRef = collection(db, "joinRequests");
+  const q = query(
+    requestsRef,
+    where("handymanUid", "==", uid),
+    where("companyId", "==", companyId)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as JoinRequest;
+}
+
 // Reject join request
 export async function rejectJoinRequest(requestId: string): Promise<void> {
   const db = ensureDb();
