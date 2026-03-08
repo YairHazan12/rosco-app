@@ -202,48 +202,68 @@ export default function JoinTeamPage() {
             </div>
           </div>
 
-          <div
-            className="rounded-xl p-4 space-y-3"
-            style={{ background: "white", border: "1px solid var(--separator)" }}
-          >
-            {platform === "ios" && (
-              <>
-                <Step num={1} text='Tap the Share button at the bottom of Safari' icon="↑" />
-                <Step num={2} text='Scroll down and tap "Add to Home Screen"' icon="+" />
-                <Step num={3} text='Tap "Add" in the top right' icon="✓" />
-              </>
-            )}
-
-            {platform === "android" && (
-              <>
-                <Step num={1} text='Tap the menu (⋮) in your browser' icon="⋮" />
-                <Step num={2} text='Tap "Install app" or "Add to Home screen"' icon="+" />
-                <Step num={3} text='Tap "Install" to confirm' icon="✓" />
-              </>
-            )}
-
-            {platform === "desktop" && (
-              <>
-                <Step num={1} text="Look for the install icon in your browser's address bar" icon="⊕" />
-                <Step num={2} text='Click "Install" when prompted' icon="+" />
-                <Step num={3} text="ROSCO will open as a standalone app" icon="✓" />
-              </>
-            )}
-          </div>
-
+          {/* One-tap install button (Android/Chrome/Edge) */}
           {showInstallButton && (
             <button
               onClick={handleInstallClick}
-              className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-semibold text-[16px] transition-all active:scale-[0.97]"
               style={{
                 background: "var(--brand)",
                 color: "white",
                 boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
               }}
             >
-              <Download className="w-4 h-4" strokeWidth={2.5} />
-              Install ROSCO
+              <Download className="w-5 h-5" strokeWidth={2.5} />
+              Install ROSCO Now
             </button>
+          )}
+
+          {/* Manual instructions — always shown on iOS, shown as fallback on others */}
+          {(platform === "ios" || !showInstallButton) && (
+            <>
+              {platform === "ios" && (
+                <div
+                  className="rounded-xl p-3 mb-3 text-center"
+                  style={{
+                    background: "var(--amber-light)",
+                    border: "1px solid var(--amber)",
+                  }}
+                >
+                  <p className="text-[13px] font-semibold" style={{ color: "#92400E" }}>
+                    📱 Safari doesn't support one-tap install — follow the steps below
+                  </p>
+                </div>
+              )}
+
+              <div
+                className="rounded-xl p-4 space-y-3"
+                style={{ background: "white", border: "1px solid var(--separator)" }}
+              >
+                {platform === "ios" && (
+                  <>
+                    <Step num={1} text='Tap the Share button ⬆ at the bottom of Safari' icon="↑" />
+                    <Step num={2} text='Scroll down and tap "Add to Home Screen"' icon="+" />
+                    <Step num={3} text='Tap "Add" in the top right corner' icon="✓" />
+                  </>
+                )}
+
+                {platform === "android" && (
+                  <>
+                    <Step num={1} text='Tap the menu (⋮) in your browser' icon="⋮" />
+                    <Step num={2} text='Tap "Install app" or "Add to Home screen"' icon="+" />
+                    <Step num={3} text='Tap "Install" to confirm' icon="✓" />
+                  </>
+                )}
+
+                {platform === "desktop" && (
+                  <>
+                    <Step num={1} text="Look for the install icon in your browser's address bar" icon="⊕" />
+                    <Step num={2} text='Click "Install" when prompted' icon="+" />
+                    <Step num={3} text="ROSCO will open as a standalone app" icon="✓" />
+                  </>
+                )}
+              </div>
+            </>
           )}
 
           <button
@@ -251,7 +271,7 @@ export default function JoinTeamPage() {
             className="w-full mt-3 text-[13px] font-medium py-2"
             style={{ color: "var(--label-tertiary)" }}
           >
-            Maybe later
+            Got it
           </button>
         </div>
       </div>
