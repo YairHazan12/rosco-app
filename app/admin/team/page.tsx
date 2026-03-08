@@ -19,6 +19,7 @@ import {
   Share2,
   AlertCircle 
 } from "lucide-react";
+import { HandymanDetailsModal } from "@/app/admin/_components/handyman-details-modal";
 
 export default function TeamPage() {
   const router = useRouter();
@@ -31,6 +32,8 @@ export default function TeamPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [dismissedRequests, setDismissedRequests] = useState<Set<string>>(new Set());
   const [dismissedMembers, setDismissedMembers] = useState<Set<string>>(new Set());
+  const [selectedHandyman, setSelectedHandyman] = useState<Handyman | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -141,6 +144,16 @@ export default function TeamPage() {
         toast.error("Failed to copy link");
       }
     }
+  };
+
+  const handleViewHandyman = (handyman: Handyman) => {
+    setSelectedHandyman(handyman);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedHandyman(null);
   };
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
@@ -430,7 +443,11 @@ export default function TeamPage() {
                 }}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
+                  {/* Clickable Content Area */}
+                  <button
+                    onClick={() => handleViewHandyman(member)}
+                    className="flex-1 min-w-0 text-left transition-opacity hover:opacity-80 active:opacity-60 cursor-pointer"
+                  >
                     {/* Name & Status */}
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="ios-headline truncate">
@@ -473,11 +490,14 @@ export default function TeamPage() {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </button>
 
                   {/* Remove Button */}
                   <button
-                    onClick={() => handleRemoveMember(member.id, member.name)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveMember(member.id, member.name);
+                    }}
                     disabled={removingId === member.id}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all active:scale-95"
                     style={{
@@ -605,6 +625,13 @@ export default function TeamPage() {
           </div>
         )}
       </div>
+
+      {/* Handyman Details Modal */}
+      <HandymanDetailsModal 
+        handyman={selectedHandyman}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }
