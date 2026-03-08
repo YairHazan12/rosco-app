@@ -8,5 +8,5 @@ import { revalidateTag } from "next/cache";
  */
 export async function revalidateHandymen(companyId: string) {
   console.log(`[♻️ Server Action] Revalidating handymen-${companyId} cache`);
-  revalidateTag(`handymen-${companyId}`);
+  revalidateTag(`handymen-${companyId}`, "max");
 }
