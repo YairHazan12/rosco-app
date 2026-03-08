@@ -29,6 +29,8 @@ export default function TeamPage() {
   const [teamCode, setTeamCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [dismissedRequests, setDismissedRequests] = useState<Set<string>>(new Set());
+  const [dismissedMembers, setDismissedMembers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!authLoading) {
@@ -146,7 +148,10 @@ export default function TeamPage() {
       return;
     }
 
+    // Optimistic: animate out immediately
     setRemovingId(memberId);
+    setDismissedMembers(prev => new Set(prev).add(memberId));
+
     try {
       const handymanRef = doc(clientDb, "handymen", memberId);
       await updateDoc(handymanRef, {
@@ -154,35 +159,108 @@ export default function TeamPage() {
         updatedAt: new Date().toISOString(),
       });
       
+      // After animation, remove from state
+      setTimeout(() => {
+        setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+        setDismissedMembers(prev => {
+          const next = new Set(prev);
+          next.delete(memberId);
+          return next;
+        });
+      }, 400);
+      
       toast.success(`${memberName} removed from team`);
-      loadData(); // Reload data
     } catch (error) {
       console.error("Failed to remove member:", error);
       toast.error("Failed to remove team member");
+      // Revert optimistic update
+      setDismissedMembers(prev => {
+        const next = new Set(prev);
+        next.delete(memberId);
+        return next;
+      });
     } finally {
       setRemovingId(null);
     }
   };
 
   const handleApprove = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId);
+    
+    // Optimistic: animate out immediately
+    setDismissedRequests(prev => new Set(prev).add(requestId));
+
     try {
       await approveJoinRequest(requestId);
-      toast.success("Request approved!");
-      loadData();
+      
+      // After animation, remove from state and reload team members
+      setTimeout(async () => {
+        setRequests(prev => prev.filter(r => r.id !== requestId));
+        setDismissedRequests(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+        
+        // Reload team members to show the new member
+        if (user?.companyId) {
+          const handymenRef = collection(clientDb, "handymen");
+          const q = query(
+            handymenRef, 
+            where("companyId", "==", user.companyId),
+            where("status", "==", "active")
+          );
+          const querySnapshot = await getDocs(q);
+          const handymen: Handyman[] = [];
+          querySnapshot.forEach((d) => {
+            handymen.push({ id: d.id, ...d.data() } as Handyman);
+          });
+          setTeamMembers(handymen);
+        }
+      }, 400);
+      
+      toast.success(`${request?.handymanName || "User"} added to team! 🎉`);
     } catch (error) {
       console.error("Failed to approve:", error);
       toast.error("Failed to approve request");
+      // Revert optimistic update
+      setDismissedRequests(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
     }
   };
 
   const handleReject = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId);
+    
+    // Optimistic: animate out immediately
+    setDismissedRequests(prev => new Set(prev).add(requestId));
+
     try {
       await rejectJoinRequest(requestId);
-      toast.success("Request rejected");
-      loadData();
+      
+      // After animation, remove from state
+      setTimeout(() => {
+        setRequests(prev => prev.filter(r => r.id !== requestId));
+        setDismissedRequests(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+      }, 400);
+      
+      toast.success(`${request?.handymanName || "User"} request rejected`);
     } catch (error) {
       console.error("Failed to reject:", error);
       toast.error("Failed to reject request");
+      // Revert optimistic update
+      setDismissedRequests(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
     }
   };
 
@@ -332,10 +410,14 @@ export default function TeamPage() {
             {teamMembers.map((member, index) => (
               <div
                 key={member.id}
-                className="p-4 hover:bg-opacity-50 transition-colors"
+                className="p-4 hover:bg-opacity-50"
                 style={{ 
                   background: index % 2 === 0 ? "transparent" : "var(--bg-grouped)",
-                  opacity: 1
+                  opacity: dismissedMembers.has(member.id) ? 0 : 1,
+                  maxHeight: dismissedMembers.has(member.id) ? "0px" : "200px",
+                  overflow: "hidden",
+                  padding: dismissedMembers.has(member.id) ? "0 16px" : undefined,
+                  transition: "opacity 0.3s ease, max-height 0.4s ease, padding 0.4s ease",
                 }}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -442,7 +524,13 @@ export default function TeamPage() {
                 className="ios-card"
                 style={{
                   borderLeftWidth: "4px",
-                  borderLeftColor: "var(--amber)"
+                  borderLeftColor: "var(--amber)",
+                  opacity: dismissedRequests.has(request.id) ? 0 : 1,
+                  maxHeight: dismissedRequests.has(request.id) ? "0px" : "300px",
+                  overflow: "hidden",
+                  marginBottom: dismissedRequests.has(request.id) ? "0px" : undefined,
+                  padding: dismissedRequests.has(request.id) ? "0" : undefined,
+                  transition: "opacity 0.3s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease",
                 }}
               >
                 <div className="p-4">
