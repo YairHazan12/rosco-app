@@ -12,6 +12,30 @@ function ensureDb() {
   return clientDb;
 }
 
+// Validate name field (minimum 2 characters, no leading/trailing spaces)
+function validateName(name: string | null | undefined, fieldName: string = "Name"): string {
+  if (!name || typeof name !== "string") {
+    throw new Error(`${fieldName} is required`);
+  }
+  
+  const trimmedName = name.trim();
+  
+  if (trimmedName.length < 2) {
+    throw new Error(`${fieldName} must be at least 2 characters long`);
+  }
+  
+  if (trimmedName.length > 100) {
+    throw new Error(`${fieldName} must be less than 100 characters`);
+  }
+  
+  // Check for valid characters (letters, spaces, hyphens, apostrophes)
+  if (!/^[a-zA-Z\s'-]+$/.test(trimmedName)) {
+    throw new Error(`${fieldName} can only contain letters, spaces, hyphens, and apostrophes`);
+  }
+  
+  return trimmedName;
+}
+
 // Generate a short company code (e.g., "ROSCO-A1B2")
 function generateCompanyCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude ambiguous chars
@@ -23,6 +47,7 @@ function generateCompanyCode(): string {
 
 // Create a new user document after signup
 // Returns true if user was created, false if user already exists
+// Note: displayName will be set during onboarding if not provided by auth provider
 export async function createUserDocument(
   uid: string,
   email: string | null,
@@ -41,7 +66,7 @@ export async function createUserDocument(
   const userData: User = {
     uid,
     email,
-    displayName,
+    displayName: displayName || "", // Will be validated and updated during onboarding
     role: "handyman", // Default, will be set during onboarding
     companyId: null,
     onboardingComplete: false,
@@ -72,6 +97,14 @@ export async function completeAdminOnboarding(
   data: OnboardingData
 ): Promise<Company> {
   const db = ensureDb();
+  
+  // Validate required fields
+  const validatedName = validateName(data.fullName, "Full name");
+  
+  if (!data.companyName || data.companyName.trim().length < 2) {
+    throw new Error("Company name is required and must be at least 2 characters");
+  }
+  
   // Create company
   const companyRef = doc(collection(db, "companies"));
   const company: Company = {
@@ -90,12 +123,12 @@ export async function completeAdminOnboarding(
   
   await setDoc(companyRef, company);
 
-  // Update user
+  // Update user with admin's personal name (not company name)
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     role: "admin",
     companyId: companyRef.id,
-    displayName: data.companyName,
+    displayName: validatedName, // Use admin's personal name
     onboardingComplete: true,
     status: "active",
     updatedAt: new Date().toISOString(),
@@ -150,11 +183,15 @@ export async function createJoinRequest(
   companyName: string
 ): Promise<JoinRequest> {
   const db = ensureDb();
+  
+  // Validate name
+  const validatedName = validateName(name, "Full name");
+  
   const requestRef = doc(collection(db, "joinRequests"));
   const request: JoinRequest = {
     id: requestRef.id,
     handymanUid: uid,
-    handymanName: name,
+    handymanName: validatedName,
     handymanEmail: email || "",
     companyId,
     companyName,
@@ -165,9 +202,10 @@ export async function createJoinRequest(
   
   await setDoc(requestRef, request);
   
-  // Update user to mark as pending
+  // Update user to mark as pending and store the validated name
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
+    displayName: validatedName,
     onboardingComplete: true,
     status: "pending",
     updatedAt: new Date().toISOString(),
@@ -183,11 +221,15 @@ export async function completeHandymanOnboarding(
   companyId: string
 ): Promise<void> {
   const db = ensureDb();
+  
+  // Validate name
+  const validatedName = validateName(data.fullName, "Full name");
+  
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     role: "handyman",
     companyId,
-    displayName: data.fullName,
+    displayName: validatedName,
     onboardingComplete: true,
     status: "active",
     updatedAt: new Date().toISOString(),

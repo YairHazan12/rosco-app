@@ -22,6 +22,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   
   // Admin fields
+  const [adminFullName, setAdminFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
   const [businessType, setBusinessType] = useState<"plumbing" | "electrical" | "general" | "other">("general");
@@ -87,10 +88,22 @@ export default function OnboardingPage() {
     e.preventDefault();
     if (!firebaseUser) return;
     
+    // Client-side validation
+    if (adminFullName.trim().length < 2) {
+      toast.error("Full name must be at least 2 characters");
+      return;
+    }
+    
+    if (companyName.trim().length < 2) {
+      toast.error("Company name must be at least 2 characters");
+      return;
+    }
+    
     setLoading(true);
     try {
       const data: OnboardingData = {
         role: "admin",
+        fullName: adminFullName,
         companyName,
         phone,
         businessType,
@@ -112,6 +125,12 @@ export default function OnboardingPage() {
   const handleHandymanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firebaseUser) return;
+    
+    // Client-side validation
+    if (fullName.trim().length < 2) {
+      toast.error("Full name must be at least 2 characters");
+      return;
+    }
     
     setLoading(true);
     try {
@@ -233,6 +252,23 @@ export default function OnboardingPage() {
             <form onSubmit={handleAdminSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Your Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={adminFullName}
+                  onChange={(e) => setAdminFullName(e.target.value)}
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="John Doe"
+                />
+                <p className="text-xs text-gray-500 mt-1">Your personal name (not company name)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Company Name *
                 </label>
                 <input
@@ -240,6 +276,7 @@ export default function OnboardingPage() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   required
+                  minLength={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="ROSCO Services Ltd."
                 />
@@ -323,9 +360,12 @@ export default function OnboardingPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  minLength={2}
+                  maxLength={100}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="John Doe"
                 />
+                <p className="text-xs text-gray-500 mt-1">Minimum 2 characters required</p>
               </div>
 
               <div>

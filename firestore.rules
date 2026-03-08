@@ -31,15 +31,27 @@ service cloud.firestore {
     }
     
     // ─── Users ───────────────────────────────────────────────────────────────
+    // Helper function: validate user data
+    function isValidUserData(data) {
+      // displayName must be a string with at least 2 characters
+      return data.displayName is string 
+        && data.displayName.size() >= 2 
+        && data.displayName.size() <= 100;
+    }
+    
     match /users/{userId} {
       // Anyone can read their own user document
       allow read: if isAuthenticated() && request.auth.uid == userId;
       
       // Users can create their own document during signup
+      // Allow empty displayName initially (will be validated during onboarding)
       allow create: if isAuthenticated() && request.auth.uid == userId;
       
-      // Users can update their own document
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+      // Users can update their own document with valid data
+      // After onboarding, displayName must be valid
+      allow update: if isAuthenticated() 
+        && request.auth.uid == userId
+        && (!request.resource.data.onboardingComplete || isValidUserData(request.resource.data));
       
       // Allow admin to update users joining their company (for approving join requests)
       allow update: if isAuthenticated() && getUserData().role == "admin" && (

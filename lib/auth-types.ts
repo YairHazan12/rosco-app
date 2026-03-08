@@ -1,7 +1,7 @@
 export interface User {
   uid: string;
   email: string | null;
-  displayName: string | null;
+  displayName: string; // Required: user's full name (minimum 2 characters)
   role: "admin" | "handyman";
   companyId: string | null;
   onboardingComplete: boolean;
@@ -38,13 +38,14 @@ export interface JoinRequest {
 
 export interface OnboardingData {
   role: "admin" | "handyman";
+  // Common fields
+  fullName: string; // Required for both admin and handyman (minimum 2 characters)
   // Admin fields
   companyName?: string;
   phone?: string;
   businessType?: "plumbing" | "electrical" | "general" | "other";
   teamSize?: string;
   // Handyman fields
-  fullName?: string;
   specialties?: string[];
   companySearch?: string;
   companyCode?: string;
