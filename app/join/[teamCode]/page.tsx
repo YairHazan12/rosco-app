@@ -40,8 +40,10 @@ export default function JoinTeamPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [showPWA, setShowPWA] = useState(false);
   const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
-  // Detect platform
+  // Detect platform & listen for install prompt
   useEffect(() => {
     if (typeof window === "undefined") return;
     const ua = navigator.userAgent;
@@ -61,7 +63,33 @@ export default function JoinTeamPage() {
       setShowPWA(true);
       localStorage.setItem("rosco-pwa-prompted", "true");
     }
+
+    // Listen for the native install prompt (Chrome/Edge/Android)
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        toast.success("ROSCO installed! Check your home screen.");
+        setShowInstallButton(false);
+        setShowPWA(false);
+      }
+    } catch {
+      toast.error("Install failed. Try the manual steps below.");
+    } finally {
+      setDeferredPrompt(null);
+    }
+  };
 
   // Main flow
   const processJoin = useCallback(async () => {
@@ -202,6 +230,21 @@ export default function JoinTeamPage() {
               </>
             )}
           </div>
+
+          {showInstallButton && (
+            <button
+              onClick={handleInstallClick}
+              className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              style={{
+                background: "var(--brand)",
+                color: "white",
+                boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+              }}
+            >
+              <Download className="w-4 h-4" strokeWidth={2.5} />
+              Install ROSCO
+            </button>
+          )}
 
           <button
             onClick={() => setShowPWA(false)}
