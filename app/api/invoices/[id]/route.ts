@@ -21,8 +21,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const update: Record<string, unknown> = {};
     if (body.status) update.status = body.status;
     if (body.status === "Paid") update.paidAt = new Date().toISOString();
-    if (body.stripePaymentLink) update.stripePaymentLink = body.stripePaymentLink;
-    if (body.stripeSessionId) update.stripeSessionId = body.stripeSessionId;
+    if (body.paystackReference) update.paystackReference = body.paystackReference;
+    if (body.paystackAccessCode) update.paystackAccessCode = body.paystackAccessCode;
+    if (body.paystackAuthorizationUrl) update.paystackAuthorizationUrl = body.paystackAuthorizationUrl;
+    if (body.handymanSubaccountCode) update.handymanSubaccountCode = body.handymanSubaccountCode;
     await updateInvoice(id, update, companyId);
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -75,6 +75,19 @@ export async function POST(req: Request) {
     if (body.handymanId) jobData.handymanId = body.handymanId;
     if (handymanName) jobData.handymanName = handymanName;
 
+    // Sync customer from job data (create or update customer record)
+    const { syncCustomerFromJob } = await import("@/lib/db");
+    const customerId = await syncCustomerFromJob({
+      clientName: body.clientName,
+      clientPhone: body.clientPhone,
+      clientEmail: body.clientEmail,
+      date: jobData.date,
+    }, companyId);
+    
+    if (customerId) {
+      jobData.customerId = customerId;
+    }
+
     const job = await createJob(jobData);
     return NextResponse.json(job, { status: 201 });
   } catch (e) {

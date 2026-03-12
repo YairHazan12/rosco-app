@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
+import CustomerAutocomplete from "./CustomerAutocomplete";
 
 interface Handyman { id: string; name: string }
 interface Job {
@@ -82,34 +83,29 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
     }
   };
 
+  const handleCustomerSelect = (customer: { name: string; phone: string; email: string } | null) => {
+    if (customer) {
+      setFormData(prev => ({
+        ...prev,
+        clientName: customer.name,
+        clientPhone: customer.phone,
+        clientEmail: customer.email,
+      }));
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-10">
       {/* Client Section */}
       <div>
         <p className="ios-section-header mb-2">Client</p>
         <div className="ios-group px-4 py-4 space-y-4">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="clientName"
-              className="text-[13px] font-medium"
-              style={{ color: "var(--label-tertiary)" }}
-            >
-              Name *
-            </Label>
-            <Input
-              id="clientName"
-              required
-              value={formData.clientName}
-              onChange={e => set("clientName", e.target.value)}
-              placeholder="John Smith"
-              className="h-11 text-[16px] rounded-xl border"
-              style={{
-                background: "var(--bg-primary)",
-                borderColor: "var(--border)",
-                color: "var(--label-primary)",
-              }}
-            />
-          </div>
+          <CustomerAutocomplete
+            onSelect={handleCustomerSelect}
+            initialName={formData.clientName}
+            initialPhone={formData.clientPhone}
+            initialEmail={formData.clientEmail}
+          />
 
           <div className="space-y-1.5">
             <Label
@@ -124,7 +120,7 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
               type="tel"
               value={formData.clientPhone}
               onChange={e => set("clientPhone", e.target.value)}
-              placeholder="+27-82-123-4567"
+              placeholder="+972-50-123-4567"
               className="h-11 text-[16px] rounded-xl border"
               style={{
                 background: "var(--bg-primary)",

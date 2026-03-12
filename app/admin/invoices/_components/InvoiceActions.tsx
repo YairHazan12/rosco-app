@@ -8,14 +8,14 @@ import { ExternalLink, Send, CheckCircle, Copy, Loader2 } from "lucide-react";
 interface Invoice {
   id: string;
   status: string;
-  stripePaymentLink?: string | null;
+  paystackAuthorizationUrl?: string | null;
   total: number;
 }
 
 export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [payLink, setPayLink] = useState(invoice.stripePaymentLink);
+  const [payLink, setPayLink] = useState(invoice.paystackAuthorizationUrl);
 
   const updateStatus = async (status: string) => {
     setLoading(true);
@@ -47,7 +47,7 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
       toast.success("Payment link generated!");
       router.refresh();
     } catch {
-      toast.error("Failed to generate payment link (check Stripe config)");
+      toast.error("Failed to generate payment link (check Paystack config)");
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
             style={{ background: "rgba(0,122,255,0.05)" }}
           >
             <p className="text-[12px] mb-1" style={{ color: "var(--label-tertiary)" }}>
-              Stripe Payment Link:
+              Paystack Payment Link:
             </p>
             <a
               href={payLink}

@@ -1,6 +1,6 @@
 # ROSCO — Handyman Business Management App
 
-A full-stack MVP for managing a handyman/maintenance business. Built with Next.js 15, Prisma, SQLite, and Stripe.
+A full-stack MVP for managing a handyman/maintenance business. Built with Next.js 15, Firebase, and Paystack.
 
 ---
 
@@ -9,7 +9,7 @@ A full-stack MVP for managing a handyman/maintenance business. Built with Next.j
 ### 🛡️ Admin Panel (`/admin`)
 - **Dashboard** — Today's job count, outstanding invoices, total revenue
 - **Job Management** — Full CRUD: client info, title, description, date/time, location, status, assigned handyman
-- **Invoice Management** — Create invoices from completed jobs, preset service items, VAT toggle (17%), status tracking (Draft → Sent → Paid), Stripe payment link generation
+- **Invoice Management** — Create invoices from completed jobs, preset service items, VAT toggle (17%), status tracking (Draft → Sent → Paid), Paystack payment link generation
 
 ### 🔧 Handyman App (`/handyman`)
 - **Daily/weekly schedule** — Jobs for the next 7 days grouped by day
@@ -18,7 +18,7 @@ A full-stack MVP for managing a handyman/maintenance business. Built with Next.j
 
 ### 💳 Customer Payment (`/pay/[invoiceId]`)
 - Clean invoice view with services, VAT breakdown, total
-- Stripe Checkout (Card, Apple Pay, Google Pay)
+- Paystack Checkout (Card, Mobile Money)
 - Payment confirmation page
 
 ---
@@ -30,8 +30,8 @@ A full-stack MVP for managing a handyman/maintenance business. Built with Next.j
 | Framework | Next.js 15 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS + shadcn/ui |
-| Database | Prisma + SQLite |
-| Payments | Stripe Checkout |
+| Database | Firebase Firestore |
+| Payments | Paystack Checkout |
 
 ---
 
@@ -43,22 +43,34 @@ npm install
 ```
 
 ### 2. Set up environment variables
-Copy `.env` and fill in your Stripe keys:
+Copy `.env.example` to `.env` and fill in your credentials:
 ```env
-DATABASE_URL="file:./dev.db"
-STRIPE_SECRET_KEY="sk_live_..."
-STRIPE_PUBLISHABLE_KEY="pk_live_..."
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_..."
-NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+# Firebase Configuration
+FIREBASE_PROJECT_ID="your-project-id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy..."
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
+
+# Paystack Configuration
+PAYSTACK_SECRET_KEY="sk_test_..."
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY="pk_test_..."
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### 3. Set up the database
+### 3. Set up Firebase
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Enable Firestore Database
+3. Download your service account key and add credentials to `.env`
+
+### 4. Seed the database (optional)
 ```bash
-npx prisma migrate dev
-npx prisma db seed
+npm run reset-data
 ```
 
-### 4. Run the app
+### 5. Run the app
 ```bash
 npm run dev
 ```
@@ -88,15 +100,16 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Stripe Setup
+## Paystack Setup
 
-1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Add your secret key to `.env`
-3. The app generates Checkout Sessions per invoice
-4. Payments are processed in ILS (Israeli Shekel)
-5. Webhook endpoint (for production): `/api/webhooks/stripe`
+1. Create a Paystack account at [paystack.com](https://paystack.com)
+2. Get your API keys from the [Paystack Dashboard](https://dashboard.paystack.com/#/settings/developer)
+3. Add your secret key to `.env`
+4. The app generates payment initialization requests per invoice
+5. Payments are processed in ZAR (South African Rand)
+6. Webhook endpoint (for production): `/api/webhooks/paystack`
 
-> **No Stripe?** The app runs in demo mode — payment links point to the internal `/pay/` page instead of Stripe.
+> **No Paystack?** The app runs in demo mode — payment links point to the internal `/pay/` page instead of Paystack.
 
 ---
 
@@ -112,8 +125,7 @@ The seed includes:
 
 ## Roadmap (post-MVP)
 
-- [ ] Authentication (NextAuth or Clerk)
-- [ ] Per-handyman login for `/handyman`
+- [ ] Split payments with Paystack subaccounts
 - [ ] SMS/WhatsApp notifications to clients
 - [ ] PDF invoice export
 - [ ] Recurring jobs / job templates
@@ -134,11 +146,13 @@ rosco-app/
 │   ├── handyman/           # Handyman interface
 │   ├── pay/                # Customer payment
 │   └── api/                # REST API routes
+│       └── webhooks/
+│           └── paystack/   # Paystack webhook handler
 ├── components/ui/          # shadcn/ui components
 ├── lib/
-│   └── prisma.ts           # Prisma client
-└── prisma/
-    ├── schema.prisma        # DB schema
-    ├── seed.ts              # Seed data
-    └── migrations/         # SQL migrations
+│   ├── db.ts               # Firebase Firestore access
+│   ├── types.ts            # TypeScript interfaces
+│   └── firebase-admin.ts   # Firebase admin SDK
+└── scripts/
+    └── reset-data.ts       # Database seed script
 ```

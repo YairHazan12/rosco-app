@@ -197,7 +197,7 @@ export default async function CustomerPayPage({
               style={{ color: "var(--label-tertiary)" }}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              Secured by Stripe · Card · Apple Pay · Google Pay
+              Secured by Paystack · Card · Mobile Money
             </div>
           </div>
         </div>
@@ -242,7 +242,7 @@ function DemoPage() {
             color: "var(--ios-blue)",
           }}
         >
-          This is a demo — add your Stripe key to enable real payments
+          This is a demo — add your Paystack key to enable real payments
         </div>
       </div>
 

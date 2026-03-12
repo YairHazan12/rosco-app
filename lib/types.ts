@@ -1,3 +1,18 @@
+export interface Customer {
+  id: string;
+  companyId: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  searchTokens: string[];
+  totalJobs: number;
+  lastJobDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Handyman {
   id: string;
   name: string;
@@ -12,6 +27,7 @@ export interface Handyman {
 export interface Job {
   id: string;
   companyId: string;
+  customerId?: string;
   clientName: string;
   clientPhone?: string;
   clientEmail?: string;
@@ -55,8 +71,10 @@ export interface Invoice {
   vatAmount: number;
   total: number;
   status: "Draft" | "Sent" | "Paid" | "Outstanding";
-  stripePaymentLink?: string;
-  stripeSessionId?: string;
+  paystackReference?: string;
+  paystackAccessCode?: string;
+  paystackAuthorizationUrl?: string;
+  handymanSubaccountCode?: string;
   paidAt?: string;
   createdAt: string;
   updatedAt: string;

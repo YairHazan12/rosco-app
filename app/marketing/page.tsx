@@ -604,7 +604,7 @@ export default function MarketingPage() {
               <ul className="space-y-2">
                 {[
                   "Branded payment pages",
-                  "Stripe-powered checkout",
+                  "Paystack-powered checkout",
                   "Instant payment confirmation",
                   "Digital receipts",
                 ].map((f) => (
@@ -775,7 +775,7 @@ export default function MarketingPage() {
                 icon: <Shield className="w-5 h-5" />,
                 color: "#BF5AF2",
                 title: "Secure & Reliable",
-                desc: "Firebase-backed with Stripe payments. Enterprise-grade security.",
+                desc: "Firebase-backed with Paystack payments. Enterprise-grade security.",
               },
             ].map((f) => (
               <div

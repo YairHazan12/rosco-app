@@ -36,7 +36,7 @@
  */
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "./firebase-admin";
-import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, HandymanSettings } from "./types";
+import type { Job, Invoice, Handyman, ServicePreset, InvoiceItem, AppSettings, HandymanSettings, Customer } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -48,6 +48,7 @@ const JOBS_LIMIT     = 500;
 const INVOICES_LIMIT = 500;
 const HANDYMEN_LIMIT = 50;
 const PRESETS_LIMIT  = 100;
+const CUSTOMERS_LIMIT = 1000;
 
 /**
  * Serialize Firestore data for Client Components.
@@ -80,16 +81,48 @@ function serializeFirestoreData<T>(data: any): T {
 }
 
 function docToJob(doc: FirebaseFirestore.DocumentSnapshot): Job {
-  return { id: doc.id, ...serializeFirestoreData<Job>(doc.data()) };
+  const { id, ...data } = serializeFirestoreData<Job>(doc.data());
+  return { id: doc.id, ...data };
 }
 function docToInvoice(doc: FirebaseFirestore.DocumentSnapshot): Invoice {
-  return { id: doc.id, ...serializeFirestoreData<Invoice>(doc.data()) };
+  const { id, ...data } = serializeFirestoreData<Invoice>(doc.data());
+  return { id: doc.id, ...data };
 }
 function docToHandyman(doc: FirebaseFirestore.DocumentSnapshot): Handyman {
-  return { id: doc.id, ...serializeFirestoreData<Handyman>(doc.data()) };
+  const { id, ...data } = serializeFirestoreData<Handyman>(doc.data());
+  return { id: doc.id, ...data };
 }
 function docToPreset(doc: FirebaseFirestore.DocumentSnapshot): ServicePreset {
-  return { id: doc.id, ...serializeFirestoreData<ServicePreset>(doc.data()) };
+  const { id, ...data } = serializeFirestoreData<ServicePreset>(doc.data());
+  return { id: doc.id, ...data };
+}
+function docToCustomer(doc: FirebaseFirestore.DocumentSnapshot): Customer {
+  const { id, ...data } = serializeFirestoreData<Customer>(doc.data());
+  return { id: doc.id, ...data };
+}
+
+// Generate search tokens for customer searching
+function generateSearchTokens(name?: string, phone?: string, email?: string): string[] {
+  const tokens: string[] = [];
+  
+  // Add lowercase name words
+  if (name) {
+    tokens.push(...name.toLowerCase().split(/\s+/).filter(Boolean));
+  }
+  
+  // Add phone digits only
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits) tokens.push(digits);
+  }
+  
+  // Add email local part (before @)
+  if (email) {
+    const localPart = email.split('@')[0]?.toLowerCase();
+    if (localPart) tokens.push(localPart);
+  }
+  
+  return [...new Set(tokens)]; // Remove duplicates
 }
 
 // ─── Base Firestore reads (UNCACHED — only called by the cache wrappers) ─────
@@ -147,6 +180,20 @@ const _fetchServicePresets = async (companyId: string = "DEMO"): Promise<Service
   return snap.docs.map(docToPreset);
 };
 
+const _fetchCustomers = async (companyId: string = "DEMO"): Promise<Customer[]> => {
+  // READ: 1 Firestore query, up to CUSTOMERS_LIMIT document reads
+  console.log(`[🔥 Firestore READ] customers collection (companyId: ${companyId}, limit: ${CUSTOMERS_LIMIT}) — CACHE MISS`);
+  const snap = await db
+    .collection("businesses")
+    .doc(companyId)
+    .collection("customers")
+    .orderBy("name")
+    .limit(CUSTOMERS_LIMIT)
+    .get();
+  console.log(`[✅ Firestore] Loaded ${snap.docs.length} customers for company ${companyId}`);
+  return snap.docs.map(docToCustomer);
+};
+
 const _fetchSettings = async (companyId: string = "DEMO"): Promise<AppSettings> => {
   // READ: 1 Firestore document read
   console.log(`[🔥 Firestore READ] settings/${companyId} — CACHE MISS`);
@@ -190,6 +237,13 @@ export const getServicePresets = (companyId: string = "DEMO") =>
     tags: [`presets-${companyId}`],
   })();
 
+/** All customers, alphabetical. Cached 5 min. Tag: "customers-{companyId}". */
+export const getCustomers = (companyId: string = "DEMO") =>
+  unstable_cache(() => _fetchCustomers(companyId), [`customers-${companyId}`], {
+    revalidate: 300,
+    tags: [`customers-${companyId}`],
+  })();
+
 /** App settings. Cached 5 min. Tag: "settings-{companyId}". */
 export const getSettings = (companyId: string = "DEMO") =>
   unstable_cache(() => _fetchSettings(companyId), [`settings-${companyId}`], {
@@ -216,7 +270,29 @@ export async function getHandyman(id: string, companyId: string = "DEMO"): Promi
   return handymen.find(h => h.id === id) ?? null;
 }
 
+export async function getCustomer(id: string, companyId: string = "DEMO"): Promise<Customer | null> {
+  const customers = await getCustomers(companyId);
+  return customers.find(c => c.id === id) ?? null;
+}
+
 // ─── In-memory derived queries (no Firestore reads) ─────────────────────────
+
+export function searchCustomers(customers: Customer[], query: string): Customer[] {
+  if (!query.trim()) return customers;
+  
+  const searchTerm = query.toLowerCase().trim();
+  const searchDigits = searchTerm.replace(/\D/g, '');
+  
+  return customers.filter(c => {
+    // Search in tokens (name words, phone digits, email local part)
+    if (c.searchTokens.some(token => token.includes(searchTerm))) return true;
+    
+    // Also search phone digits if query has digits
+    if (searchDigits && c.phone?.replace(/\D/g, '').includes(searchDigits)) return true;
+    
+    return false;
+  });
+}
 
 export function filterTodayJobs(jobs: Job[]): Job[] {
   const today = new Date();
@@ -321,10 +397,10 @@ export async function createJob(data: Omit<Job, "id" | "createdAt" | "updatedAt"
 }
 
 export async function updateJob(id: string, data: Partial<Job>, companyId?: string): Promise<void> {
-  await db.collection("jobs").doc(id).update({
-    ...data,
-    updatedAt: now(),
-  });
+  const cleaned = Object.fromEntries(
+    Object.entries({ ...data, updatedAt: now() }).filter(([, v]) => v !== undefined)
+  );
+  await db.collection("jobs").doc(id).update(cleaned);
   // Use companyId from data if provided, otherwise use the parameter
   const cid = data.companyId || companyId || "DEMO";
   console.log(`[♻️ Cache] Revalidating "jobs-${cid}" tag after UPDATE`);
@@ -335,6 +411,114 @@ export async function deleteJob(id: string, companyId: string = "DEMO"): Promise
   await db.collection("jobs").doc(id).delete();
   console.log(`[♻️ Cache] Revalidating "jobs-${companyId}" tag after DELETE`);
   revalidateTag(`jobs-${companyId}`, "max");
+}
+
+// ─── Customers – mutations ───────────────────────────────────────────────────
+
+export async function createCustomer(
+  data: Omit<Customer, "id" | "createdAt" | "updatedAt" | "searchTokens" | "totalJobs" | "lastJobDate">,
+  companyId: string = "DEMO"
+): Promise<Customer> {
+  const ref = db.collection("businesses").doc(companyId).collection("customers").doc();
+  const customer: Customer = {
+    ...data,
+    companyId,
+    id: ref.id,
+    searchTokens: generateSearchTokens(data.name, data.phone, data.email),
+    totalJobs: 0,
+    lastJobDate: "",
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  await ref.set(customer);
+  console.log(`[♻️ Cache] Revalidating "customers-${companyId}" tag after CREATE`);
+  revalidateTag(`customers-${companyId}`, "max");
+  return customer;
+}
+
+export async function updateCustomer(
+  id: string,
+  data: Partial<Omit<Customer, "id" | "createdAt" | "searchTokens" | "companyId">>,
+  companyId: string = "DEMO"
+): Promise<void> {
+  // Regenerate search tokens if name, phone, or email changed
+  const updates: any = { ...data, updatedAt: now() };
+  if (data.name || data.phone || data.email) {
+    // Fetch current customer to get all fields for token generation
+    const current = await getCustomer(id, companyId);
+    if (current) {
+      updates.searchTokens = generateSearchTokens(
+        data.name || current.name,
+        data.phone !== undefined ? data.phone : current.phone,
+        data.email !== undefined ? data.email : current.email
+      );
+    }
+  }
+  
+  const cleaned = Object.fromEntries(
+    Object.entries(updates).filter(([, v]) => v !== undefined)
+  );
+  await db.collection("businesses").doc(companyId).collection("customers").doc(id).update(cleaned);
+  console.log(`[♻️ Cache] Revalidating "customers-${companyId}" tag after UPDATE`);
+  revalidateTag(`customers-${companyId}`, "max");
+}
+
+export async function deleteCustomer(id: string, companyId: string = "DEMO"): Promise<void> {
+  await db.collection("businesses").doc(companyId).collection("customers").doc(id).delete();
+  console.log(`[♻️ Cache] Revalidating "customers-${companyId}" tag after DELETE`);
+  revalidateTag(`customers-${companyId}`, "max");
+}
+
+export async function syncCustomerFromJob(
+  jobData: { clientName: string; clientPhone?: string; clientEmail?: string; date: string },
+  companyId: string = "DEMO"
+): Promise<string | null> {
+  // Try to find existing customer by phone or email
+  const customers = await getCustomers(companyId);
+  let existingCustomer = customers.find(c => 
+    (jobData.clientPhone && c.phone === jobData.clientPhone) ||
+    (jobData.clientEmail && c.email === jobData.clientEmail)
+  );
+  
+  if (existingCustomer) {
+    // Update existing customer
+    const updates: any = {
+      totalJobs: existingCustomer.totalJobs + 1,
+      lastJobDate: jobData.date,
+    };
+    
+    // Update name if provided and different
+    if (jobData.clientName && jobData.clientName !== existingCustomer.name) {
+      updates.name = jobData.clientName;
+    }
+    
+    // Add missing contact info
+    if (jobData.clientPhone && !existingCustomer.phone) {
+      updates.phone = jobData.clientPhone;
+    }
+    if (jobData.clientEmail && !existingCustomer.email) {
+      updates.email = jobData.clientEmail;
+    }
+    
+    await updateCustomer(existingCustomer.id, updates, companyId);
+    return existingCustomer.id;
+  } else {
+    // Create new customer
+    const newCustomer = await createCustomer({
+      companyId,
+      name: jobData.clientName,
+      phone: jobData.clientPhone,
+      email: jobData.clientEmail,
+    }, companyId);
+    
+    // Update with first job info
+    await updateCustomer(newCustomer.id, {
+      totalJobs: 1,
+      lastJobDate: jobData.date,
+    }, companyId);
+    
+    return newCustomer.id;
+  }
 }
 
 // ─── Invoices – mutations ────────────────────────────────────────────────────
@@ -356,10 +540,10 @@ export async function createInvoice(data: Omit<Invoice, "id" | "createdAt" | "up
 }
 
 export async function updateInvoice(id: string, data: Partial<Invoice>, companyId?: string): Promise<void> {
-  await db.collection("invoices").doc(id).update({
-    ...data,
-    updatedAt: now(),
-  });
+  const cleaned = Object.fromEntries(
+    Object.entries({ ...data, updatedAt: now() }).filter(([, v]) => v !== undefined)
+  );
+  await db.collection("invoices").doc(id).update(cleaned);
   const cid = data.companyId || companyId || "DEMO";
   console.log(`[♻️ Cache] Revalidating "invoices-${cid}" tag after UPDATE`);
   revalidateTag(`invoices-${cid}`, "max");
@@ -539,7 +723,7 @@ export async function seedDatabase(): Promise<void> {
     vatRate: 0.17,
     vatAmount,
     total: subtotal + vatAmount,
-    status: "Sent",
+    status: "Draft",
   });
 
   console.log("✅ Firebase seed complete with DEMO company");

@@ -158,6 +158,15 @@ service cloud.firestore {
       allow create, update: if isActive() && isAdminOf(companyId);
     }
     
+    // ─── Customers ───────────────────────────────────────────────────────────
+    match /businesses/{businessId}/customers/{customerId} {
+      // Company members can read customers
+      allow read: if isActive() && belongsToCompany(businessId);
+      
+      // Only admins can create/update/delete customers
+      allow create, update, delete: if isActive() && isAdminOf(businessId);
+    }
+    
     // ─── Off-Day Requests ────────────────────────────────────────────────────
     match /offDayRequests/{requestId} {
       // Handyman can read their own requests

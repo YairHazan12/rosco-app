@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface Invoice {
   id: string;
   total: number;
-  stripePaymentLink?: string | null;
+  paystackAuthorizationUrl?: string | null;
 }
 
 export default function PayButton({ invoice }: { invoice: Invoice }) {
@@ -16,11 +16,12 @@ export default function PayButton({ invoice }: { invoice: Invoice }) {
   const handlePay = async () => {
     setLoading(true);
 
+    // If invoice already has a Paystack authorization URL, use it
     if (
-      invoice.stripePaymentLink &&
-      invoice.stripePaymentLink.startsWith("https://checkout.stripe.com")
+      invoice.paystackAuthorizationUrl &&
+      invoice.paystackAuthorizationUrl.startsWith("https://checkout.paystack.com")
     ) {
-      window.location.href = invoice.stripePaymentLink;
+      window.location.href = invoice.paystackAuthorizationUrl;
       return;
     }
 
@@ -31,10 +32,10 @@ export default function PayButton({ invoice }: { invoice: Invoice }) {
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
 
-      if (data.paymentLink?.startsWith("https://checkout.stripe.com")) {
+      if (data.paymentLink?.startsWith("https://checkout.paystack.com")) {
         window.location.href = data.paymentLink;
       } else {
-        toast.info("Demo mode — add STRIPE_SECRET_KEY to enable payments");
+        toast.info("Demo mode — add PAYSTACK_SECRET_KEY to enable payments");
         setLoading(false);
       }
     } catch {
