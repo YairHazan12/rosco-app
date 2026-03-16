@@ -121,6 +121,38 @@ export async function completeAdminOnboarding(
     createdAt: new Date().toISOString(),
   };
   
+  // Add bank details if provided
+  if (data.settlementBank && data.accountNumber) {
+    company.settlementBank = data.settlementBank;
+    company.accountNumber = data.accountNumber;
+    
+    // Try to create Paystack subaccount
+    try {
+      const response = await fetch(`${window.location.origin}/api/paystack/subaccounts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: company.name,
+          settlementBank: data.settlementBank,
+          accountNumber: data.accountNumber,
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.subaccountCode) {
+          company.subaccountCode = result.subaccountCode;
+          console.log(`✅ Paystack subaccount created: ${result.subaccountCode}`);
+        }
+      } else {
+        console.warn("⚠️  Paystack subaccount creation failed, continuing without it");
+      }
+    } catch (error) {
+      console.error("❌ Error creating Paystack subaccount:", error);
+      console.warn("⚠️  Continuing without Paystack subaccount");
+    }
+  }
+  
   await setDoc(companyRef, company);
 
   // Update user with admin's personal name (not company name)

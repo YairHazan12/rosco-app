@@ -21,6 +21,10 @@ export interface Company {
     phone?: string;
     teamSize?: string;
   };
+  // Paystack subaccount fields (for platform revenue split)
+  settlementBank?: string;      // Bank code for Paystack (e.g., "044")
+  accountNumber?: string;        // Company bank account number
+  subaccountCode?: string;       // Paystack subaccount code (ACCT_xxx)
   createdAt: string;
 }
 
@@ -45,6 +49,9 @@ export interface OnboardingData {
   phone?: string;
   businessType?: "plumbing" | "electrical" | "general" | "other";
   teamSize?: string;
+  // Bank details for Paystack subaccount (optional during signup, can be added later)
+  settlementBank?: string;
+  accountNumber?: string;
   // Handyman fields
   specialties?: string[];
   companySearch?: string;

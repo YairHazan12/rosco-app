@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getInvoice, updateInvoice } from "@/lib/db";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
+import { adminDb } from "@/lib/firebase-admin";
+import type { Company } from "@/lib/auth-types";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,8 +22,49 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   }
 
   try {
+    // Fetch company to get subaccount code
+    const companyDoc = await adminDb.collection("companies").doc(companyId).get();
+    const company = companyDoc.exists ? (companyDoc.data() as Company) : null;
+    
     // Generate unique reference
     const reference = `ROSCO-${invoice.id}-${Date.now()}`;
+    
+    // Build transaction payload
+    const transactionPayload: any = {
+      email: invoice.clientEmail || "customer@example.com",
+      amount: Math.round(invoice.total * 100), // Convert to kobo (cents)
+      currency: "ZAR",
+      reference,
+      callback_url: `${appUrl}/pay/${invoice.id}/success`,
+      metadata: {
+        invoiceId: invoice.id,
+        companyId: invoice.companyId,
+        clientName: invoice.clientName,
+        handymanName: invoice.handymanName,
+        jobTitle: invoice.jobTitle,
+        custom_fields: [
+          {
+            display_name: "Invoice ID",
+            variable_name: "invoice_id",
+            value: invoice.id,
+          },
+          {
+            display_name: "Job Title",
+            variable_name: "job_title",
+            value: invoice.jobTitle,
+          },
+        ],
+      },
+    };
+    
+    // Add subaccount for split payment if available
+    // Split is configured in the subaccount: 95% to company, 5% to platform
+    if (company?.subaccountCode) {
+      transactionPayload.subaccount = company.subaccountCode;
+      console.log(`💰 Split payment enabled: 95% → ${company.name}, 5% → ROSCO Platform`);
+    } else {
+      console.warn(`⚠️  No subaccount found for company ${companyId}, full payment goes to platform account`);
+    }
     
     // Initialize Paystack transaction
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -30,32 +73,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         Authorization: `Bearer ${paystackKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email: invoice.clientEmail || "customer@example.com",
-        amount: Math.round(invoice.total * 100), // Convert to kobo
-        currency: "ZAR",
-        reference,
-        callback_url: `${appUrl}/pay/${invoice.id}/success`,
-        metadata: {
-          invoiceId: invoice.id,
-          companyId: invoice.companyId,
-          clientName: invoice.clientName,
-          handymanName: invoice.handymanName,
-          jobTitle: invoice.jobTitle,
-          custom_fields: [
-            {
-              display_name: "Invoice ID",
-              variable_name: "invoice_id",
-              value: invoice.id,
-            },
-            {
-              display_name: "Job Title",
-              variable_name: "job_title",
-              value: invoice.jobTitle,
-            },
-          ],
-        },
-      }),
+      body: JSON.stringify(transactionPayload),
     });
 
     if (!response.ok) {

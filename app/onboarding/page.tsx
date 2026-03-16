@@ -28,6 +28,12 @@ export default function OnboardingPage() {
   const [businessType, setBusinessType] = useState<"plumbing" | "electrical" | "general" | "other">("general");
   const [teamSize, setTeamSize] = useState("1-5");
   
+  // Bank details for Paystack subaccount
+  const [settlementBank, setSettlementBank] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [banks, setBanks] = useState<Array<{ name: string; code: string }>>([]);
+  
   // Handyman fields
   const [fullName, setFullName] = useState("");
   const [handymanPhone, setHandymanPhone] = useState("");
@@ -78,6 +84,46 @@ export default function OnboardingPage() {
       }
     }
   }, []);
+  
+  // Auto-fill account holder name when company name changes
+  useEffect(() => {
+    if (companyName && !accountHolderName) {
+      setAccountHolderName(companyName);
+    }
+  }, [companyName, accountHolderName]);
+  
+  // Fetch available banks from Paystack when admin role is selected
+  useEffect(() => {
+    if (role === "admin") {
+      fetch("/api/paystack/subaccounts")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.banks) {
+            setBanks(data.banks);
+          } else {
+            // Fallback to hardcoded major SA banks if API fails
+            setBanks([
+              { name: "ABSA Bank", code: "632005" },
+              { name: "Standard Bank", code: "051001" },
+              { name: "First National Bank (FNB)", code: "250655" },
+              { name: "Nedbank", code: "198765" },
+              { name: "Capitec Bank", code: "470010" },
+            ]);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch banks:", err);
+          // Fallback to hardcoded major SA banks
+          setBanks([
+            { name: "ABSA Bank", code: "632005" },
+            { name: "Standard Bank", code: "051001" },
+            { name: "First National Bank (FNB)", code: "250655" },
+            { name: "Nedbank", code: "198765" },
+            { name: "Capitec Bank", code: "470010" },
+          ]);
+        });
+    }
+  }, [role]);
 
   const handleRoleSelect = (selectedRole: "admin" | "handyman") => {
     setRole(selectedRole);
@@ -99,6 +145,17 @@ export default function OnboardingPage() {
       return;
     }
     
+    // Validate bank details - if one is provided, both must be provided
+    if ((settlementBank && !accountNumber) || (!settlementBank && accountNumber)) {
+      toast.error("Please provide both bank name and account number, or leave both empty");
+      return;
+    }
+    
+    if (accountNumber && accountNumber.length < 8) {
+      toast.error("Account number must be at least 8 digits");
+      return;
+    }
+    
     setLoading(true);
     try {
       const data: OnboardingData = {
@@ -110,9 +167,24 @@ export default function OnboardingPage() {
         teamSize,
       };
       
+      // Include bank details if provided (for Paystack subaccount)
+      if (settlementBank && accountNumber) {
+        data.settlementBank = settlementBank;
+        data.accountNumber = accountNumber;
+      }
+      
       const company = await completeAdminOnboarding(firebaseUser.uid, firebaseUser.email, data);
       await refreshUser();
-      toast.success(`Company created! Your invite code: ${company.companyCode}`);
+      
+      // Show success message with additional info about bank setup
+      if (company.subaccountCode) {
+        toast.success(`Company created! Bank account linked for payments. Invite code: ${company.companyCode}`);
+      } else if (settlementBank && accountNumber) {
+        toast.success(`Company created! (Bank setup pending - you can configure it later). Invite code: ${company.companyCode}`);
+      } else {
+        toast.success(`Company created! Your invite code: ${company.companyCode}`);
+      }
+      
       router.push("/admin");
     } catch (error: any) {
       console.error("Admin onboarding error:", error);
@@ -326,6 +398,99 @@ export default function OnboardingPage() {
                   <option value="11-20">11-20 people</option>
                   <option value="20+">20+ people</option>
                 </select>
+              </div>
+
+              {/* Bank Details Section */}
+              <div className="border-t pt-4 mt-2">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                    Bank Details (Optional)
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Provide your bank details to receive 95% of customer payments directly. 
+                    ROSCO keeps 5% as a platform fee. You can add this later in settings.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Name
+                      <span className="ml-1 text-xs text-gray-500 font-normal">
+                        (for payment splits)
+                      </span>
+                    </label>
+                    <select
+                      value={settlementBank}
+                      onChange={(e) => setSettlementBank(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={banks.length === 0}
+                    >
+                      <option value="">
+                        {banks.length === 0 ? "Loading banks..." : "Select your bank..."}
+                      </option>
+                      {banks.map((bank) => (
+                        <option key={bank.code} value={bank.code}>
+                          {bank.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Choose the bank where you want to receive payments
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      value={accountNumber}
+                      onChange={(e) => {
+                        // Only allow digits
+                        const value = e.target.value.replace(/\D/g, "");
+                        setAccountNumber(value);
+                      }}
+                      pattern="[0-9]*"
+                      inputMode="numeric"
+                      maxLength={15}
+                      placeholder="1234567890"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter your business bank account number (numbers only)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      placeholder="Company name or business owner"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      ℹ️ Auto-filled with company name - should match your bank records
+                    </p>
+                  </div>
+
+                  {settlementBank && accountNumber && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-600 mt-0.5">✓</span>
+                        <div className="text-xs text-green-800">
+                          <strong>Payment split configured:</strong> You'll receive 95% of customer payments, 
+                          ROSCO keeps 5% as platform fee.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <button
