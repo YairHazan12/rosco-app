@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       jobTitle: job.title,
       jobDate: job.date,
       jobLocation: job.location,
-      handymanName: job.handymanName,
+      handymanName: job.handymanName ?? "",
       items: body.items,
       subtotal: body.subtotal,
       vatEnabled: body.vatEnabled,
