@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ExternalLink, Send, CheckCircle, Copy, Loader2 } from "lucide-react";
+import { ExternalLink, Send, CheckCircle, Copy, Loader2, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 
 interface Invoice {
   id: string;
@@ -16,6 +17,24 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [payLink, setPayLink] = useState(invoice.paystackAuthorizationUrl);
+  const [hasSubaccount, setHasSubaccount] = useState<boolean | null>(null);
+
+  // Check if company has subaccount setup
+  useEffect(() => {
+    async function checkSubaccount() {
+      try {
+        const res = await fetch("/api/companies/current");
+        if (res.ok) {
+          const data = await res.json();
+          setHasSubaccount(!!data.company?.subaccountCode);
+        }
+      } catch (error) {
+        console.error("Failed to check subaccount:", error);
+      }
+    }
+
+    checkSubaccount();
+  }, []);
 
   const updateStatus = async (status: string) => {
     setLoading(true);
@@ -36,6 +55,14 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   };
 
   const generatePaymentLink = async () => {
+    // Show warning if no subaccount
+    if (hasSubaccount === false) {
+      toast.error(
+        "⚠️ Bank details not configured. Payments will go to platform account. Set up in Settings.",
+        { duration: 5000 }
+      );
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/payment-link`, {
@@ -62,6 +89,36 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   return (
     <div>
       <p className="ios-section-header mb-2">Actions</p>
+      
+      {/* Warning if bank details not set up */}
+      {hasSubaccount === false && (
+        <div 
+          className="mb-3 p-3 rounded-[12px] flex items-start gap-2.5"
+          style={{ background: "rgba(255, 149, 0, 0.08)", border: "1px solid rgba(255, 149, 0, 0.2)" }}
+        >
+          <AlertTriangle 
+            className="w-4 h-4 flex-shrink-0 mt-0.5" 
+            style={{ color: "var(--ios-orange)" }} 
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium mb-1" style={{ color: "var(--label-primary)" }}>
+              ⚠️ Bank Details Not Configured
+            </p>
+            <p className="text-[12px] leading-relaxed mb-2" style={{ color: "var(--label-secondary)" }}>
+              Payments will not be split. Add your bank details to receive 95% of payments directly.
+            </p>
+            <Link href="/admin/settings">
+              <span 
+                className="text-[12px] font-semibold"
+                style={{ color: "var(--ios-orange)" }}
+              >
+                Set Up Now →
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         {/* Primary actions */}
         {(invoice.status === "Sent" || invoice.status === "Outstanding") && (

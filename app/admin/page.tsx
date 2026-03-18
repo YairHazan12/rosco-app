@@ -13,6 +13,7 @@ import UpcomingJobs from "./_components/upcoming-jobs";
 import TeamUtilization from "./_components/team-utilization";
 import OutstandingInvoices from "./_components/outstanding-invoices";
 import RecentJobs from "./_components/recent-jobs";
+import BankSetupBanner from "./_components/bank-setup-banner";
 
 // Skeletons
 import {
@@ -30,6 +31,9 @@ export const dynamic = "force-dynamic";
 export default function AdminDashboard() {
   return (
     <div className="space-y-6">
+      {/* ── Bank Setup Banner (if not configured) ───── */}
+      <BankSetupBanner />
+
       {/* ── Page Header ─────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>

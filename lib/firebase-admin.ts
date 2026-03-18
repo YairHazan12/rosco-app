@@ -49,3 +49,4 @@ try {
 }
 
 export const db = _db;
+export const adminDb = { collection: (name: string) => _db.collection(name) };

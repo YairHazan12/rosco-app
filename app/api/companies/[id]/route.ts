@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { adminDb } from "@/lib/firebase-admin";
+import { db as adminDb } from "@/lib/firebase-admin";
 import type { Company } from "@/lib/auth-types";
 
 /**
@@ -9,10 +8,10 @@ import type { Company } from "@/lib/auth-types";
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const companyId = params.id;
+    const { id: companyId } = await params;
     const updates = await req.json();
     
     // Get current company data
@@ -105,10 +104,10 @@ export async function PUT(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const companyId = params.id;
+    const { id: companyId } = await params;
     
     const companyRef = adminDb.collection("companies").doc(companyId);
     const companyDoc = await companyRef.get();

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getInvoice, updateInvoice } from "@/lib/db";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
-import { adminDb } from "@/lib/firebase-admin";
+import { db as adminDb } from "@/lib/firebase-admin";
 import type { Company } from "@/lib/auth-types";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
