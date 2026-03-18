@@ -1,196 +1,139 @@
-# Bank Details Collection - Implementation Summary
+# Bank Details Prompt Implementation
 
 ## Overview
-Updated the admin signup flow in ROSCO to collect bank details during registration and automatically create Paystack subaccounts for payment splitting (95% company, 5% ROSCO platform).
+This implementation adds a bank details collection flow for existing ROSCO admin accounts that were created before the Paystack subaccount feature was added.
 
 ## Changes Made
 
-### 1. Frontend: `/app/onboarding/page.tsx`
+### 1. Dashboard Banner Alert (`app/admin/_components/bank-setup-banner.tsx`)
+- **Purpose**: Prominently alerts admins who haven't set up bank details
+- **Location**: Top of admin dashboard
+- **Behavior**: 
+  - Fetches company data from `/api/companies/current`
+  - Shows banner only if `subaccountCode` is missing
+  - Provides CTA button linking to Settings page
+- **Message**: "Complete your payment setup to receive 95% of customer payments directly"
 
-#### Added State Variables
-```typescript
-// Bank details for Paystack subaccount
-const [settlementBank, setSettlementBank] = useState("");
-const [accountNumber, setAccountNumber] = useState("");
-const [accountHolderName, setAccountHolderName] = useState("");
-const [banks, setBanks] = useState<Array<{ name: string; code: string }>>([]);
-```
+### 2. Settings Page - Bank Details Section (`app/admin/settings/_components/BankDetailsForm.tsx`)
+- **Purpose**: Allows admins to add bank details after account creation
+- **Features**:
+  - **Bank selection dropdown**: Fetches banks from Paystack API (with fallback to major SA banks)
+  - **Account number field**: Numeric input with validation (min 8 digits)
+  - **Account holder name**: Pre-filled with company name (read-only)
+  - **Status display**: Shows different UI when bank details are already configured
+- **API Integration**: 
+  - Uses existing `PUT /api/companies/{id}` endpoint
+  - Automatically creates Paystack subaccount when bank details are saved
+  - Shows success message with confirmation
 
-#### Added Effects
+### 3. Payment Link Warning (`app/admin/invoices/_components/InvoiceActions.tsx`)
+- **Purpose**: Warns admins when generating payment links without bank setup
+- **Implementation**:
+  - Checks company `subaccountCode` on component mount
+  - Shows warning banner above invoice actions if not configured
+  - Displays toast notification when "Generate Payment Link" is clicked without bank setup
+- **Warning Message**: "⚠️ You haven't set up your bank details yet. Payments will not be split. Add your details in Settings."
 
-**Auto-fill Account Holder Name:**
-- When company name changes, automatically populates account holder name field
-- User can override if needed
+### 4. API Endpoint (`app/api/companies/current/route.ts`)
+- **Purpose**: Provides current company data to client components
+- **Endpoint**: `GET /api/companies/current`
+- **Response**: Returns company object including `subaccountCode`, `settlementBank`, `accountNumber`
+- **Security**: Uses server-side cookie authentication (`getCompanyIdFromCookie`)
 
-**Fetch Banks from Paystack:**
-- Dynamically loads available banks from Paystack API when admin role is selected
-- Falls back to hardcoded major South African banks if API fails:
-  - ABSA Bank (632005)
-  - Standard Bank (051001)
-  - First National Bank/FNB (250655)
-  - Nedbank (198765)
-  - Capitec Bank (470010)
+### 5. Firebase Admin Helper (`lib/firebase-admin.ts`)
+- **Purpose**: Export `adminDb` helper for consistency with existing codebase
+- **Change**: Added `adminDb` export wrapping Firestore collection access
 
-#### Updated Form Submission
+## User Flow
 
-**Validation:**
-- If one bank field is provided, both bank and account number must be provided
-- Account number must be at least 8 digits
-- Only numeric input allowed for account number
+### For Existing Admins (No Bank Details)
+1. **Login** → See dashboard banner: "Complete your payment setup"
+2. **Click "Set Up Now"** → Navigate to Settings page
+3. **Fill bank form**:
+   - Select bank from dropdown
+   - Enter account number
+   - Review pre-filled account holder name
+4. **Click "Save Bank Details"** → Paystack subaccount created automatically
+5. **Success** → Banner disappears, settings page shows "Payment Setup Complete" status
 
-**Payload:**
-- Includes bank details in `OnboardingData` if provided
-- Backend already handles Paystack subaccount creation
+### When Generating Payment Links (Without Bank Setup)
+1. **Navigate to invoice detail page**
+2. **See warning banner**: "⚠️ Bank Details Not Configured"
+3. **Click "Generate Payment Link"** → Toast warning displays
+4. **Payment link still generated** (but goes to platform account, not company account)
 
-**Success Messages:**
-- Different toast messages based on outcome:
-  - "Bank account linked for payments" if subaccount created successfully
-  - "Bank setup pending" if subaccount creation failed (signup still succeeds)
-  - Default message if no bank details provided
+## Technical Details
 
-#### Added UI Section
+### Paystack Subaccount Creation
+- Triggered automatically when bank details are saved via `PUT /api/companies/{id}`
+- Creates subaccount with 95/5 split (95% to company, 5% to ROSCO platform)
+- Stores `subaccountCode` in company document
 
-New "Bank Details (Optional)" section with:
+### Form Validation
+- Bank name: Required (dropdown selection)
+- Account number: Required, min 8 digits, numeric only
+- Account holder name: Auto-filled, read-only
 
-1. **Explanatory Header**
-   - Clear explanation that bank details enable 95/5 payment split
-   - Note that details can be added later in settings
+### Error Handling
+- Network errors: Shows toast error message
+- Paystack API failures: Returns 400/500 with error details
+- Graceful fallback: Uses hardcoded SA banks if Paystack banks API fails
 
-2. **Bank Name Dropdown**
-   - Dynamically populated from Paystack API
-   - Disabled while loading
-   - Tooltip explaining purpose
+## Testing Recommendations
 
-3. **Account Number Field**
-   - Numeric input only (pattern validation)
-   - Max 15 digits
-   - Clear placeholder and help text
+### Manual Testing
+1. **Test with existing account**:
+   - Manually remove `subaccountCode` from a company document in Firestore
+   - Login as admin → Should see dashboard banner
+   - Navigate to Settings → Should see bank details form
+   - Fill and submit → Verify subaccount created in Paystack dashboard
 
-4. **Account Holder Name Field**
-   - Auto-filled with company name
-   - Read-only appearance (bg-gray-50)
-   - Tooltip explaining it should match bank records
+2. **Test payment link generation**:
+   - Without bank setup: Verify warning banner and toast notification appear
+   - With bank setup: Verify no warning, payment link includes subaccount split
 
-5. **Confirmation Message**
-   - Green success box appears when both fields filled
-   - Confirms payment split configuration
+3. **Test edge cases**:
+   - Invalid account numbers (< 8 digits)
+   - Network failures during save
+   - Paystack API errors
 
-## Backend (No Changes Required)
-
-The backend was already set up correctly:
-
-### `/lib/auth-helpers.ts` - `completeAdminOnboarding()`
-- Already accepts `settlementBank` and `accountNumber` in `OnboardingData`
-- Calls `/api/paystack/subaccounts` to create subaccount
-- Stores `subaccountCode` in company record
-- Gracefully handles errors (allows signup to succeed even if subaccount creation fails)
-
-### `/lib/auth-types.ts` - `OnboardingData` Interface
-- Already includes optional `settlementBank` and `accountNumber` fields
-
-### `/lib/paystack.ts`
-- `createPaystackSubaccount()` - Creates subaccount with 95% company split
-- `getPaystackBanks()` - Fetches available banks for South African Rand (ZAR)
-
-### `/app/api/paystack/subaccounts/route.ts`
-- POST endpoint for creating subaccounts
-- GET endpoint for fetching available banks
-
-### Firestore Schema - `companies` Collection
-```typescript
+### Database Check
+```javascript
+// Check company document structure
 {
-  settlementBank?: string;      // Bank code (e.g., "632005")
-  accountNumber?: string;        // Company bank account number
-  subaccountCode?: string;       // Paystack subaccount code (ACCT_xxx)
+  id: "company123",
+  name: "My Company",
+  settlementBank: "051001",  // Bank code
+  accountNumber: "1234567890",
+  subaccountCode: "ACCT_xxx", // Added after bank setup
+  ...
 }
 ```
 
-## User Experience
+## Files Modified
 
-### Happy Path
-1. User selects "Company Admin" role
-2. Fills in required company information
-3. Optionally provides bank details:
-   - Selects bank from dropdown
-   - Enters account number (numeric only)
-   - Reviews auto-filled account holder name
-4. Sees confirmation message about 95/5 split
-5. Submits form
-6. Paystack subaccount created in background
-7. Success message confirms bank setup
-8. Redirected to admin dashboard
+### New Files
+- `app/admin/_components/bank-setup-banner.tsx`
+- `app/admin/settings/_components/BankDetailsForm.tsx`
+- `app/api/companies/current/route.ts`
 
-### Error Handling
-- If Paystack API fails, signup still succeeds
-- User sees warning that bank setup is pending
-- Can configure bank details later in settings
-- All validation errors shown clearly with toast messages
+### Modified Files
+- `app/admin/page.tsx` (added banner import and component)
+- `app/admin/settings/page.tsx` (added bank details form)
+- `app/admin/invoices/_components/InvoiceActions.tsx` (added warning)
+- `lib/firebase-admin.ts` (exported adminDb helper)
 
-## Testing Checklist
+## Notes
 
-✅ Dev server starts without errors
-✅ Page compiles successfully in Next.js
-✅ TypeScript types are correct
-✅ Form renders with new bank fields
-✅ Bank dropdown populated dynamically
-✅ Account number accepts only numeric input
-✅ Account holder name auto-fills
-✅ Validation works (both fields required together)
-✅ Success/error messages display appropriately
-
-### Manual Testing Required
-
-- [ ] Sign up with valid bank details
-- [ ] Verify Paystack subaccount created
-- [ ] Check company record has `subaccountCode`
-- [ ] Test signup without bank details (should still work)
-- [ ] Test error case (invalid bank/account)
-- [ ] Verify graceful fallback if Paystack API fails
-
-## Security Notes
-
-- ✅ All Paystack API calls are server-side only
-- ✅ Secret key never exposed to client
-- ✅ Bank details stored securely in Firestore
-- ✅ Validation prevents injection attacks (numeric only for account numbers)
+- **Backward Compatible**: Existing admins with bank details see no changes
+- **Non-Blocking**: Admins can still generate payment links without bank setup (with warning)
+- **Reuses Existing Logic**: Uses the same Paystack subaccount creation flow as signup
+- **Mobile-First UI**: iOS-style components matching existing ROSCO design system
+- **Production Ready**: Includes error handling, loading states, and validation
 
 ## Future Enhancements
 
-1. **Settings Page Update**
-   - Allow admins to add/update bank details after signup
-   - Show current bank setup status
-   - Retry subaccount creation if it failed during signup
-
-2. **Verification Flow**
-   - Add account verification step (Paystack can verify account ownership)
-   - Show verification status to admin
-
-3. **Multi-Bank Support**
-   - Allow multiple bank accounts per company
-   - Let admin choose primary settlement account
-
-4. **Bank Statement Upload**
-   - Optional bank statement upload for faster verification
-   - Auto-extract account details from statement
-
-## Dependencies
-
-No new dependencies added. Uses existing:
-- `sonner` for toast notifications
-- `@/components/ui/input` and `@/components/ui/button`
-- Next.js 16.1.6
-- Firebase/Firestore
-
-## Deployment Notes
-
-Before deploying:
-1. ✅ Ensure `PAYSTACK_SECRET_KEY` is set in production environment
-2. ✅ Test Paystack integration in staging environment first
-3. ✅ Verify Firestore rules allow writing bank details (admin only)
-4. ✅ Monitor Paystack API rate limits
-
----
-
-**Implementation Date:** March 12, 2026  
-**Developer:** OpenClaw Subagent  
-**Status:** ✅ Complete and tested
+1. **Email Notifications**: Remind admins to set up bank details after X days
+2. **Bank Verification**: Add account verification step (Paystack supports this)
+3. **Edit Bank Details**: Allow admins to update bank details (requires new Paystack subaccount)
+4. **Analytics**: Track how many admins complete bank setup after seeing banner
