@@ -117,6 +117,3 @@ export async function getPaystackBanks(): Promise<Array<{ name: string; code: st
     return [];
   }
 }
-return [];
-  }
-}

@@ -1,4 +1,4 @@
-import { getInvoice } from "@/lib/db";
+import { getInvoiceById } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
@@ -16,7 +16,7 @@ export default async function PaymentSuccessPage({
   const { invoiceId } = await params;
   const { reference, trxref } = await searchParams;
 
-  const invoice = await getInvoice(invoiceId);
+  const invoice = await getInvoiceById(invoiceId);
   if (!invoice) notFound();
 
   // Paystack uses either 'reference' or 'trxref' in callback

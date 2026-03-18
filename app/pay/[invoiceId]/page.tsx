@@ -1,4 +1,4 @@
-import { getInvoice } from "@/lib/db";
+import { getInvoiceById } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Wrench, MapPin, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
@@ -14,7 +14,7 @@ export default async function CustomerPayPage({
   const { invoiceId } = await params;
   if (invoiceId === "demo") return <DemoPage />;
 
-  const invoice = await getInvoice(invoiceId);
+  const invoice = await getInvoiceById(invoiceId);
   if (!invoice) notFound();
 
   const isPaid = invoice.status === "Paid";

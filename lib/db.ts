@@ -265,6 +265,17 @@ export async function getInvoice(id: string, companyId: string = "DEMO"): Promis
   return invoices.find(i => i.id === id) ?? null;
 }
 
+/**
+ * Direct Firestore lookup of an invoice by ID, without knowing companyId.
+ * Used by public pages (/pay/[invoiceId]) that only have the invoice ID.
+ * Cost: 1 Firestore read (direct doc fetch, not cached).
+ */
+export async function getInvoiceById(id: string): Promise<Invoice | null> {
+  const doc = await db.collection("invoices").doc(id).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() } as Invoice;
+}
+
 export async function getHandyman(id: string, companyId: string = "DEMO"): Promise<Handyman | null> {
   const handymen = await getHandymen(companyId);
   return handymen.find(h => h.id === id) ?? null;
