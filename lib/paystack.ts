@@ -62,7 +62,7 @@ export async function createPaystackSubaccount(
       business_name: params.businessName,
       settlement_bank: params.settlementBank,
       account_number: params.accountNumber,
-      percentage_charge: 95, // Company receives 95%, platform keeps 5%
+      percentage_charge: 5, // Platform (ROSCO) keeps 5%, company receives 95%
       description: params.description || `ROSCO Platform - ${params.businessName}`,
     }),
   });
@@ -115,5 +115,8 @@ export async function getPaystackBanks(): Promise<Array<{ name: string; code: st
   } catch (error) {
     console.error("Failed to fetch banks:", error);
     return [];
+  }
+}
+return [];
   }
 }
