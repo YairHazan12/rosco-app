@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { CalendarDays, Briefcase, Settings, UserCircle } from "lucide-react";
+import { CalendarDays, Briefcase, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PWAPrompt from "@/components/pwa-prompt";
 // notification prompt removed - was blocking mobile UI
@@ -12,10 +12,9 @@ import { useAuth } from "@/lib/auth-context";
 import LocationSetupPrompt from "@/components/location-setup-prompt";
 
 const navItems = [
-  { href: "/handyman",          label: "Schedule", icon: CalendarDays },
-  { href: "/handyman/jobs",     label: "Jobs",     icon: Briefcase   },
-  { href: "/handyman/settings", label: "Settings", icon: Settings    },
-  { href: "/handyman/profile",  label: "Profile",  icon: UserCircle  },
+  { href: "/handyman",         label: "Schedule", icon: CalendarDays },
+  { href: "/handyman/jobs",    label: "Jobs",     icon: Briefcase   },
+  { href: "/handyman/profile", label: "Profile",  icon: UserCircle  },
 ];
 
 export default function HandymanLayout({ children }: { children: React.ReactNode }) {
