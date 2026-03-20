@@ -60,7 +60,7 @@ export default function ErrorBoundary({
               onClick={reset}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[14px] font-semibold text-[15px] text-white transition-all hover:opacity-90"
               style={{
-                background: "linear-gradient(135deg, #14B8A6 0%, #0F9C8C 100%)",
+                background: "linear-gradient(135deg, #5DD88A 0%, #4ECB71 100%)",
               }}
             >
               <RefreshCw className="w-4 h-4" />
@@ -71,8 +71,8 @@ export default function ErrorBoundary({
               <button
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[14px] font-semibold text-[15px] border-2 transition-all hover:bg-white/50"
                 style={{
-                  borderColor: "#14B8A6",
-                  color: "#0F9C8C",
+                  borderColor: "#5DD88A",
+                  color: "#4ECB71",
                   background: "rgba(255, 255, 255, 0.6)",
                 }}
               >

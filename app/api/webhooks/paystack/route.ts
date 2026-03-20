@@ -40,12 +40,26 @@ export async function POST(req: NextRequest) {
       const invoiceId = metadata?.invoiceId;
       const companyId = metadata?.companyId || "DEMO";
 
+      console.log(`[💰 Webhook] charge.success received:`, {
+        invoiceId,
+        companyId,
+        reference,
+        amount,
+        fullMetadata: metadata,
+      });
+
       if (!invoiceId) {
-        console.error("No invoice ID in webhook metadata");
+        console.error("❌ No invoice ID in webhook metadata");
         return NextResponse.json({ error: "No invoice ID" }, { status: 400 });
       }
 
+      if (!companyId || companyId === "DEMO") {
+        console.warn(`⚠️  CompanyId missing or defaulted to DEMO. Metadata:`, metadata);
+      }
+
       try {
+        console.log(`[🔥 Webhook → DB] Updating invoice ${invoiceId} for company ${companyId}`);
+        
         await updateInvoice(
           invoiceId,
           {
@@ -56,10 +70,12 @@ export async function POST(req: NextRequest) {
           companyId
         );
 
-        console.log(`Invoice ${invoiceId} marked as paid (reference: ${reference})`);
+        console.log(`✅ Invoice ${invoiceId} marked as paid (company: ${companyId}, reference: ${reference})`);
+        console.log(`[♻️ Webhook] Cache should be invalidated for "invoices-${companyId}"`);
+        
         return NextResponse.json({ success: true });
       } catch (error) {
-        console.error("Error updating invoice:", error);
+        console.error("❌ Error updating invoice:", error);
         return NextResponse.json(
           { error: "Failed to update invoice" },
           { status: 500 }

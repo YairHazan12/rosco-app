@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Wrench, Calendar, FileText, Users } from "lucide-react";
@@ -52,23 +53,7 @@ export default function Home() {
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
           {/* Logo */}
           <div className="relative mb-6">
-            <div
-              className="w-[88px] h-[88px] rounded-[22px] flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 shadow-xl"
-              style={{
-                boxShadow:
-                  "0 12px 32px rgba(15, 156, 140, 0.25), 0 4px 12px rgba(15, 156, 140, 0.15)",
-              }}
-            >
-              <Wrench className="w-11 h-11 text-white" strokeWidth={2.5} />
-            </div>
-            {/* Shine overlay */}
-            <div
-              className="absolute inset-0 rounded-[22px] pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
-              }}
-            />
+            <Image src="/logo.png" alt="ROSCO" width={88} height={88} className="rounded-[22px] shadow-xl" />
           </div>
 
           <h1
@@ -99,7 +84,7 @@ export default function Home() {
               <div
                 className="rounded-[18px] p-5 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all duration-200"
                 style={{
-                  background: "linear-gradient(135deg, #14B8A6 0%, #0F9C8C 100%)",
+                  background: "linear-gradient(135deg, #5DD88A 0%, #4ECB71 100%)",
                 }}
               >
                 <Wrench className="w-6 h-6 text-white" strokeWidth={2.5} />
@@ -114,13 +99,13 @@ export default function Home() {
               <div
                 className="rounded-[18px] p-5 flex items-center justify-center border-2 hover:bg-white/50 transition-all duration-200"
                 style={{
-                  borderColor: "#14B8A6",
+                  borderColor: "#5DD88A",
                   background: "rgba(255, 255, 255, 0.6)",
                 }}
               >
                 <span
                   className="font-semibold text-[17px] tracking-tight"
-                  style={{ color: "#0F9C8C" }}
+                  style={{ color: "#4ECB71" }}
                 >
                   Sign Up / Sign In
                 </span>
@@ -135,7 +120,7 @@ export default function Home() {
             <div className="flex flex-col items-center text-center">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                style={{ background: "#E6F7F5" }}
+                style={{ background: "#EDFAF2" }}
               >
                 <Calendar className="w-6 h-6 text-teal-600" strokeWidth={2} />
               </div>
@@ -147,7 +132,7 @@ export default function Home() {
             <div className="flex flex-col items-center text-center">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                style={{ background: "#E6F7F5" }}
+                style={{ background: "#EDFAF2" }}
               >
                 <FileText className="w-6 h-6 text-teal-600" strokeWidth={2} />
               </div>
@@ -159,7 +144,7 @@ export default function Home() {
             <div className="flex flex-col items-center text-center">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                style={{ background: "#E6F7F5" }}
+                style={{ background: "#EDFAF2" }}
               >
                 <Users className="w-6 h-6 text-teal-600" strokeWidth={2} />
               </div>
@@ -173,7 +158,7 @@ export default function Home() {
           <Link
             href="/marketing"
             className="block text-center text-[13px] font-medium py-1 transition-colors duration-200 hover:opacity-80"
-            style={{ color: "#0F9C8C" }}
+            style={{ color: "#4ECB71" }}
           >
             Learn more about ROSCO →
           </Link>

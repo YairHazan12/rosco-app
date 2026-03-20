@@ -1,7 +1,7 @@
 import { getInvoiceById } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Wrench } from "lucide-react";
+import Image from "next/image";
 import PaymentVerifier from "./_components/PaymentVerifier";
 
 export const dynamic = "force-dynamic";
@@ -62,12 +62,7 @@ export default async function PaymentSuccessPage({
 
           {/* Brand */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--brand)" }}
-            >
-              <Wrench className="w-4 h-4 text-white" />
-            </div>
+            <Image src="/logo.png" alt="ROSCO" width={28} height={28} className="rounded-lg" />
             <span
               className="font-semibold text-[17px]"
               style={{ color: "var(--label-primary)" }}

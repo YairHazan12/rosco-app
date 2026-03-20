@@ -1,3 +1,10 @@
+export interface UserPreferences {
+  timezone: string;
+  language: "en" | "he" | "ru" | "ar";
+  currency: "ZAR" | "USD" | "EUR" | "GBP" | "ILS";
+  countryCode?: string;
+}
+
 export interface User {
   uid: string;
   email: string | null;
@@ -6,6 +13,7 @@ export interface User {
   companyId: string | null;
   onboardingComplete: boolean;
   status: "active" | "pending" | "inactive";
+  preferences?: UserPreferences; // Location-based preferences
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +52,8 @@ export interface OnboardingData {
   role: "admin" | "handyman";
   // Common fields
   fullName: string; // Required for both admin and handyman (minimum 2 characters)
+  // Location-based preferences (detected automatically)
+  preferences?: UserPreferences;
   // Admin fields
   companyName?: string;
   phone?: string;

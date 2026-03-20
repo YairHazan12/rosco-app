@@ -229,7 +229,7 @@ export default function JoinTeamPage() {
               style={{
                 background: "var(--brand)",
                 color: "white",
-                boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+                boxShadow: "0 4px 12px rgba(78, 203, 113, 0.3)",
               }}
             >
               <Download className="w-5 h-5" strokeWidth={2.5} />
@@ -335,7 +335,7 @@ export default function JoinTeamPage() {
             style={{
               background: "var(--brand)",
               color: "white",
-              boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+              boxShadow: "0 4px 12px rgba(78, 203, 113, 0.3)",
             }}
           >
             Sign In / Sign Up
@@ -372,7 +372,7 @@ export default function JoinTeamPage() {
             style={{
               background: "var(--brand)",
               color: "white",
-              boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+              boxShadow: "0 4px 12px rgba(78, 203, 113, 0.3)",
             }}
           >
             Complete Profile
@@ -441,7 +441,7 @@ export default function JoinTeamPage() {
             style={{
               background: "var(--brand)",
               color: "white",
-              boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+              boxShadow: "0 4px 12px rgba(78, 203, 113, 0.3)",
             }}
           >
             Go to Dashboard
@@ -498,7 +498,7 @@ export default function JoinTeamPage() {
             style={{
               background: "var(--brand)",
               color: "white",
-              boxShadow: "0 4px 12px rgba(15, 156, 140, 0.3)",
+              boxShadow: "0 4px 12px rgba(78, 203, 113, 0.3)",
             }}
           >
             Go to Home

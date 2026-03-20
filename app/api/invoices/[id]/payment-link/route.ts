@@ -57,6 +57,14 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       },
     };
     
+    console.log(`[💳 Payment Init] Creating Paystack transaction:`, {
+      invoiceId: invoice.id,
+      companyId: invoice.companyId,
+      reference,
+      amount: transactionPayload.amount,
+      currency: transactionPayload.currency,
+    });
+    
     // Add subaccount for split payment if available
     // Split is configured in the subaccount: 95% to company, 5% to platform
     if (company?.subaccountCode) {
