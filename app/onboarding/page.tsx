@@ -10,16 +10,27 @@ import {
   createJoinRequest,
   completeHandymanOnboarding,
 } from "@/lib/auth-helpers";
-import type { OnboardingData, Company } from "@/lib/auth-types";
+import type { OnboardingData, Company, UserPreferences } from "@/lib/auth-types";
 import { toast } from "sonner";
+import LocationPermissionPrompt from "@/components/location-permission-prompt";
+import {
+  detectLocationPreferences,
+  getDefaultPreferences,
+  isGeolocationAvailable,
+  type LocationPreferences,
+} from "@/lib/location-utils";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, firebaseUser, loading: authLoading, refreshUser } = useAuth();
   
-  const [step, setStep] = useState<"role" | "form">("role");
+  const [step, setStep] = useState<"role" | "location" | "form">("role");
   const [role, setRole] = useState<"admin" | "handyman" | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Location preferences (detected or defaults)
+  const [detectedPreferences, setDetectedPreferences] = useState<LocationPreferences | null>(null);
+  const [locationDetecting, setLocationDetecting] = useState(false);
   
   // Admin fields
   const [adminFullName, setAdminFullName] = useState("");
@@ -77,7 +88,7 @@ export default function OnboardingPage() {
         setPendingInvite(pending);
         // Auto-select handyman role if there's a pending invite
         setRole("handyman");
-        setStep("form");
+        setStep("location"); // Go to location step first
         // Pre-fill the code
         setSearchMethod("code");
         setCompanyCode(pending);
@@ -127,7 +138,48 @@ export default function OnboardingPage() {
 
   const handleRoleSelect = (selectedRole: "admin" | "handyman") => {
     setRole(selectedRole);
+    // Check if geolocation is available
+    if (isGeolocationAvailable()) {
+      setStep("location");
+    } else {
+      // Skip location step if not available, use defaults
+      setDetectedPreferences(getDefaultPreferences());
+      setStep("form");
+    }
+  };
+
+  const handleLocationAllow = async () => {
+    setLocationDetecting(true);
+    try {
+      const prefs = await detectLocationPreferences(true);
+      setDetectedPreferences(prefs);
+      toast.success("Preferences detected automatically!");
+      setStep("form");
+    } catch (error) {
+      console.error("Location detection failed:", error);
+      setDetectedPreferences(getDefaultPreferences());
+      toast.info("Using default preferences. You can change them in settings.");
+      setStep("form");
+    } finally {
+      setLocationDetecting(false);
+    }
+  };
+
+  const handleLocationSkip = () => {
+    setDetectedPreferences(getDefaultPreferences());
     setStep("form");
+  };
+
+  // Convert detected preferences to UserPreferences type for storage
+  const getUserPreferences = (): UserPreferences | undefined => {
+    if (!detectedPreferences) return undefined;
+    
+    return {
+      timezone: detectedPreferences.timezone,
+      language: detectedPreferences.language as UserPreferences["language"],
+      currency: detectedPreferences.currency as UserPreferences["currency"],
+      countryCode: detectedPreferences.countryCode,
+    };
   };
 
   const handleAdminSubmit = async (e: React.FormEvent) => {
@@ -165,6 +217,7 @@ export default function OnboardingPage() {
         phone,
         businessType,
         teamSize,
+        preferences: getUserPreferences(),
       };
       
       // Include bank details if provided (for Paystack subaccount)
@@ -224,13 +277,14 @@ export default function OnboardingPage() {
         return;
       }
       
-      // Create join request
+      // Create join request with preferences
       await createJoinRequest(
         firebaseUser.uid,
         fullName,
         firebaseUser.email,
         company.id,
-        company.name
+        company.name,
+        getUserPreferences()
       );
       
       // Clear pending invite if any
@@ -310,7 +364,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step === "form" && role === "admin" && (
+        {step === "location" && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <button
               onClick={() => setStep("role")}
@@ -319,7 +373,62 @@ export default function OnboardingPage() {
               ← Back to role selection
             </button>
 
+            <LocationPermissionPrompt
+              inline
+              onAllow={handleLocationAllow}
+              onSkip={handleLocationSkip}
+            />
+            
+            {locationDetecting && (
+              <div className="mt-4 text-center">
+                <div className="inline-flex items-center gap-2 text-gray-600">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Detecting your location...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === "form" && role === "admin" && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <button
+              onClick={() => setStep("location")}
+              className="text-sm text-gray-600 hover:text-gray-900 mb-6"
+            >
+              ← Back
+            </button>
+
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h2>
+            
+            {/* Show detected preferences summary */}
+            {detectedPreferences && (
+              <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <p className="text-sm font-medium text-blue-900 mb-2">📍 Detected preferences</p>
+                <div className="flex flex-wrap gap-3 text-xs text-blue-700">
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    🌍 {detectedPreferences.timezone}
+                  </span>
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    💬 {detectedPreferences.language.toUpperCase()}
+                  </span>
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    💰 {detectedPreferences.currency}
+                  </span>
+                  {detectedPreferences.countryCode && (
+                    <span className="px-2 py-1 bg-blue-100 rounded-full">
+                      🏳️ {detectedPreferences.countryCode}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  You can change these anytime in Settings
+                </p>
+              </div>
+            )}
             
             <form onSubmit={handleAdminSubmit} className="space-y-4">
               <div>
@@ -507,13 +616,39 @@ export default function OnboardingPage() {
         {step === "form" && role === "handyman" && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <button
-              onClick={() => setStep("role")}
+              onClick={() => setStep("location")}
               className="text-sm text-gray-600 hover:text-gray-900 mb-6"
             >
-              ← Back to role selection
+              ← Back
             </button>
 
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Handyman Profile</h2>
+            
+            {/* Show detected preferences summary */}
+            {detectedPreferences && (
+              <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <p className="text-sm font-medium text-blue-900 mb-2">📍 Detected preferences</p>
+                <div className="flex flex-wrap gap-3 text-xs text-blue-700">
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    🌍 {detectedPreferences.timezone}
+                  </span>
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    💬 {detectedPreferences.language.toUpperCase()}
+                  </span>
+                  <span className="px-2 py-1 bg-blue-100 rounded-full">
+                    💰 {detectedPreferences.currency}
+                  </span>
+                  {detectedPreferences.countryCode && (
+                    <span className="px-2 py-1 bg-blue-100 rounded-full">
+                      🏳️ {detectedPreferences.countryCode}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  You can change these anytime in Settings
+                </p>
+              </div>
+            )}
             
             <form onSubmit={handleHandymanSubmit} className="space-y-4">
               <div>

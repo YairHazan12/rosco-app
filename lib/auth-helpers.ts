@@ -157,14 +157,21 @@ export async function completeAdminOnboarding(
 
   // Update user with admin's personal name (not company name)
   const userRef = doc(db, "users", uid);
-  await updateDoc(userRef, {
+  const updateData: Record<string, unknown> = {
     role: "admin",
     companyId: companyRef.id,
     displayName: validatedName, // Use admin's personal name
     onboardingComplete: true,
     status: "active",
     updatedAt: new Date().toISOString(),
-  });
+  };
+  
+  // Add user preferences if provided
+  if (data.preferences) {
+    updateData.preferences = data.preferences;
+  }
+  
+  await updateDoc(userRef, updateData);
 
   return company;
 }
@@ -212,7 +219,8 @@ export async function createJoinRequest(
   name: string,
   email: string | null,
   companyId: string,
-  companyName: string
+  companyName: string,
+  preferences?: import("./auth-types").UserPreferences
 ): Promise<JoinRequest> {
   const db = ensureDb();
   
@@ -236,12 +244,19 @@ export async function createJoinRequest(
   
   // Update user to mark as pending and store the validated name
   const userRef = doc(db, "users", uid);
-  await updateDoc(userRef, {
+  const updateData: Record<string, unknown> = {
     displayName: validatedName,
     onboardingComplete: true,
     status: "pending",
     updatedAt: new Date().toISOString(),
-  });
+  };
+  
+  // Add user preferences if provided
+  if (preferences) {
+    updateData.preferences = preferences;
+  }
+  
+  await updateDoc(userRef, updateData);
   
   return request;
 }
@@ -258,14 +273,21 @@ export async function completeHandymanOnboarding(
   const validatedName = validateName(data.fullName, "Full name");
   
   const userRef = doc(db, "users", uid);
-  await updateDoc(userRef, {
+  const updateData: Record<string, unknown> = {
     role: "handyman",
     companyId,
     displayName: validatedName,
     onboardingComplete: true,
     status: "active",
     updatedAt: new Date().toISOString(),
-  });
+  };
+  
+  // Add user preferences if provided
+  if (data.preferences) {
+    updateData.preferences = data.preferences;
+  }
+  
+  await updateDoc(userRef, updateData);
 }
 
 // Get pending join requests for a company
@@ -349,6 +371,20 @@ export async function rejectJoinRequest(requestId: string): Promise<void> {
   
   await updateDoc(requestRef, {
     status: "rejected",
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+// Update user preferences (timezone, language, currency)
+export async function updateUserPreferences(
+  uid: string,
+  preferences: import("./auth-types").UserPreferences
+): Promise<void> {
+  const db = ensureDb();
+  const userRef = doc(db, "users", uid);
+  
+  await updateDoc(userRef, {
+    preferences,
     updatedAt: new Date().toISOString(),
   });
 }

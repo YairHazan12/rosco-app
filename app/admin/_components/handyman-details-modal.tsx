@@ -74,7 +74,7 @@ export function HandymanDetailsModal({ handyman, isOpen, onClose }: HandymanDeta
                 className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{
                   background: "var(--brand)",
-                  boxShadow: "0 4px 12px rgba(15, 156, 140, 0.25)",
+                  boxShadow: "0 4px 12px rgba(78, 203, 113, 0.25)",
                 }}
               >
                 <User className="w-8 h-8 text-white" strokeWidth={2.5} />
@@ -267,7 +267,7 @@ export function HandymanDetailsModal({ handyman, isOpen, onClose }: HandymanDeta
                 style={{
                   background: "var(--brand)",
                   color: "white",
-                  boxShadow: "0 2px 8px rgba(15, 156, 140, 0.25)",
+                  boxShadow: "0 2px 8px rgba(78, 203, 113, 0.25)",
                 }}
               >
                 <Phone className="w-4 h-4" strokeWidth={2.5} />
@@ -282,7 +282,7 @@ export function HandymanDetailsModal({ handyman, isOpen, onClose }: HandymanDeta
                   background: "white",
                   color: "var(--brand)",
                   border: "1.5px solid var(--brand)",
-                  boxShadow: "0 1px 3px rgba(15, 156, 140, 0.1)",
+                  boxShadow: "0 1px 3px rgba(78, 203, 113, 0.1)",
                 }}
               >
                 <Mail className="w-4 h-4" strokeWidth={2.5} />

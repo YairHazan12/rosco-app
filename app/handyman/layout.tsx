@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { CalendarDays, Briefcase, Settings } from "lucide-react";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 import PWAPrompt from "@/components/pwa-prompt";
 // notification prompt removed - was blocking mobile UI
 import { useAuth } from "@/lib/auth-context";
+import LocationSetupPrompt from "@/components/location-setup-prompt";
 
 const navItems = [
   { href: "/handyman",          label: "Schedule", icon: CalendarDays },
@@ -74,15 +76,7 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
         <div className="max-w-[430px] mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo + brand */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-              style={{
-                background: "linear-gradient(145deg, #0F9C8C, #0D8578)",
-                boxShadow: "0 2px 6px rgba(15, 156, 140, 0.3)",
-              }}
-            >
-              <span className="text-white font-bold text-[13px] tracking-tight">R</span>
-            </div>
+            <Image src="/logo.png" alt="ROSCO" width={32} height={32} className="rounded-[10px]" />
             <span
               className="font-semibold text-[17px] tracking-[-0.3px]"
               style={{ color: "var(--label-primary)" }}
@@ -95,6 +89,9 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
 
       {/* PWA prompt */}
       <PWAPrompt />
+
+      {/* Location setup prompt for users without preferences */}
+      <LocationSetupPrompt />
 
       {/* iOS-style frosted bottom tab bar */}
       <nav

@@ -321,7 +321,7 @@ export default function TeamPage() {
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{ 
                   background: "var(--brand)",
-                  boxShadow: "0 4px 12px rgba(15, 156, 140, 0.25)"
+                  boxShadow: "0 4px 12px rgba(78, 203, 113, 0.25)"
                 }}
               >
                 <Users className="w-6 h-6 text-white" strokeWidth={2.5} />
@@ -369,7 +369,7 @@ export default function TeamPage() {
                 color: "white",
                 boxShadow: copied 
                   ? "0 2px 8px rgba(16, 185, 129, 0.25)"
-                  : "0 2px 8px rgba(15, 156, 140, 0.25)"
+                  : "0 2px 8px rgba(78, 203, 113, 0.25)"
               }}
             >
               {copied ? (
@@ -391,7 +391,7 @@ export default function TeamPage() {
                 background: "white",
                 color: "var(--brand)",
                 border: "1.5px solid var(--brand)",
-                boxShadow: "0 1px 3px rgba(15, 156, 140, 0.1)"
+                boxShadow: "0 1px 3px rgba(78, 203, 113, 0.1)"
               }}
             >
               <Share2 className="w-4 h-4" strokeWidth={2.5} />

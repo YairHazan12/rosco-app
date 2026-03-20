@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
-import { Wrench, Shield, Hammer } from "lucide-react";
+import { Shield, Hammer } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DemoPage() {
@@ -80,22 +81,7 @@ export default function DemoPage() {
     >
       {/* Logo */}
       <div className="relative mb-8">
-        <div
-          className="w-[88px] h-[88px] rounded-[22px] flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 shadow-xl"
-          style={{
-            boxShadow:
-              "0 12px 32px rgba(15, 156, 140, 0.25), 0 4px 12px rgba(15, 156, 140, 0.15)",
-          }}
-        >
-          <Wrench className="w-11 h-11 text-white" strokeWidth={2.5} />
-        </div>
-        <div
-          className="absolute inset-0 rounded-[22px] pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
-          }}
-        />
+        <Image src="/logo.png" alt="ROSCO" width={88} height={88} className="rounded-[22px] shadow-xl" />
       </div>
 
       {/* Title */}
@@ -123,7 +109,7 @@ export default function DemoPage() {
           <div className="flex items-start gap-4">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "#E6F7F5" }}
+              style={{ background: "#EDFAF2" }}
             >
               <Shield className="w-7 h-7 text-teal-600" strokeWidth={2} />
             </div>
@@ -147,7 +133,7 @@ export default function DemoPage() {
           <div className="flex items-start gap-4">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "#E6F7F5" }}
+              style={{ background: "#EDFAF2" }}
             >
               <Hammer className="w-7 h-7 text-teal-600" strokeWidth={2} />
             </div>
@@ -177,7 +163,7 @@ export default function DemoPage() {
       <button
         onClick={() => router.push("/")}
         className="mt-8 text-[14px] font-medium transition-opacity hover:opacity-70"
-        style={{ color: "#0F9C8C" }}
+        style={{ color: "#4ECB71" }}
       >
         ← Back to Home
       </button>
