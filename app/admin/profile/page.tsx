@@ -21,8 +21,13 @@ export default async function ProfilePage() {
   const companyId = await getCompanyIdFromCookie();
   const userId = await getUserUidFromCookie();
   
-  if (!companyId || companyId === "DEMO" || !userId) {
+  if (!companyId || !userId) {
     redirect("/login");
+  }
+
+  // Demo users don't have a real company profile — redirect gracefully
+  if (companyId === "DEMO") {
+    redirect("/admin/dashboard");
   }
 
   // Fetch company
