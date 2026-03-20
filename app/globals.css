@@ -9,9 +9,9 @@
 
 :root {
   /* ── Professional Color Palette ─────────────── */
-  --teal-primary:   #0F9C8C;
-  --teal-dark:      #0D8578;
-  --teal-light:     #E6F7F5;
+  --teal-primary:   #4ECB71;
+  --teal-dark:      #3DB960;
+  --teal-light:     #EDFAF2;
   --blue:           #0088CC;
   --blue-light:     #E6F4FA;
   --green:          #10B981;
@@ -28,14 +28,14 @@
   --ios-red:        #EF4444;
   --ios-yellow:     #F59E0B;
   --ios-purple:     #9333EA;
-  --ios-teal:       #0F9C8C;
+  --ios-teal:       #4ECB71;
   --ios-indigo:     #6366F1;
   --ios-cyan:       #06B6D4;
 
   /* ── ROSCO Brand ───────────────────────────── */
-  --brand:          #0F9C8C;
-  --brand-dark:     #0D8578;
-  --brand-light:    #E6F7F5;
+  --brand:          #4ECB71;
+  --brand-dark:     #3DB960;
+  --brand-light:    #EDFAF2;
 
   /* ── Light Mode Surfaces ───────────────────── */
   --bg-primary:     #F8FAFB;
@@ -63,19 +63,19 @@
   --card-foreground:    #0F172A;
   --popover:            #FFFFFF;
   --popover-foreground: #0F172A;
-  --primary:            #0F9C8C;
+  --primary:            #4ECB71;
   --primary-foreground: #FFFFFF;
   --secondary:          #F1F5F9;
   --secondary-foreground: #0F172A;
   --muted:              #F8FAFB;
   --muted-foreground:   #64748B;
-  --accent:             #E6F7F5;
+  --accent:             #EDFAF2;
   --accent-foreground:  #0F172A;
   --destructive:        #EF4444;
   --destructive-foreground: #FFFFFF;
   --border:             #E2E8F0;
   --input:              #E2E8F0;
-  --ring:               #0F9C8C;
+  --ring:               #4ECB71;
   --radius:             0.75rem;
 
   /* ── Safe Areas ────────────────────────────── */
@@ -216,12 +216,12 @@ body {
   transition: all 0.15s ease;
   letter-spacing: -0.3px;
   -webkit-font-smoothing: antialiased;
-  box-shadow: 0 2px 8px rgba(15, 156, 140, 0.2);
+  box-shadow: 0 2px 8px rgba(78, 203, 113, 0.2);
 }
 
 .ios-btn-primary:hover { 
   background: var(--brand-dark);
-  box-shadow: 0 4px 12px rgba(15, 156, 140, 0.25);
+  box-shadow: 0 4px 12px rgba(78, 203, 113, 0.25);
 }
 .ios-btn-primary:active { 
   opacity: 0.85; 
@@ -282,14 +282,14 @@ body {
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 3px 12px rgba(15, 156, 140, 0.2);
+  box-shadow: 0 3px 12px rgba(78, 203, 113, 0.2);
   letter-spacing: -0.3px;
   -webkit-font-smoothing: antialiased;
 }
 
 .ios-btn-brand:hover {
   background: var(--brand-dark);
-  box-shadow: 0 4px 16px rgba(15, 156, 140, 0.26);
+  box-shadow: 0 4px 16px rgba(78, 203, 113, 0.26);
 }
 .ios-btn-brand:active { 
   opacity: 0.85; 
