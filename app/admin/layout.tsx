@@ -8,6 +8,7 @@ import { LayoutDashboard, Briefcase, FileText, User, Users, LogOut } from "lucid
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import LocationSetupPrompt from "@/components/location-setup-prompt";
+import DemoResetButton from "./_components/demo-reset-button";
 
 const navItems = [
   { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
@@ -72,14 +73,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* User menu */}
-          <button
-            onClick={() => signOut()}
-            className="text-[15px] font-medium min-h-[44px] flex items-center gap-1.5 px-2 -mr-2"
-            style={{ color: "var(--ios-red)" }}
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Demo Reset Button — only shown for demo admin */}
+            {firebaseUser?.email?.startsWith("demo-") && (
+              <DemoResetButton />
+            )}
+            <button
+              onClick={() => signOut()}
+              className="text-[15px] font-medium min-h-[44px] flex items-center gap-1.5 px-2 -mr-2"
+              style={{ color: "var(--ios-red)" }}
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

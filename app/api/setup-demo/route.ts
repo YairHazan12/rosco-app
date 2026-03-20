@@ -46,6 +46,10 @@ export async function POST(request: Request) {
     const userDoc = await userRef.get();
 
     if (userDoc.exists) {
+      // Ensure handyman doc is linked for the demo handyman user
+      if (role === "handyman") {
+        await ensureDemoHandymanDoc(userRecord.uid);
+      }
       // User already fully set up, return immediately
       return NextResponse.json({ success: true, uid: userRecord.uid, cached: true });
     }
@@ -85,8 +89,13 @@ export async function POST(request: Request) {
       });
     }
 
+    // Ensure handyman doc is linked for the demo handyman user
+    if (role === "handyman") {
+      await ensureDemoHandymanDoc(userRecord.uid);
+    }
+
     // Seed demo data if it doesn't exist
-    await seedDemoData();
+    await seedDemoData(role === "handyman" ? userRecord.uid : null);
 
     return NextResponse.json({ success: true, uid: userRecord.uid });
   } catch (error: any) {
@@ -98,7 +107,35 @@ export async function POST(request: Request) {
   }
 }
 
-async function seedDemoData() {
+async function ensureDemoHandymanDoc(uid: string): Promise<void> {
+  const handymanDocRef = db.collection("handymen").doc(uid);
+  const handymanDoc = await handymanDocRef.get();
+  if (!handymanDoc.exists) {
+    await handymanDocRef.set({
+      id: uid,
+      name: "Demo Handyman",
+      email: DEMO_HANDYMAN_EMAIL,
+      phone: "+27-81-000-0002",
+      specialties: ["Plumbing", "General"],
+      status: "active",
+      companyId: DEMO_COMPANY_ID,
+      createdAt: now(),
+      updatedAt: now(),
+    });
+  } else {
+    // Ensure it's active and in the right company
+    const data = handymanDoc.data() as { companyId?: string; status?: string };
+    if (data.companyId !== DEMO_COMPANY_ID || data.status !== "active") {
+      await handymanDocRef.update({
+        companyId: DEMO_COMPANY_ID,
+        status: "active",
+        updatedAt: now(),
+      });
+    }
+  }
+}
+
+async function seedDemoData(demoHandymanUid: string | null = null) {
   // Check if demo data already exists
   const existingJobs = await db
     .collection("jobs")
@@ -213,7 +250,19 @@ async function seedDemoData() {
   // Create second batch for jobs and invoice
   const batch2 = db.batch();
 
-  // Create a few sample jobs
+  // Helper to get a date N days from now (with morning time)
+  const futureDays = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    d.setHours(9, 0, 0, 0);
+    return d.toISOString();
+  };
+
+  // Use the demo handyman UID if available, otherwise fall back to seeded handymen
+  const demoHmId = demoHandymanUid ?? handymanRefs[0].id;
+  const demoHmName = demoHandymanUid ? "Demo Handyman" : handymanRefs[0].name;
+
+  // Create sample jobs — mix of completed (past), in-progress (today/tomorrow), pending (upcoming)
   const sampleJobs = [
     {
       title: "Kitchen Sink Leak Repair",
@@ -225,9 +274,9 @@ async function seedDemoData() {
       status: "Completed",
       estimatedCost: 1200,
       actualCost: 1350,
-      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      handymanId: handymanRefs[0].id,
-      handymanName: handymanRefs[0].name,
+      date: futureDays(-3),
+      handymanId: demoHmId,
+      handymanName: demoHmName,
     },
     {
       title: "Bedroom Ceiling Light Installation",
@@ -239,9 +288,9 @@ async function seedDemoData() {
       status: "In Progress",
       estimatedCost: 1400,
       actualCost: 0,
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      handymanId: handymanRefs[1].id,
-      handymanName: handymanRefs[1].name,
+      date: futureDays(0),
+      handymanId: demoHmId,
+      handymanName: demoHmName,
     },
     {
       title: "Custom Kitchen Shelving",
@@ -253,9 +302,37 @@ async function seedDemoData() {
       status: "Pending",
       estimatedCost: 2800,
       actualCost: 0,
-      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      handymanId: handymanRefs[2].id,
-      handymanName: handymanRefs[2].name,
+      date: futureDays(5),
+      handymanId: demoHmId,
+      handymanName: demoHmName,
+    },
+    {
+      title: "Air Conditioner Service",
+      description: "Annual service and clean of split-unit AC in master bedroom.",
+      clientName: "Ayanda Sithole",
+      clientPhone: "+27-72-678-9012",
+      clientEmail: "ayanda.s@example.co.za",
+      location: "7 Ocean View Drive, Sea Point",
+      status: "Pending",
+      estimatedCost: 1100,
+      actualCost: 0,
+      date: futureDays(8),
+      handymanId: handymanRefs[1].id,
+      handymanName: handymanRefs[1].name,
+    },
+    {
+      title: "Electrical DB Board Inspection",
+      description: "DB board tripping intermittently. Full safety inspection and report.",
+      clientName: "Charlene Davids",
+      clientPhone: "+27-61-789-0123",
+      clientEmail: "charlene.davids@example.co.za",
+      location: "23 Main Road, Claremont",
+      status: "Pending",
+      estimatedCost: 950,
+      actualCost: 0,
+      date: futureDays(10),
+      handymanId: handymanRefs[1].id,
+      handymanName: handymanRefs[1].name,
     },
   ];
 
