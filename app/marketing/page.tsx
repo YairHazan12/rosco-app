@@ -132,24 +132,24 @@ function FeatureIcon({
   );
 }
 
-// ─── Hero Phone Mockup ────────────────────────────────────────────────────────
+// ─── Hero Phone Mockup (Light Theme) ──────────────────────────────────────────
 function PhoneMockup() {
   return (
     <div
       className="relative w-[260px] rounded-[36px] overflow-hidden shadow-2xl"
       style={{
-        border: "2px solid rgba(255,255,255,0.12)",
-        background: "#0F0F12",
+        border: "2px solid rgba(15,23,42,0.12)",
+        background: "#FFFFFF",
       }}
     >
       {/* Notch */}
       <div className="flex justify-center pt-3 pb-1">
-        <div className="w-20 h-5 rounded-full" style={{ background: "#1a1a1f" }} />
+        <div className="w-20 h-5 rounded-full" style={{ background: "#F1F5F9" }} />
       </div>
       {/* Status */}
       <div
         className="px-5 py-2 flex items-center justify-between text-[10px]"
-        style={{ color: "rgba(255,255,255,0.4)" }}
+        style={{ color: "rgba(15,23,42,0.45)" }}
       >
         <span>9:41</span>
         <span>●●●</span>
@@ -158,7 +158,7 @@ function PhoneMockup() {
       <div className="px-4 pb-6 space-y-3">
         <p
           className="text-[11px] font-semibold uppercase tracking-widest mb-1"
-          style={{ color: "rgba(255,255,255,0.35)" }}
+          style={{ color: "rgba(15,23,42,0.50)" }}
         >
           Today's Jobs
         </p>
@@ -171,16 +171,16 @@ function PhoneMockup() {
             key={i}
             className="rounded-[14px] p-3"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "rgba(15,23,42,0.03)",
+              border: "1px solid rgba(15,23,42,0.08)",
             }}
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-white text-[12px] font-semibold">{item.job}</p>
+                <p className="text-[12px] font-semibold" style={{ color: "#0F172A" }}>{item.job}</p>
                 <p
                   className="text-[10px] mt-0.5 flex items-center gap-1"
-                  style={{ color: "rgba(255,255,255,0.35)" }}
+                  style={{ color: "rgba(15,23,42,0.50)" }}
                 >
                   <MapPin className="w-2.5 h-2.5" />
                   {item.addr}
@@ -203,7 +203,7 @@ function PhoneMockup() {
         <div
           className="rounded-[12px] p-3 flex items-center justify-center gap-2"
           style={{
-            background: "linear-gradient(135deg, #0F9C8C, #0D8578)",
+            background: "linear-gradient(135deg, #12B5A6, #0F9C8C)",
             boxShadow: "0 4px 16px rgba(15,156,140,0.35)",
           }}
         >
@@ -215,7 +215,7 @@ function PhoneMockup() {
   );
 }
 
-// ─── Dashboard Mockup ─────────────────────────────────────────────────────────
+// ─── Dashboard Mockup (Light Theme) ───────────────────────────────────────────
 function DashboardMockup() {
   return (
     <div
@@ -223,15 +223,15 @@ function DashboardMockup() {
       style={{
         border: "1px solid rgba(15,23,42,0.12)",
         boxShadow: "0 32px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(15,23,42,0.04)",
-        background: "#141416",
+        background: "#FFFFFF",
       }}
     >
       {/* Browser bar */}
       <div
         className="flex items-center gap-2 px-4 py-3"
         style={{
-          background: "#1C1C1E",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: "#F1F5F9",
+          borderBottom: "1px solid rgba(15,23,42,0.10)",
         }}
       >
         <div className="flex gap-1.5">
@@ -242,15 +242,15 @@ function DashboardMockup() {
         <div
           className="flex-1 mx-4 rounded-md px-3 py-1 text-[11px]"
           style={{
-            background: "rgba(255,255,255,0.05)",
-            color: "rgba(235,235,245,0.30)",
+            background: "rgba(15,23,42,0.06)",
+            color: "rgba(15,23,42,0.50)",
           }}
         >
           rosco-app-chi.vercel.app/admin
         </div>
       </div>
 
-      <div className="p-5" style={{ background: "#141416" }}>
+      <div className="p-5" style={{ background: "#FFFFFF" }}>
         {/* KPI row */}
         <div className="grid grid-cols-4 gap-2 mb-4">
           {[
@@ -263,17 +263,17 @@ function DashboardMockup() {
               key={s.label}
               className="rounded-[12px] p-2.5"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                background: "rgba(15,23,42,0.03)",
+                border: "1px solid rgba(15,23,42,0.08)",
               }}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <span className="text-[9px]" style={{ color: "rgba(15,23,42,0.50)" }}>
                   {s.label}
                 </span>
                 <span style={{ color: s.color }}>{s.icon}</span>
               </div>
-              <p className="text-[18px] font-bold text-white leading-none">{s.value}</p>
+              <p className="text-[18px] font-bold leading-none" style={{ color: "#0F172A" }}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -282,15 +282,15 @@ function DashboardMockup() {
         <div
           className="rounded-[12px] overflow-hidden"
           style={{
-            background: "rgba(255,255,255,0.025)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(15,23,42,0.02)",
+            border: "1px solid rgba(15,23,42,0.08)",
           }}
         >
           <div
             className="px-4 py-2.5 flex items-center justify-between"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
           >
-            <span className="text-[12px] font-semibold text-white">Recent Jobs</span>
+            <span className="text-[12px] font-semibold" style={{ color: "#0F172A" }}>Recent Jobs</span>
             <span className="text-[10px] font-semibold" style={{ color: "#0F9C8C" }}>
               View All →
             </span>
@@ -304,12 +304,12 @@ function DashboardMockup() {
               key={i}
               className="px-4 py-2.5 flex items-center justify-between"
               style={{
-                borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : undefined,
+                borderBottom: i < 2 ? "1px solid rgba(15,23,42,0.05)" : undefined,
               }}
             >
               <div>
-                <p className="text-[12px] font-medium text-white">{item.job}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                <p className="text-[12px] font-medium" style={{ color: "#0F172A" }}>{item.job}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: "rgba(15,23,42,0.45)" }}>
                   {item.time}
                 </p>
               </div>
