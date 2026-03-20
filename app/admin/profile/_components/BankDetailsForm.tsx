@@ -123,61 +123,42 @@ export default function BankDetailsForm({
 
   if (isConfigured) {
     return (
-      <div className="ios-card">
-        <div className="px-4 pt-4 pb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-             style={{ color: "var(--label-tertiary)" }}>
-            Bank Details
+      <div 
+        className="p-4 rounded-[12px] flex items-start gap-3"
+        style={{ background: "rgba(52, 199, 89, 0.08)" }}
+      >
+        <CheckCircle2 
+          className="w-5 h-5 flex-shrink-0 mt-0.5" 
+          style={{ color: "var(--ios-green)" }} 
+        />
+        <div>
+          <p className="font-semibold text-[15px] mb-1" style={{ color: "var(--label-primary)" }}>
+            Payment Setup Complete
           </p>
-        </div>
-
-        <div className="px-4 pb-4">
-          <div 
-            className="p-4 rounded-[12px] flex items-start gap-3"
-            style={{ background: "rgba(52, 199, 89, 0.08)" }}
-          >
-            <CheckCircle2 
-              className="w-5 h-5 flex-shrink-0 mt-0.5" 
-              style={{ color: "var(--ios-green)" }} 
-            />
-            <div>
-              <p className="font-semibold text-[15px] mb-1" style={{ color: "var(--label-primary)" }}>
-                Payment Setup Complete
+          <p className="text-[13px] leading-relaxed" style={{ color: "var(--label-secondary)" }}>
+            Your bank account is linked. You'll receive 95% of customer payments directly, 
+            ROSCO keeps 5% as platform fee.
+          </p>
+          {initialSettlementBank && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: "rgba(52, 199, 89, 0.2)" }}>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: "var(--label-tertiary)" }}>
+                CONFIGURED ACCOUNT
               </p>
-              <p className="text-[13px] leading-relaxed" style={{ color: "var(--label-secondary)" }}>
-                Your bank account is linked. You'll receive 95% of customer payments directly, 
-                ROSCO keeps 5% as platform fee.
+              <p className="text-[13px]" style={{ color: "var(--label-secondary)" }}>
+                Bank: {banks.find(b => b.code === initialSettlementBank)?.name || initialSettlementBank}
               </p>
-              {initialSettlementBank && (
-                <div className="mt-3 pt-3 border-t" style={{ borderColor: "rgba(52, 199, 89, 0.2)" }}>
-                  <p className="text-[11px] font-semibold mb-1" style={{ color: "var(--label-tertiary)" }}>
-                    CONFIGURED ACCOUNT
-                  </p>
-                  <p className="text-[13px]" style={{ color: "var(--label-secondary)" }}>
-                    Bank: {banks.find(b => b.code === initialSettlementBank)?.name || initialSettlementBank}
-                  </p>
-                  <p className="text-[13px]" style={{ color: "var(--label-secondary)" }}>
-                    Account: •••• {initialAccountNumber?.slice(-4) || "****"}
-                  </p>
-                </div>
-              )}
+              <p className="text-[13px]" style={{ color: "var(--label-secondary)" }}>
+                Account: •••• {initialAccountNumber?.slice(-4) || "****"}
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="ios-card">
-      <div className="px-4 pt-4 pb-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-           style={{ color: "var(--label-tertiary)" }}>
-          Bank Details
-        </p>
-      </div>
-
-      <div className="px-4 pb-4 space-y-4">
+    <div className="space-y-4">
         {/* Info banner */}
         <div 
           className="p-4 rounded-[12px] flex items-start gap-3"
@@ -285,7 +266,6 @@ export default function BankDetailsForm({
         >
           {saving ? "Saving..." : "Save Bank Details"}
         </button>
-      </div>
     </div>
   );
 }

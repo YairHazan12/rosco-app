@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LayoutDashboard, Briefcase, FileText, Settings, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, User, Users, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import LocationSetupPrompt from "@/components/location-setup-prompt";
@@ -13,7 +13,7 @@ const navItems = [
   { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/jobs",      label: "Jobs",      icon: Briefcase },
   { href: "/admin/team",      label: "Team",      icon: Users },
-  { href: "/admin/settings",  label: "Settings",  icon: Settings },
+  { href: "/admin/profile",   label: "Profile",   icon: User },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

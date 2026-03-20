@@ -61,17 +61,17 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
   }
 
   return (
-    <div className="space-y-5">
-      {/* Preferences card */}
-      <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
-        <div className="px-4 pt-4 pb-2">
+    <div className="space-y-4">
+      {/* Regional Settings */}
+      <div className="divide-y" style={{ borderColor: "var(--separator)" }}>
+        <div className="pb-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
              style={{ color: "var(--label-tertiary)" }}>
             Regional
           </p>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3.5">
+        <div className="flex items-center justify-between py-3.5">
           <div>
             <p className="text-[16px] font-medium" style={{ color: "var(--label-primary)" }}>Currency</p>
             <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Used in invoices and totals</p>
@@ -88,7 +88,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
           </select>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3.5">
+        <div className="flex items-center justify-between py-3.5">
           <div>
             <p className="text-[16px] font-medium" style={{ color: "var(--label-primary)" }}>Language</p>
             <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Interface language</p>
@@ -105,7 +105,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
           </select>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3.5">
+        <div className="flex items-center justify-between py-3.5">
           <div>
             <p className="text-[16px] font-medium" style={{ color: "var(--label-primary)" }}>Timezone</p>
             <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>For scheduling and dates</p>
@@ -123,9 +123,9 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
         </div>
       </div>
 
-      {/* Notifications card */}
-      <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
-        <div className="px-4 pt-4 pb-2">
+      {/* Notifications */}
+      <div className="divide-y" style={{ borderColor: "var(--separator)" }}>
+        <div className="pb-2 pt-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
              style={{ color: "var(--label-tertiary)" }}>
             Notifications
@@ -139,7 +139,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
             { key: "push"  as const, label: "Push notifications",  desc: "Browser & app push alerts" },
           ] as const
         ).map(({ key, label, desc }) => (
-          <div key={key} className="flex items-center justify-between px-4 py-3.5">
+          <div key={key} className="flex items-center justify-between py-3.5">
             <div>
               <p className="text-[16px] font-medium" style={{ color: "var(--label-primary)" }}>{label}</p>
               <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>{desc}</p>
@@ -168,16 +168,16 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
       </div>
 
       {/* Save */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full font-semibold text-[17px] h-[50px] rounded-[14px] text-white transition-opacity active:opacity-75 disabled:opacity-60"
-        style={{ background: "linear-gradient(145deg, #FF7A47, #FF5500)", boxShadow: "0 4px 14px rgba(255,107,53,0.30)" }}
-      >
-        {saving ? "Saving…" : "Save Settings"}
-      </button>
-
-      <div className="h-2" />
+      <div className="pt-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full font-semibold text-[17px] h-[50px] rounded-[14px] text-white transition-opacity active:opacity-75 disabled:opacity-60"
+          style={{ background: "linear-gradient(145deg, #FF7A47, #FF5500)", boxShadow: "0 4px 14px rgba(255,107,53,0.30)" }}
+        >
+          {saving ? "Saving…" : "Save Settings"}
+        </button>
+      </div>
     </div>
   );
 }
