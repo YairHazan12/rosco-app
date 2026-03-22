@@ -36,8 +36,8 @@ export async function notifyHandyman({
       data: { url, tag },
       webpush: {
         notification: {
-          icon: "/logo.png",
-          badge: "/logo.png",
+          icon: "/AppLogo.png",
+          badge: "/AppLogo.png",
         },
         fcmOptions: { link: url },
       },

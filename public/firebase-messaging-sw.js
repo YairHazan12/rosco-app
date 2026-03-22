@@ -16,8 +16,8 @@ messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || "ROSCO";
   const options = {
     body: payload.notification?.body || "You have a new update.",
-    icon: "/logo.png",
-    badge: "/logo.png",
+    icon: "/AppLogo.png",
+    badge: "/AppLogo.png",
     tag: payload.data?.tag || "rosco-notification",
     data: { url: payload.data?.url || "/handyman" },
   };

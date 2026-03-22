@@ -432,14 +432,12 @@ export default function MarketingPage() {
         >
           <div className="flex items-center gap-3">
             <Image
-              src="/logo.png"
+              src="/Design_1.png"
               alt="ROSCO Logo"
-              width={36}
-              height={36}
-              className="rounded-[10px]"
+              width={120}
+              height={40}
               style={{ objectFit: "contain" }}
             />
-            <span className="font-bold text-xl tracking-tight" style={{ color: "#0F172A" }}>ROSCO</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-[14px] font-medium">
@@ -1239,14 +1237,12 @@ export default function MarketingPage() {
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/Design_1.png"
                 alt="ROSCO"
-                width={32}
-                height={32}
-                className="rounded-[9px]"
+                width={100}
+                height={34}
                 style={{ objectFit: "contain" }}
               />
-              <span className="font-bold tracking-tight" style={{ color: "#0F172A" }}>ROSCO</span>
               <span className="text-[12px]" style={{ color: "rgba(15,23,42,0.38)" }}>
                 Handyman Management
               </span>

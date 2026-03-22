@@ -81,7 +81,7 @@ export default function DemoPage() {
     >
       {/* Logo */}
       <div className="relative mb-8">
-        <Image src="/logo.png" alt="ROSCO" width={88} height={88} className="rounded-[22px] shadow-xl" />
+        <Image src="/Design_1.png" alt="ROSCO" width={200} height={68} style={{ objectFit: "contain" }} />
       </div>
 
       {/* Title */}

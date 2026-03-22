@@ -62,9 +62,9 @@ export default async function PaymentSuccessPage({
 
           {/* Brand */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            <Image src="/logo.png" alt="ROSCO" width={28} height={28} className="rounded-lg" />
+            <Image src="/Design_1.png" alt="ROSCO" width={100} height={34} style={{ objectFit: "contain" }} />
             <span
-              className="font-semibold text-[17px]"
+              className="font-semibold text-[17px] hidden"
               style={{ color: "var(--label-primary)" }}
             >
               ROSCO

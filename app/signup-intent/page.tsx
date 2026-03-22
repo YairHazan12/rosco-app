@@ -45,14 +45,12 @@ export default function SignupIntentPage() {
         >
           <Link href="/marketing" className="flex items-center gap-3 group">
             <Image
-              src="/logo.png"
+              src="/Design_1.png"
               alt="ROSCO Logo"
-              width={36}
-              height={36}
-              className="rounded-[10px]"
+              width={120}
+              height={40}
               style={{ objectFit: "contain" }}
             />
-            <span className="font-bold text-xl tracking-tight" style={{ color: "#0F172A" }}>ROSCO</span>
           </Link>
 
           <Link

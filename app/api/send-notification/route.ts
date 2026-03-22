@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
       data: data || {},
       webpush: {
         notification: {
-          icon: "/logo.png",
-          badge: "/logo.png",
+          icon: "/AppLogo.png",
+          badge: "/AppLogo.png",
         },
         fcmOptions: { link: data?.url || "/handyman" },
       },
