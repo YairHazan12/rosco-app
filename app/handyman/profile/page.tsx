@@ -10,7 +10,6 @@ import {
   Edit2,
   Star,
   Briefcase,
-  DollarSign,
   Bell,
   LogOut,
 } from "lucide-react";
@@ -216,7 +215,7 @@ export default function HandymanProfilePage() {
             </p>
           </div>
 
-          <div className="px-4 pb-4 grid grid-cols-3 gap-3">
+          <div className="px-4 pb-4 grid grid-cols-2 gap-3">
             {/* Jobs Completed */}
             <div
               className="p-3 rounded-[10px] flex flex-col items-center gap-1"
@@ -260,29 +259,6 @@ export default function HandymanProfilePage() {
                 style={{ color: "var(--label-tertiary)" }}
               >
                 Avg Rating
-              </p>
-            </div>
-
-            {/* Total Earnings */}
-            <div
-              className="p-3 rounded-[10px] flex flex-col items-center gap-1"
-              style={{ background: "rgba(120,120,128,0.12)" }}
-            >
-              <DollarSign
-                className="w-5 h-5"
-                style={{ color: "var(--brand)" }}
-              />
-              <p
-                className="text-[22px] font-bold leading-tight"
-                style={{ color: "var(--label-primary)" }}
-              >
-                —
-              </p>
-              <p
-                className="text-[10px] font-medium text-center leading-tight"
-                style={{ color: "var(--label-tertiary)" }}
-              >
-                Earnings
               </p>
             </div>
           </div>
