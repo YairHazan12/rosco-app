@@ -56,6 +56,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       status: body.status,
       handymanId: body.handymanId || undefined,
       handymanName,
+      durationHours: body.durationHours !== undefined ? Number(body.durationHours) : undefined,
+      jobPhotos: body.jobPhotos || undefined,
+      isRecurring: body.isRecurring || undefined,
+      recurringSchedule: body.recurringSchedule || undefined,
     }, companyId);
 
     // Notify handyman about changes (best-effort, non-blocking)

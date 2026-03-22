@@ -2,7 +2,7 @@ import { getJob } from "@/lib/db";
 import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Phone, Mail, Calendar, Clock, ChevronLeft, ExternalLink } from "lucide-react";
+import { Phone, Mail, Calendar, Clock, ChevronLeft, ExternalLink, Timer, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import MarkDoneButton from "./_components/MarkDoneButton";
 import WazeButton from "./_components/WazeButton";
@@ -157,6 +157,48 @@ export default async function HandymanJobDetailPage({
       {/* Waze Navigation */}
       <WazeButton address={job.location} />
 
+      {/* Duration */}
+      {job.durationHours && (
+        <div className="ios-group">
+          <div className="ios-group-row">
+            <div
+              className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+              style={{ background: "rgba(255,149,0,0.12)" }}
+            >
+              <Timer className="w-[18px] h-[18px]" style={{ color: "#FF9500" }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Estimated Duration</p>
+              <p className="font-semibold text-[15px]" style={{ color: "var(--label-primary)" }}>
+                {job.durationHours} hour{job.durationHours !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recurring indicator */}
+      {(job.isRecurring || job.recurringParentId) && (
+        <div className="ios-group">
+          <div className="ios-group-row">
+            <div
+              className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+              style={{ background: "rgba(0,122,255,0.12)" }}
+            >
+              <RefreshCw className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Recurring Job</p>
+              <p className="font-semibold text-[15px]" style={{ color: "var(--label-primary)" }}>
+                {job.isRecurring && job.recurringSchedule
+                  ? `${job.recurringSchedule.frequency.charAt(0).toUpperCase() + job.recurringSchedule.frequency.slice(1)} series`
+                  : "Part of a recurring series"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Notes */}
       {job.description && (
         <div className="ios-group">
@@ -213,6 +255,27 @@ export default async function HandymanJobDetailPage({
           )}
         </div>
       </div>
+
+      {/* Photos */}
+      {job.jobPhotos && job.jobPhotos.length > 0 && (
+        <div>
+          <p className="ios-section-header mb-2">Photos</p>
+          <div className="ios-group p-4">
+            <div className="flex flex-wrap gap-3">
+              {job.jobPhotos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={url}
+                    alt={`Job photo ${i + 1}`}
+                    className="w-20 h-20 object-cover rounded-xl border"
+                    style={{ borderColor: "var(--border)" }}
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Completed state */}
       {isCompleted && (

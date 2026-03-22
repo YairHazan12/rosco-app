@@ -1,7 +1,7 @@
 import { getJobs } from "@/lib/db";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, MapPin, Clock, FileText } from "lucide-react";
+import { ChevronRight, ChevronLeft, MapPin, Clock, FileText, RefreshCw, Timer, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 
 const ITEMS_PER_PAGE = 15;
@@ -117,6 +117,38 @@ export default async function JobsList({ page }: { page: number }) {
                             style={{ background: "rgba(255,107,53,0.10)", color: "var(--brand)" }}
                           >
                             No invoice
+                          </span>
+                        )}
+                        {job.isRecurring && (
+                          <span
+                            className="text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold"
+                            style={{ background: "rgba(0,122,255,0.10)", color: "var(--ios-blue)" }}
+                          >
+                            <RefreshCw className="w-3 h-3" /> Recurring
+                          </span>
+                        )}
+                        {job.recurringParentId && (
+                          <span
+                            className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                            style={{ background: "rgba(0,122,255,0.06)", color: "var(--ios-blue)" }}
+                          >
+                            Series
+                          </span>
+                        )}
+                        {job.durationHours && (
+                          <span
+                            className="text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold"
+                            style={{ background: "rgba(255,149,0,0.10)", color: "#FF9500" }}
+                          >
+                            <Timer className="w-3 h-3" /> {job.durationHours}h
+                          </span>
+                        )}
+                        {job.jobPhotos && job.jobPhotos.length > 0 && (
+                          <span
+                            className="text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold"
+                            style={{ background: "rgba(52,199,89,0.10)", color: "var(--ios-green)" }}
+                          >
+                            <ImageIcon className="w-3 h-3" /> {job.jobPhotos.length}
                           </span>
                         )}
                       </div>

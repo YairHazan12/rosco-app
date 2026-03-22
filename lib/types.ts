@@ -24,6 +24,12 @@ export interface Handyman {
   createdAt: string;
 }
 
+export interface RecurringSchedule {
+  frequency: "daily" | "weekly" | "monthly";
+  startDate: string; // ISO string
+  endDate?: string; // ISO string, optional
+}
+
 export interface Job {
   id: string;
   companyId: string;
@@ -39,6 +45,13 @@ export interface Job {
   handymanId?: string;
   handymanName?: string; // denormalized
   invoiceId?: string;
+  // Duration & Photos
+  durationHours?: number;
+  jobPhotos?: string[]; // array of photo URLs
+  // Recurring Jobs
+  isRecurring?: boolean;
+  recurringSchedule?: RecurringSchedule;
+  recurringParentId?: string; // ID of the first job in series (for generated jobs)
   createdAt: string;
   updatedAt: string;
 }

@@ -3,7 +3,7 @@ import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Pencil, MapPin, Phone, Mail, Calendar, Clock, ExternalLink, ChevronLeft } from "lucide-react";
+import { Pencil, MapPin, Phone, Mail, Calendar, Clock, ExternalLink, ChevronLeft, Timer, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 
 // Revalidate every 5 min; job mutations call revalidateTag("jobs") for immediate freshness
@@ -201,6 +201,82 @@ export default async function JobDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Duration */}
+      {job.durationHours && (
+        <div>
+          <p className="ios-section-header mb-2">Duration</p>
+          <div className="ios-group">
+            <div className="ios-group-row">
+              <div
+                className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+                style={{ background: "rgba(255,149,0,0.1)" }}
+              >
+                <Timer className="w-[18px] h-[18px]" style={{ color: "#FF9500" }} />
+              </div>
+              <div>
+                <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Estimated Duration</p>
+                <p className="font-semibold text-[15px]" style={{ color: "var(--label-primary)" }}>
+                  {job.durationHours} hour{job.durationHours !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recurring */}
+      {job.isRecurring && job.recurringSchedule && (
+        <div>
+          <p className="ios-section-header mb-2">Recurring Schedule</p>
+          <div className="ios-group">
+            <div className="ios-group-row">
+              <div
+                className="w-9 h-9 rounded-[9px] flex items-center justify-center flex-shrink-0 mr-3"
+                style={{ background: "rgba(0,122,255,0.1)" }}
+              >
+                <RefreshCw className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+              </div>
+              <div>
+                <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>Frequency</p>
+                <p className="font-semibold text-[15px] capitalize" style={{ color: "var(--label-primary)" }}>
+                  {job.recurringSchedule.frequency}
+                  {job.recurringSchedule.endDate
+                    ? ` until ${format(new Date(job.recurringSchedule.endDate), "MMM d, yyyy")}`
+                    : ""}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photos */}
+      {job.jobPhotos && job.jobPhotos.length > 0 && (
+        <div>
+          <p className="ios-section-header mb-2">Photos</p>
+          <div className="ios-group p-4">
+            <div className="flex flex-wrap gap-3">
+              {job.jobPhotos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative">
+                  <img
+                    src={url}
+                    alt={`Job photo ${i + 1}`}
+                    className="w-24 h-24 object-cover rounded-xl border"
+                    style={{ borderColor: "var(--border)" }}
+                  />
+                  <div
+                    className="absolute inset-0 flex items-center justify-center rounded-xl opacity-0 hover:opacity-100 transition-opacity"
+                    style={{ background: "rgba(0,0,0,0.4)" }}
+                  >
+                    <ExternalLink className="w-5 h-5 text-white" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invoice */}
       <div>

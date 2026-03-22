@@ -4,30 +4,27 @@
  * GET  — Returns jobs with optional pagination.
  *         Query params: ?page=1&limit=10 (defaults: page=1, limit=10)
  *         Response: { data: Job[], total: number, page: number, totalPages: number }
- *         Also carries a short-lived Cache-Control header so
- *         repeated client fetches within 30 s don't even reach the server.
- * POST — Creates a new job and revalidates the "jobs" cache tag.
+ * POST — Creates a new job (and recurring series if requested) and revalidates cache.
  */
 import { NextResponse } from "next/server";
 import { getJobs, createJob, getHandyman } from "@/lib/db";
 import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
 import { notifyJobAssigned } from "@/lib/notifications";
+import type { RecurringSchedule } from "@/lib/types";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam  = searchParams.get("page");
   const limitParam = searchParams.get("limit");
-  // Get companyId from cookie (server-side auth), not from query params (security!)
   const companyId = await getCompanyIdFromCookie();
   const userRole = await getUserRoleFromCookie();
   const userUid = await getUserUidFromCookie();
 
-  // RBAC: Handymen only see their own jobs, admins see all
   let allJobs = await getJobs(companyId);
   if (userRole === "handyman" && userUid) {
     allJobs = allJobs.filter(job => job.handymanId === userUid);
   }
-  const total   = allJobs.length;
+  const total = allJobs.length;
 
   const page  = Math.max(1, parseInt(pageParam  ?? "1",  10) || 1);
   const limit = Math.max(1, Math.min(100, parseInt(limitParam ?? "10", 10) || 10));
@@ -41,27 +38,60 @@ export async function GET(req: Request) {
     { data, total, page: safePage, totalPages },
     {
       headers: {
-        // Match server-side cache: 5 min cache + 5 min stale-while-revalidate
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300",
       },
     },
   );
 }
 
+/** Generate future occurrences of a recurring job series */
+function generateRecurringDates(
+  baseDate: Date,
+  schedule: RecurringSchedule,
+): Date[] {
+  const dates: Date[] = [];
+  const start = new Date(schedule.startDate);
+  const end = schedule.endDate ? new Date(schedule.endDate) : null;
+
+  // Generate up to 52 occurrences (safety cap)
+  const MAX_OCCURRENCES = 52;
+  let current = new Date(baseDate);
+
+  // Advance to next occurrence
+  const advance = (d: Date) => {
+    const next = new Date(d);
+    if (schedule.frequency === "daily") {
+      next.setDate(next.getDate() + 1);
+    } else if (schedule.frequency === "weekly") {
+      next.setDate(next.getDate() + 7);
+    } else if (schedule.frequency === "monthly") {
+      next.setMonth(next.getMonth() + 1);
+    }
+    return next;
+  };
+
+  current = advance(current); // skip the first (already created)
+  let count = 0;
+  while (count < MAX_OCCURRENCES) {
+    if (end && current > end) break;
+    dates.push(new Date(current));
+    current = advance(current);
+    count++;
+  }
+  return dates;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    // Get companyId from cookie (server-side auth), not from body (security!)
     const companyId = await getCompanyIdFromCookie();
-    
-    // Look up handyman name from the selected handyman
+
     let handymanName: string | undefined;
     if (body.handymanId) {
       const handyman = await getHandyman(body.handymanId, companyId);
       handymanName = handyman?.name || undefined;
     }
 
-    // Build job data, excluding undefined values to avoid Firestore errors
     const jobData: Parameters<typeof createJob>[0] = {
       companyId,
       clientName: body.clientName,
@@ -75,8 +105,17 @@ export async function POST(req: Request) {
     if (body.description) jobData.description = body.description;
     if (body.handymanId) jobData.handymanId = body.handymanId;
     if (handymanName) jobData.handymanName = handymanName;
+    if (body.durationHours !== undefined && body.durationHours !== null) {
+      jobData.durationHours = Number(body.durationHours);
+    }
+    if (body.jobPhotos && Array.isArray(body.jobPhotos) && body.jobPhotos.length > 0) {
+      jobData.jobPhotos = body.jobPhotos;
+    }
+    if (body.isRecurring) {
+      jobData.isRecurring = true;
+      jobData.recurringSchedule = body.recurringSchedule;
+    }
 
-    // Sync customer from job data (create or update customer record)
     const { syncCustomerFromJob } = await import("@/lib/db");
     const customerId = await syncCustomerFromJob({
       clientName: body.clientName,
@@ -84,21 +123,38 @@ export async function POST(req: Request) {
       clientEmail: body.clientEmail,
       date: jobData.date,
     }, companyId);
-    
+
     if (customerId) {
       jobData.customerId = customerId;
     }
 
     const job = await createJob(jobData);
 
-    // Notify handyman about new job assignment (best-effort, non-blocking)
+    // Generate recurring occurrences
+    if (body.isRecurring && body.recurringSchedule) {
+      const futureDates = generateRecurringDates(
+        new Date(job.date),
+        body.recurringSchedule as RecurringSchedule,
+      );
+      for (const d of futureDates) {
+        const childData = {
+          ...jobData,
+          date: d.toISOString(),
+          isRecurring: false, // children are not independently recurring
+          recurringParentId: job.id,
+          recurringSchedule: undefined,
+        };
+        await createJob(childData);
+      }
+    }
+
     if (body.handymanId) {
       notifyJobAssigned(
         body.handymanId,
         body.title,
         body.clientName,
         jobData.date
-      ).catch(() => {}); // fire and forget
+      ).catch(() => {});
     }
 
     return NextResponse.json(job, { status: 201 });
