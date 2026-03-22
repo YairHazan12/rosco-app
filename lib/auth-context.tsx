@@ -40,7 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth only on client side
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setAuth(getAuth());
+      try {
+        setAuth(getAuth());
+      } catch (err) {
+        console.error("❌ Failed to initialize Firebase Auth:", err);
+        // Fail open: allow loading to resolve so users aren't stuck
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -131,12 +137,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Do NOT set loading=false here when auth is null — auth initializes
+    // asynchronously on the client and we must wait for onAuthStateChanged
+    // to fire before we know whether a user is logged in.
+    // Setting loading=false prematurely causes route guards to redirect to
+    // /login while the Firebase session is still being restored from storage.
     if (!auth) {
-      setLoading(false);
       return;
     }
 
+    // Safety timeout: if onAuthStateChanged never fires (e.g., network issues),
+    // resolve loading after 10s so users aren't stuck on a blank screen.
+    const safetyTimeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          console.warn("⚠️ Auth loading timeout — resolving without user");
+        }
+        return false;
+      });
+    }, 10_000);
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      clearTimeout(safetyTimeout);
       setFirebaseUser(fbUser);
       
       if (fbUser) {
@@ -151,7 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimeout);
+      unsubscribe();
+    };
   }, [auth]);
 
   const signIn = async (email: string, password: string) => {
