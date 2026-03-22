@@ -25,9 +25,16 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  // Demo users don't have a real company profile — redirect gracefully
+  // Fetch user
+  const userDoc = await adminDb.collection("users").doc(userId).get();
+  if (!userDoc.exists) {
+    redirect("/login");
+  }
+  const user = { uid: userDoc.id, ...userDoc.data() } as User;
+
+  // Demo users: show profile without company data
   if (companyId === "DEMO") {
-    redirect("/admin");
+    return <ProfileView user={user} company={null} settings={settings} />;
   }
 
   // Fetch company
@@ -36,13 +43,6 @@ export default async function ProfilePage() {
     redirect("/login");
   }
   const company = { id: companyDoc.id, ...companyDoc.data() } as Company;
-
-  // Fetch user
-  const userDoc = await adminDb.collection("users").doc(userId).get();
-  if (!userDoc.exists) {
-    redirect("/login");
-  }
-  const user = { uid: userDoc.id, ...userDoc.data() } as User;
 
   return <ProfileView user={user} company={company} settings={settings} />;
 }

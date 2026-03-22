@@ -11,7 +11,7 @@ import EditProfileModal from "./EditProfileModal";
 
 interface ProfileViewProps {
   user: UserType;
-  company: Company;
+  company: Company | null;
   settings: AppSettings;
 }
 
@@ -26,12 +26,42 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
         <div>
           <h1 className="ios-large-title pt-1">Profile</h1>
           <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
-            Your business &amp; account
+            {company ? "Your business & account" : "Your account"}
           </p>
         </div>
 
-        {/* Section 1: Business Overview */}
-        <div className="ios-card">
+        {/* Demo Notice (if no company) */}
+        {!company && (
+          <div 
+            className="ios-card p-4"
+            style={{ 
+              background: "linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.05))",
+              borderColor: "rgba(255,107,53,0.2)"
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "var(--brand)" }}
+              >
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-[17px] font-semibold mb-1" style={{ color: "var(--label-primary)" }}>
+                  Demo Mode
+                </h3>
+                <p className="text-[15px] leading-relaxed" style={{ color: "var(--label-secondary)" }}>
+                  You're exploring ROSCO in demo mode. To unlock full company features like team management, 
+                  bank details, and custom branding, create your business account.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section 1: Business Overview (only for real companies) */}
+        {company && (
+          <div className="ios-card">
           <div className="px-4 pt-4 pb-2 flex items-center gap-2">
             <Building2 className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
             <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
@@ -125,6 +155,7 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
             </button>
           </div>
         </div>
+        )}
 
         {/* Section 2: Admin Profile */}
         <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
@@ -185,26 +216,28 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
           </div>
         </div>
 
-        {/* Section 3: Bank Details */}
-        <div className="ios-card">
-          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-            <CreditCard className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-               style={{ color: "var(--label-tertiary)" }}>
-              Bank Details
-            </p>
+        {/* Section 3: Bank Details (only for real companies) */}
+        {company && (
+          <div className="ios-card">
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <CreditCard className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
+                 style={{ color: "var(--label-tertiary)" }}>
+                Bank Details
+              </p>
+            </div>
+            
+            <div className="px-4 pb-4">
+              <BankDetailsForm
+                companyId={company.id}
+                companyName={company.name}
+                initialSettlementBank={company.settlementBank}
+                initialAccountNumber={company.accountNumber}
+                initialSubaccountCode={company.subaccountCode}
+              />
+            </div>
           </div>
-          
-          <div className="px-4 pb-4">
-            <BankDetailsForm
-              companyId={company.id}
-              companyName={company.name}
-              initialSettlementBank={company.settlementBank}
-              initialAccountNumber={company.accountNumber}
-              initialSubaccountCode={company.subaccountCode}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Section 4: Settings */}
         <div className="ios-card">
@@ -225,7 +258,7 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
       </div>
 
       {/* Modals */}
-      {showJoinModal && (
+      {showJoinModal && company && (
         <JoinLinkModal
           companyCode={company.companyCode}
           companyName={company.name}
