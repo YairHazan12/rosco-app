@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { getJob, updateJob, deleteJob, getHandyman } from "@/lib/db";
 import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
+import { notifyJobAssigned, notifyJobStatusChanged } from "@/lib/notifications";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,6 +42,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       handymanName = h?.name;
     }
 
+    // Fetch existing job to detect assignment/status changes
+    const existingJob = await getJob(id, companyId);
+
     await updateJob(id, {
       clientName: body.clientName,
       clientPhone: body.clientPhone || undefined,
@@ -53,6 +57,26 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       handymanId: body.handymanId || undefined,
       handymanName,
     }, companyId);
+
+    // Notify handyman about changes (best-effort, non-blocking)
+    if (body.handymanId) {
+      if (existingJob?.handymanId !== body.handymanId) {
+        // New assignment or reassignment
+        notifyJobAssigned(
+          body.handymanId,
+          body.title,
+          body.clientName,
+          new Date(body.date).toISOString()
+        ).catch(() => {});
+      } else if (existingJob?.status !== body.status) {
+        // Status changed for same handyman
+        notifyJobStatusChanged(
+          body.handymanId,
+          body.title,
+          body.status
+        ).catch(() => {});
+      }
+    }
 
     const updated = await getJob(id, companyId);
     return NextResponse.json(updated);

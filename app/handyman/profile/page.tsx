@@ -405,13 +405,15 @@ export default function HandymanProfilePage() {
                     className="text-[12px] mt-0.5"
                     style={{ color: "var(--label-tertiary)" }}
                   >
-                    New jobs &amp; status updates
+                    {pushSupported
+                      ? "New jobs & status updates"
+                      : "Not supported on this device/browser"}
                   </p>
                 </div>
                 <Switch
-                  checked={settings.pushNotifications ?? true}
+                  checked={settings.pushNotifications ?? false}
                   onCheckedChange={(v) => handleToggle("pushNotifications", v)}
-                  disabled={savingSettings}
+                  disabled={savingSettings || pushLoading || !pushSupported}
                 />
               </div>
 

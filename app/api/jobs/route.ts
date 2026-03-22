@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { getJobs, createJob, getHandyman } from "@/lib/db";
 import { getCompanyIdFromCookie, getUserUidFromCookie, getUserRoleFromCookie } from "@/lib/server-auth";
+import { notifyJobAssigned } from "@/lib/notifications";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -89,6 +90,17 @@ export async function POST(req: Request) {
     }
 
     const job = await createJob(jobData);
+
+    // Notify handyman about new job assignment (best-effort, non-blocking)
+    if (body.handymanId) {
+      notifyJobAssigned(
+        body.handymanId,
+        body.title,
+        body.clientName,
+        jobData.date
+      ).catch(() => {}); // fire and forget
+    }
+
     return NextResponse.json(job, { status: 201 });
   } catch (e) {
     console.error(e);
