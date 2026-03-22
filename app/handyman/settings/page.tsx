@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LogOut, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 
 interface HandymanSettings {
   pushNotifications?: boolean;
@@ -27,6 +28,14 @@ export default function SettingsPage() {
   const [savingSettings, setSavingSettings] = useState(false);
 
   const companyId = user?.companyId || "DEMO";
+
+  const {
+    requestPermission,
+    revokePermission,
+    hasPermission,
+    isSupported: pushSupported,
+    loading: pushLoading,
+  } = usePushNotifications(firebaseUser?.uid);
 
   // Load settings from API
   useEffect(() => {
@@ -85,9 +94,29 @@ export default function SettingsPage() {
   };
 
   // Handle settings change
-  const handleSettingsChange = (key: keyof HandymanSettings, value: boolean) => {
+  const handleSettingsChange = async (key: keyof HandymanSettings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+
+    // Handle push notification token registration / revocation
+    if (key === "pushNotifications") {
+      if (value) {
+        const granted = await requestPermission();
+        if (!granted) {
+          // Revert toggle if permission denied
+          setSettings({ ...settings, pushNotifications: false });
+          toast.error(
+            "Notification permission denied. Please enable it in your browser settings."
+          );
+          return;
+        }
+        toast.success("Push notifications enabled");
+      } else {
+        await revokePermission();
+        toast.success("Push notifications disabled");
+      }
+    }
+
     saveSettings(newSettings);
   };
 
@@ -159,13 +188,15 @@ export default function SettingsPage() {
               Push Notifications
             </div>
             <div className="text-[13px] mt-0.5" style={{ color: "var(--label-secondary)" }}>
-              Receive alerts for new jobs and updates
+              {pushSupported
+                ? "Receive alerts for new jobs and updates"
+                : "Not supported on this device/browser"}
             </div>
           </div>
           <Switch
-            checked={settings.pushNotifications ?? true}
+            checked={settings.pushNotifications ?? false}
             onCheckedChange={(checked) => handleSettingsChange("pushNotifications", checked)}
-            disabled={savingSettings}
+            disabled={savingSettings || pushLoading || !pushSupported}
           />
         </div>
       </section>

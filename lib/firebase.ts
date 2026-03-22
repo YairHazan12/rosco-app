@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getMessaging, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim(),
@@ -14,6 +15,7 @@ const firebaseConfig = {
 // Only initialize Firebase on the client side
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
+let messaging: Messaging | undefined;
 
 if (typeof window !== "undefined") {
   try {
@@ -28,6 +30,16 @@ if (typeof window !== "undefined") {
     setPersistence(auth, browserLocalPersistence).catch((err) => {
       console.warn("⚠️ Could not set auth persistence:", err);
     });
+
+    // Initialize Firebase Cloud Messaging (only if supported)
+    // FCM requires a service worker and is not supported on iOS Safari
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      try {
+        messaging = getMessaging(app);
+      } catch (err) {
+        console.warn("⚠️ FCM not available in this environment:", err);
+      }
+    }
     
     console.log("✅ Firebase initialized successfully");
   } catch (error) {
@@ -36,3 +48,4 @@ if (typeof window !== "undefined") {
 }
 
 export const clientDb = db as Firestore;
+export { messaging };

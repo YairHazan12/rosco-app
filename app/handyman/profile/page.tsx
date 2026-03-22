@@ -16,6 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import EditProfileModal from "./_components/EditProfileModal";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 
 interface HandymanSettings {
   pushNotifications?: boolean;
@@ -41,6 +42,13 @@ export default function HandymanProfilePage() {
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const {
+    requestPermission,
+    revokePermission,
+    isSupported: pushSupported,
+    loading: pushLoading,
+  } = usePushNotifications(firebaseUser?.uid);
 
   // Load settings
   useEffect(() => {
@@ -84,9 +92,28 @@ export default function HandymanProfilePage() {
     }
   };
 
-  const handleToggle = (key: keyof HandymanSettings, value: boolean) => {
+  const handleToggle = async (key: keyof HandymanSettings, value: boolean) => {
     const next = { ...settings, [key]: value };
     setSettings(next);
+
+    // Handle push notification token registration / revocation
+    if (key === "pushNotifications") {
+      if (value) {
+        const granted = await requestPermission();
+        if (!granted) {
+          setSettings({ ...settings, pushNotifications: false });
+          toast.error(
+            "Notification permission denied. Please enable it in your browser settings."
+          );
+          return;
+        }
+        toast.success("Push notifications enabled");
+      } else {
+        await revokePermission();
+        toast.success("Push notifications disabled");
+      }
+    }
+
     saveSettings(next);
   };
 

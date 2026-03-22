@@ -1,3 +1,4 @@
+import * as admin from "firebase-admin";
 import { initializeApp, getApps, cert, applicationDefault, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -50,3 +51,4 @@ try {
 
 export const db = _db;
 export const adminDb = { collection: (name: string) => _db.collection(name) };
+export default admin;
