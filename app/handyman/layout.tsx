@@ -76,7 +76,8 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
         <div className="max-w-[430px] mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo + brand */}
           <div className="flex items-center gap-2.5">
-            <Image src="/Design_1.png" alt="ROSCO" width={100} height={34} style={{ objectFit: "contain" }} />
+            {/* AppLogo.png: app icon/avatar for header navigation */}
+            <Image src="/AppLogo.png" alt="ROSCO" width={34} height={34} style={{ objectFit: "contain" }} />
           </div>
         </div>
       </header>

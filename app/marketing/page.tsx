@@ -432,7 +432,7 @@ export default function MarketingPage() {
         >
           <div className="flex items-center gap-3">
             <Image
-              src="/Design_1.png"
+              src="/Design_1.svg"
               alt="ROSCO Logo"
               width={120}
               height={40}
@@ -1237,7 +1237,7 @@ export default function MarketingPage() {
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <Image
-                src="/Design_1.png"
+                src="/Design_1.svg"
                 alt="ROSCO"
                 width={100}
                 height={34}

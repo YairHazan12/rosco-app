@@ -81,7 +81,7 @@ export default function DemoPage() {
     >
       {/* Logo */}
       <div className="relative mb-8">
-        <Image src="/Design_1.png" alt="ROSCO" width={200} height={68} style={{ objectFit: "contain" }} />
+        <Image src="/Design_1.svg" alt="ROSCO" width={200} height={68} style={{ objectFit: "contain" }} />
       </div>
 
       {/* Title */}

@@ -45,7 +45,7 @@ export default function SignupIntentPage() {
         >
           <Link href="/marketing" className="flex items-center gap-3 group">
             <Image
-              src="/Design_1.png"
+              src="/Design_1.svg"
               alt="ROSCO Logo"
               width={120}
               height={40}

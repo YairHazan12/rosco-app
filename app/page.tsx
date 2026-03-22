@@ -53,7 +53,7 @@ export default function Home() {
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
           {/* Logo */}
           <div className="relative mb-6">
-            <Image src="/Design_1.png" alt="ROSCO" width={220} height={75} style={{ objectFit: "contain" }} />
+            <Image src="/Design_1.svg" alt="ROSCO" width={220} height={75} style={{ objectFit: "contain" }} />
           </div>
 
           <h1
