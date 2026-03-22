@@ -27,7 +27,7 @@ export default async function ProfilePage() {
 
   // Demo users don't have a real company profile — redirect gracefully
   if (companyId === "DEMO") {
-    redirect("/admin/dashboard");
+    redirect("/admin");
   }
 
   // Fetch company
