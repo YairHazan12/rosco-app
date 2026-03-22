@@ -68,7 +68,7 @@ export default function BankSetupBanner() {
             Takes less than a minute to set up.
           </p>
           
-          <Link href="/admin/settings">
+          <Link href="/admin/profile">
             <button
               className="flex items-center gap-1.5 font-semibold text-[14px] px-4 h-[36px] rounded-[10px] text-white transition-opacity active:opacity-75"
               style={{

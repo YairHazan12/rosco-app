@@ -107,7 +107,7 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
             <p className="text-[12px] leading-relaxed mb-2" style={{ color: "var(--label-secondary)" }}>
               Payments will not be split. Add your bank details to receive 95% of payments directly.
             </p>
-            <Link href="/admin/settings">
+            <Link href="/admin/profile">
               <span 
                 className="text-[12px] font-semibold"
                 style={{ color: "var(--ios-orange)" }}
