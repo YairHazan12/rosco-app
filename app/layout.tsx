@@ -51,10 +51,10 @@ export default function RootLayout({
         <Script id="smartlook" strategy="afterInteractive">
           {`
             window.smartlook||(function(d) {
-              var o=smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
+              var o=window.smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
               var c=d.createElement('script');o.api=new Array();c.async=true;c.type='text/javascript';
               c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';
-              c.onload=function(){ smartlook('init', '37dfbcca833fb971c081c844ada70da706407ed6', { region: 'eu' }); };
+              c.onload=function(){ window.smartlook('init', '37dfbcca833fb971c081c844ada70da706407ed6', { region: 'eu' }); };
               h.appendChild(c);
             })(document);
           `}
