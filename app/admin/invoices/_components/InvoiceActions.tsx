@@ -19,17 +19,19 @@ export default function InvoiceActions({ invoice }: { invoice: Invoice }) {
   const [payLink, setPayLink] = useState(invoice.paystackAuthorizationUrl);
   const [hasSubaccount, setHasSubaccount] = useState<boolean | null>(null);
 
-  // Check if company has subaccount setup
+  // Check if company has subaccount setup (gracefully skip if not authenticated)
   useEffect(() => {
     async function checkSubaccount() {
       try {
         const res = await fetch("/api/companies/current");
-        if (res.ok) {
-          const data = await res.json();
-          setHasSubaccount(!!data.company?.subaccountCode);
+        if (!res.ok) {
+          // 401/404 means not authenticated or no company — silently skip
+          return;
         }
-      } catch (error) {
-        console.error("Failed to check subaccount:", error);
+        const data = await res.json();
+        setHasSubaccount(!!data.company?.subaccountCode);
+      } catch {
+        // Network error — silently skip, don't block the UI
       }
     }
 
