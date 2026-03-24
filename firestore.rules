@@ -49,9 +49,15 @@ service cloud.firestore {
       
       // Users can update their own document with valid data
       // After onboarding, displayName must be valid
+      // Always allow updating fcmToken (for push notifications)
       allow update: if isAuthenticated() 
         && request.auth.uid == userId
-        && (!request.resource.data.onboardingComplete || isValidUserData(request.resource.data));
+        && (
+          // Allow fcmToken updates without validation
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken'])) ||
+          // Or validate displayName if onboarding is complete
+          (!request.resource.data.onboardingComplete || isValidUserData(request.resource.data))
+        );
       
       // Allow admin to update users joining their company (for approving join requests)
       allow update: if isAuthenticated() && getUserData().role == "admin" && (
