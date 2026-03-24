@@ -59,8 +59,8 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
       });
 
       if (token) {
-        // Persist token to Firestore handymen/{uid}
-        const ref = doc(clientDb, "handymen", uid);
+        // Persist token to Firestore users/{uid}
+        const ref = doc(clientDb, "users", uid);
         await updateDoc(ref, { fcmToken: token });
         console.log("✅ FCM token saved:", token.slice(0, 20) + "...");
       }
@@ -103,7 +103,7 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
   const revokePermission = useCallback(async (): Promise<void> => {
     if (!handymanId || !clientDb) return;
     try {
-      const ref = doc(clientDb, "handymen", handymanId);
+      const ref = doc(clientDb, "users", handymanId);
       await updateDoc(ref, { fcmToken: null });
       console.log("✅ FCM token cleared from Firestore");
     } catch (err) {
