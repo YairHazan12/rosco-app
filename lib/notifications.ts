@@ -25,8 +25,9 @@ export async function notifyHandyman({
   tag = "rosco-job",
 }: NotifyHandymanOptions): Promise<boolean> {
   try {
-    const handymanDoc = await db.collection("handymen").doc(handymanId).get();
-    const fcmToken = handymanDoc.data()?.fcmToken;
+    // FCM token is stored in the user document, not handymen
+    const userDoc = await db.collection("users").doc(handymanId).get();
+    const fcmToken = userDoc.data()?.fcmToken;
 
     if (!fcmToken) return false;
 

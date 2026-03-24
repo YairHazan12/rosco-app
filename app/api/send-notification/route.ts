@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get handyman's FCM token from Firestore
-    const handymanDoc = await db.collection("handymen").doc(handymanId).get();
-    const fcmToken = handymanDoc.data()?.fcmToken;
+    // Get handyman's FCM token from their user document
+    const userDoc = await db.collection("users").doc(handymanId).get();
+    const fcmToken = userDoc.data()?.fcmToken;
 
     if (!fcmToken) {
       return NextResponse.json(
