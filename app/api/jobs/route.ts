@@ -151,7 +151,9 @@ export async function POST(req: Request) {
     if (body.handymanId) {
       notifyJobAssigned(
         body.handymanId,
+        job.id,
         body.title,
+        body.location,
         body.clientName,
         jobData.date
       ).catch(() => {});

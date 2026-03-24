@@ -68,7 +68,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         // New assignment or reassignment
         notifyJobAssigned(
           body.handymanId,
+          id,
           body.title,
+          body.location,
           body.clientName,
           new Date(body.date).toISOString()
         ).catch(() => {});
@@ -76,6 +78,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         // Status changed for same handyman
         notifyJobStatusChanged(
           body.handymanId,
+          id,
           body.title,
           body.status
         ).catch(() => {});

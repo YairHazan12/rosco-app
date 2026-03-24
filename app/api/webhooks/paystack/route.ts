@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { updateInvoice } from "@/lib/db";
+import { updateInvoice, getInvoice, getJob } from "@/lib/db";
+import { notifyInvoicePaid } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,6 +61,9 @@ export async function POST(req: NextRequest) {
       try {
         console.log(`[🔥 Webhook → DB] Updating invoice ${invoiceId} for company ${companyId}`);
         
+        // Get invoice details before updating
+        const invoice = await getInvoice(invoiceId, companyId);
+        
         await updateInvoice(
           invoiceId,
           {
@@ -72,6 +76,21 @@ export async function POST(req: NextRequest) {
 
         console.log(`✅ Invoice ${invoiceId} marked as paid (company: ${companyId}, reference: ${reference})`);
         console.log(`[♻️ Webhook] Cache should be invalidated for "invoices-${companyId}"`);
+        
+        // Notify the handyman if invoice has an associated job with a handyman
+        if (invoice?.jobId) {
+          const job = await getJob(invoice.jobId, companyId);
+          if (job?.handymanId) {
+            notifyInvoicePaid(
+              job.handymanId,
+              invoiceId,
+              invoice.clientName || "Customer",
+              invoice.total || 0
+            ).catch((err) => {
+              console.warn("Failed to send invoice paid notification:", err);
+            });
+          }
+        }
         
         return NextResponse.json({ success: true });
       } catch (error) {

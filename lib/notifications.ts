@@ -100,15 +100,24 @@ export async function notifyHandyman({
  */
 export async function notifyJobAssigned(
   handymanId: string,
+  jobId: string,
   jobTitle: string,
+  location: string,
   clientName: string,
   jobDate: string
 ): Promise<boolean> {
+  const dateStr = new Date(jobDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  
   return notifyHandyman({
     handymanId,
     title: "New Job Assigned",
-    body: `${jobTitle} for ${clientName} on ${new Date(jobDate).toLocaleDateString()}`,
-    url: "/handyman",
+    body: `${jobTitle} at ${location} • ${dateStr}`,
+    url: `/handyman/jobs/${jobId}`,
     tag: "rosco-job-assigned",
     notificationType: "job_assigned",
   });
@@ -119,15 +128,53 @@ export async function notifyJobAssigned(
  */
 export async function notifyJobStatusChanged(
   handymanId: string,
+  jobId: string,
   jobTitle: string,
   newStatus: string
 ): Promise<boolean> {
   return notifyHandyman({
     handymanId,
     title: "Job Status Updated",
-    body: `${jobTitle} is now ${newStatus}`,
-    url: "/handyman",
+    body: `Job #${jobId.slice(0, 8)} (${jobTitle}) is now ${newStatus}`,
+    url: `/handyman/jobs/${jobId}`,
     tag: "rosco-job-status",
     notificationType: "job_status",
+  });
+}
+
+/**
+ * Notify when an invoice has been paid.
+ */
+export async function notifyInvoicePaid(
+  handymanId: string,
+  invoiceId: string,
+  customerName: string,
+  amount: number
+): Promise<boolean> {
+  return notifyHandyman({
+    handymanId,
+    title: "Invoice Paid",
+    body: `Invoice #${invoiceId.slice(0, 8)} paid by ${customerName} (₪${amount.toLocaleString()})`,
+    url: `/handyman/invoices/${invoiceId}`,
+    tag: "rosco-invoice-paid",
+    notificationType: "invoice_paid",
+  });
+}
+
+/**
+ * Notify when a new team member joins.
+ */
+export async function notifyTeamMemberJoined(
+  recipientHandymanId: string,
+  newMemberName: string,
+  newMemberRole: string
+): Promise<boolean> {
+  return notifyHandyman({
+    handymanId: recipientHandymanId,
+    title: "New Team Member",
+    body: `${newMemberName} joined your team as ${newMemberRole}`,
+    url: "/handyman/team",
+    tag: "rosco-team-joined",
+    notificationType: "team_joined",
   });
 }
