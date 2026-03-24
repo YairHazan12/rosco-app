@@ -12,11 +12,16 @@ import {
   Briefcase,
   Bell,
   LogOut,
+  Users,
+  Building2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import EditProfileModal from "./_components/EditProfileModal";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
+import { doc, getDoc } from "firebase/firestore";
+import { clientDb } from "@/lib/firebase";
+import type { Company } from "@/lib/auth-types";
 
 interface HandymanSettings {
   pushNotifications?: boolean;
@@ -30,6 +35,10 @@ interface HandymanSettings {
 export default function HandymanProfilePage() {
   const { user, firebaseUser, signOut } = useAuth();
   const router = useRouter();
+
+  const [company, setCompany] = useState<Company | null>(null);
+  const [companyLoading, setCompanyLoading] = useState(false);
+  const [companyError, setCompanyError] = useState(false);
 
   const [settings, setSettings] = useState<HandymanSettings>({
     pushNotifications: true,
@@ -70,6 +79,48 @@ export default function HandymanProfilePage() {
     };
     load();
   }, [firebaseUser?.uid]);
+
+  // Load company/team info
+  useEffect(() => {
+    const loadCompany = async () => {
+      if (!user?.companyId) return;
+      setCompanyLoading(true);
+      try {
+        const companyRef = doc(clientDb, "companies", user.companyId);
+        const snap = await getDoc(companyRef);
+        if (snap.exists()) {
+          setCompany({ id: snap.id, ...snap.data() } as Company);
+        }
+      } catch {
+        // silently fail — team section just won't show
+      } finally {
+        setCompanyLoading(false);
+      }
+    };
+    loadCompany();
+  }, [user?.companyId]);
+
+  // Load company data
+  useEffect(() => {
+    if (!user?.companyId) return;
+    const loadCompany = async () => {
+      setCompanyLoading(true);
+      try {
+        const res = await fetch("/api/companies/current");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.company) {
+            setCompany(data.company);
+          }
+        }
+      } catch {
+        setCompanyError(true);
+      } finally {
+        setCompanyLoading(false);
+      }
+    };
+    loadCompany();
+  }, [user?.companyId]);
 
   const saveSettings = async (newSettings: HandymanSettings) => {
     if (!firebaseUser?.uid) return;
@@ -291,7 +342,96 @@ export default function HandymanProfilePage() {
           </div>
         </div>
 
-        {/* ─── Section 3: Preferences ─── */}
+        {/* ─── Section 3: Team ─── */}
+        <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+            <Users className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.6px]"
+              style={{ color: "var(--label-tertiary)" }}
+            >
+              My Team
+            </p>
+          </div>
+
+          {companyLoading ? (
+            <div className="px-4 py-3.5">
+              <div
+                className="h-4 rounded animate-pulse w-32"
+                style={{ background: "rgba(120,120,128,0.15)" }}
+              />
+            </div>
+          ) : company ? (
+            <>
+              {/* Company Name */}
+              <div className="px-4 py-3.5">
+                <p
+                  className="text-[13px] font-medium mb-0.5"
+                  style={{ color: "var(--label-tertiary)" }}
+                >
+                  Company
+                </p>
+                <p
+                  className="text-[17px] font-semibold"
+                  style={{ color: "var(--label-primary)" }}
+                >
+                  {company.name}
+                </p>
+              </div>
+
+              {/* Team Code */}
+              <div className="px-4 py-3.5">
+                <p
+                  className="text-[13px] font-medium mb-0.5"
+                  style={{ color: "var(--label-tertiary)" }}
+                >
+                  Team Code
+                </p>
+                <p
+                  className="text-[15px] font-mono"
+                  style={{ color: "var(--label-primary)" }}
+                >
+                  {company.companyCode}
+                </p>
+              </div>
+
+              {/* Business Type */}
+              {company.settings?.businessType && (
+                <div className="px-4 py-3.5">
+                  <p
+                    className="text-[13px] font-medium mb-1"
+                    style={{ color: "var(--label-tertiary)" }}
+                  >
+                    Business Type
+                  </p>
+                  <span
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-[13px] font-medium capitalize"
+                    style={{
+                      background: "rgba(120,120,128,0.12)",
+                      color: "var(--label-secondary)",
+                    }}
+                  >
+                    {company.settings.businessType}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="px-4 py-3.5">
+              <p className="text-[15px]" style={{ color: "var(--label-tertiary)" }}>
+                Not connected to a team
+              </p>
+              <p
+                className="text-[12px] mt-0.5"
+                style={{ color: "var(--label-quaternary)" }}
+              >
+                Ask your admin to share a team invite link
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ─── Section 4: Preferences ─── */}
         <div className="ios-card">
           <div className="px-4 pt-4 pb-2 flex items-center gap-2">
             <Settings className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
