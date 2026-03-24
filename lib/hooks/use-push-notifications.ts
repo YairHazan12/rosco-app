@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getToken, onMessage, isSupported } from "firebase/messaging";
+import { getToken, onMessage, isSupported as fcmIsSupported } from "firebase/messaging";
 import { doc, updateDoc } from "firebase/firestore";
 import { messaging, messagingInitPromise, clientDb } from "@/lib/firebase";
 
@@ -26,7 +26,7 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
     let cancelled = false;
     (async () => {
       try {
-        const supported = await isSupported();
+        const supported = await fcmIsSupported();
         if (cancelled) return;
         setIsSupported(supported);
         if (supported && typeof Notification !== "undefined") {
