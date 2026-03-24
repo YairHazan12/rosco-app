@@ -180,6 +180,19 @@ service cloud.firestore {
       allow create, update, delete: if isActive() && isAdminOf(businessId);
     }
     
+    // ─── Notifications ─────────────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can mark their own notifications as read
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      
+      // Only server (admin SDK) creates notifications — no client writes
+    }
+    
     // ─── Off-Day Requests ────────────────────────────────────────────────────
     match /offDayRequests/{requestId} {
       // Handyman can read their own requests
