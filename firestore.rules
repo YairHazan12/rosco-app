@@ -49,12 +49,14 @@ service cloud.firestore {
       
       // Users can update their own document with valid data
       // After onboarding, displayName must be valid
-      // Always allow updating fcmToken (for push notifications)
+      // Always allow updating/removing fcmToken (for push notifications)
       allow update: if isAuthenticated() 
         && request.auth.uid == userId
         && (
-          // Allow fcmToken updates without validation
+          // Allow fcmToken updates/removals without validation
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken'])) ||
+          // Allow deleting fcmToken field entirely
+          (!request.resource.data.keys().hasAny(['fcmToken']) && resource.data.keys().hasAny(['fcmToken'])) ||
           // Or validate displayName if onboarding is complete
           (!request.resource.data.onboardingComplete || isValidUserData(request.resource.data))
         );
