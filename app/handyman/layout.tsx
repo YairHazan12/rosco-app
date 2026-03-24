@@ -10,6 +10,7 @@ import PWAPrompt from "@/components/pwa-prompt";
 // notification prompt removed - was blocking mobile UI
 import { useAuth } from "@/lib/auth-context";
 import LocationSetupPrompt from "@/components/location-setup-prompt";
+import NotificationCenter from "@/components/notification-center";
 
 const navItems = [
   { href: "/handyman",         label: "Schedule", icon: CalendarDays },
@@ -79,6 +80,8 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
             {/* AppLogo.png: app icon/avatar for header navigation */}
             <Image src="/AppLogo.png" alt="ROSCO" width={34} height={34} style={{ objectFit: "contain" }} />
           </div>
+          {/* Notification Center */}
+          <NotificationCenter />
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 /**
  * Server-side push notification helpers.
- * Sends FCM messages to handymen when jobs are assigned or updated.
+ * Sends FCM messages and writes in-app notifications to Firestore.
  */
 import admin from "@/lib/firebase-admin";
 import { db } from "@/lib/firebase-admin";
@@ -11,6 +11,38 @@ interface NotifyHandymanOptions {
   body: string;
   url?: string;
   tag?: string;
+  notificationType?: "job_assigned" | "job_updated" | "job_status" | "invoice_paid" | "team_joined" | "general";
+}
+
+/**
+ * Write an in-app notification to Firestore for a user.
+ */
+async function writeInAppNotification({
+  userId,
+  companyId,
+  type,
+  title,
+  message,
+}: {
+  userId: string;
+  companyId: string;
+  type: string;
+  title: string;
+  message: string;
+}) {
+  try {
+    await db.collection("notifications").add({
+      userId,
+      companyId,
+      type,
+      title,
+      message,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn("In-app notification write failed (non-critical):", err);
+  }
 }
 
 /**
@@ -23,11 +55,22 @@ export async function notifyHandyman({
   body,
   url = "/handyman",
   tag = "rosco-job",
+  notificationType = "general",
 }: NotifyHandymanOptions): Promise<boolean> {
   try {
     // FCM token is stored in the user document, not handymen
     const userDoc = await db.collection("users").doc(handymanId).get();
     const fcmToken = userDoc.data()?.fcmToken;
+    const companyId = userDoc.data()?.companyId ?? "";
+
+    // Always write in-app notification regardless of FCM
+    await writeInAppNotification({
+      userId: handymanId,
+      companyId,
+      type: notificationType,
+      title,
+      message: body,
+    });
 
     if (!fcmToken) return false;
 
@@ -63,10 +106,11 @@ export async function notifyJobAssigned(
 ): Promise<boolean> {
   return notifyHandyman({
     handymanId,
-    title: "📋 New Job Assigned",
+    title: "New Job Assigned",
     body: `${jobTitle} for ${clientName} on ${new Date(jobDate).toLocaleDateString()}`,
     url: "/handyman",
     tag: "rosco-job-assigned",
+    notificationType: "job_assigned",
   });
 }
 
@@ -80,9 +124,10 @@ export async function notifyJobStatusChanged(
 ): Promise<boolean> {
   return notifyHandyman({
     handymanId,
-    title: "🔄 Job Updated",
-    body: `${jobTitle} — Status changed to ${newStatus}`,
+    title: "Job Status Updated",
+    body: `${jobTitle} is now ${newStatus}`,
     url: "/handyman",
     tag: "rosco-job-status",
+    notificationType: "job_status",
   });
 }

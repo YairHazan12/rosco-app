@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import LocationSetupPrompt from "@/components/location-setup-prompt";
 import DemoResetButton from "./_components/demo-reset-button";
+import NotificationCenter from "@/components/notification-center";
 
 const navItems = [
   { href: "/admin",           label: "Dashboard", icon: LayoutDashboard },
@@ -75,6 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* User menu */}
           <div className="flex items-center gap-2">
+            {/* Notification Center */}
+            <NotificationCenter />
             {/* Demo Reset Button — only shown for demo admin */}
             {firebaseUser?.email?.startsWith("demo-") && (
               <DemoResetButton />
