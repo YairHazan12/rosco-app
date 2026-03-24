@@ -98,10 +98,10 @@ export default function OnboardingPage() {
   
   // Auto-fill account holder name when company name changes
   useEffect(() => {
-    if (companyName && !accountHolderName) {
+    if (companyName) {
       setAccountHolderName(companyName);
     }
-  }, [companyName, accountHolderName]);
+  }, [companyName]);
   
   // Fetch available banks from Paystack when admin role is selected
   useEffect(() => {
@@ -587,18 +587,6 @@ export default function OnboardingPage() {
                       ℹ️ Auto-filled with company name - should match your bank records
                     </p>
                   </div>
-
-                  {settlementBank && accountNumber && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600 mt-0.5">✓</span>
-                        <div className="text-xs text-green-800">
-                          <strong>Payment split configured:</strong> You'll receive 95% of customer payments, 
-                          ROSCO keeps 5% as platform fee.
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

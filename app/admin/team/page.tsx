@@ -465,10 +465,17 @@ export default function TeamPage() {
                       </span>
                     </div>
 
+                    {/* Email */}
+                    {member.email && (
+                      <p className="text-[13px] truncate" style={{ color: "var(--label-secondary)" }}>
+                        {member.email}
+                      </p>
+                    )}
+
                     {/* Phone */}
                     {member.phone && (
-                      <p className="text-[14px] mb-2" style={{ color: "var(--label-secondary)" }}>
-                        {member.phone}
+                      <p className="text-[14px] font-medium mt-1" style={{ color: "var(--label)" }}>
+                        📞 {member.phone}
                       </p>
                     )}
 
