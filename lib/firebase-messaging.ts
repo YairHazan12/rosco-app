@@ -1,8 +1,12 @@
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getApps } from "firebase/app";
 
+const isMessagingSupported =
+  typeof window !== "undefined" &&
+  "serviceWorker" in navigator &&
+  "PushManager" in window;
+
 export async function requestNotificationPermission(): Promise<string | null> {
-  if (typeof window === "undefined" || typeof Notification === "undefined") return null;
+  if (!isMessagingSupported || typeof Notification === "undefined") return null;
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return null;
@@ -10,23 +14,38 @@ export async function requestNotificationPermission(): Promise<string | null> {
   const app = getApps()[0];
   if (!app) return null;
 
-  const messaging = getMessaging(app);
-  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-  if (!vapidKey) {
-    console.error("Missing VAPID key");
+  try {
+    const { getMessaging, getToken } = await import("firebase/messaging");
+    const messaging = getMessaging(app);
+    const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+    if (!vapidKey) {
+      console.error("Missing VAPID key");
+      return null;
+    }
+
+    // Register service worker for FCM
+    const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
+    const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swRegistration });
+    return token;
+  } catch (err) {
+    console.warn("⚠️ FCM not available in this environment:", err);
     return null;
   }
-
-  // Register service worker for FCM
-  const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-
-  const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swRegistration });
-  return token;
 }
 
 export function onForegroundMessage(callback: (payload: any) => void) {
+  if (!isMessagingSupported) return () => {};
+
   const app = getApps()[0];
-  if (!app || typeof window === "undefined") return () => {};
-  const messaging = getMessaging(app);
-  return onMessage(messaging, callback);
+  if (!app) return () => {};
+
+  try {
+    const { getMessaging, onMessage } = require("firebase/messaging");
+    const messaging = getMessaging(app);
+    return onMessage(messaging, callback);
+  } catch (err) {
+    console.warn("⚠️ FCM onForegroundMessage not available:", err);
+    return () => {};
+  }
 }

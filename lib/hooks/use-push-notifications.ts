@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getToken, onMessage } from "firebase/messaging";
+import { getToken, onMessage, isSupported } from "firebase/messaging";
 import { doc, updateDoc } from "firebase/firestore";
-import { messaging, clientDb } from "@/lib/firebase";
+import { messaging, messagingInitPromise, clientDb } from "@/lib/firebase";
 
 const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
@@ -20,27 +20,33 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
   const [isSupported, setIsSupported] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Detect support on mount
+  // Detect support on mount using Firebase's own isSupported() check,
+  // which correctly returns false for Safari, incognito, and unsupported browsers.
   useEffect(() => {
-    const supported =
-      typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window &&
-      "Notification" in window;
-    setIsSupported(supported);
-
-    if (supported) {
-      const current = Notification.permission;
-      setHasPermission(current === "granted");
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const supported = await isSupported();
+        if (cancelled) return;
+        setIsSupported(supported);
+        if (supported && typeof Notification !== "undefined") {
+          setHasPermission(Notification.permission === "granted");
+        }
+      } catch {
+        if (!cancelled) setIsSupported(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   /**
    * Register FCM service worker, get token, save to Firestore.
    */
   const registerToken = useCallback(async (uid: string): Promise<string | null> => {
-    if (!messaging || !VAPID_KEY) {
-      console.warn("FCM messaging not initialized or VAPID key missing");
+    // Await the async messaging initialization (may be null if unsupported)
+    const resolvedMessaging = messaging ?? (messagingInitPromise ? await messagingInitPromise : null);
+    if (!resolvedMessaging || !VAPID_KEY) {
+      console.warn("FCM messaging not available or VAPID key missing");
       return null;
     }
 
@@ -53,7 +59,7 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
         swRegistration = await navigator.serviceWorker.ready;
       }
 
-      const token = await getToken(messaging, {
+      const token = await getToken(resolvedMessaging, {
         vapidKey: VAPID_KEY,
         serviceWorkerRegistration: swRegistration,
       });
@@ -113,13 +119,23 @@ export function usePushNotifications(handymanId: string | null | undefined): Use
 
   // Listen for foreground messages (optional: show toast or in-app alert)
   useEffect(() => {
-    if (!messaging || !hasPermission) return;
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("📩 Foreground FCM message:", payload);
-      // Foreground notifications are handled here if needed.
-      // The service worker handles background notifications automatically.
-    });
-    return unsubscribe;
+    if (!hasPermission) return;
+    let unsubscribe: (() => void) | undefined;
+    // Await messaging init before subscribing (no-op if unsupported)
+    const resolveAndListen = async () => {
+      const resolvedMessaging = messaging ?? (messagingInitPromise ? await messagingInitPromise : null);
+      if (!resolvedMessaging) return;
+      try {
+      unsubscribe = onMessage(resolvedMessaging, (payload) => {
+        console.log("📩 Foreground FCM message:", payload);
+        // The service worker handles background notifications automatically.
+      });
+      } catch (err) {
+        console.warn("⚠️ onMessage listener failed to attach:", err);
+      }
+    };
+    resolveAndListen().catch(() => {});
+    return () => unsubscribe?.();
   }, [hasPermission]);
 
   return {

@@ -1,7 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getMessaging, Messaging } from "firebase/messaging";
+import { getMessaging, Messaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim(),
@@ -17,6 +17,9 @@ let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let messaging: Messaging | undefined;
 
+// Promise that resolves when messaging is initialized (or null if unsupported)
+let messagingInitPromise: Promise<Messaging | null> | undefined;
+
 if (typeof window !== "undefined") {
   try {
     // Initialize Firebase app
@@ -26,21 +29,36 @@ if (typeof window !== "undefined") {
     db = getFirestore(app);
 
     // Ensure auth session persists across page navigations (LOCAL = IndexedDB/localStorage)
+    // This runs independently of messaging — auth must never be blocked by messaging failures.
     const auth = getAuth(app);
     setPersistence(auth, browserLocalPersistence).catch((err) => {
       console.warn("⚠️ Could not set auth persistence:", err);
     });
 
-    // Initialize Firebase Cloud Messaging (only if supported)
-    // FCM requires a service worker and is not supported on iOS Safari
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      try {
-        messaging = getMessaging(app);
-      } catch (err) {
-        console.warn("⚠️ FCM not available in this environment:", err);
-      }
-    }
-    
+    // Initialize Firebase Cloud Messaging asynchronously and optionally.
+    // FCM is not supported in Safari, incognito mode, or browsers without ServiceWorker/PushManager.
+    // The app must function normally even when messaging is unavailable.
+    const appRef = app;
+    messagingInitPromise = isSupported()
+      .then((supported: boolean) => {
+        if (!supported) {
+          console.info("ℹ️ Firebase Messaging not supported in this browser (e.g. Safari/incognito). Notifications disabled.");
+          return null;
+        }
+        try {
+          const msg = getMessaging(appRef);
+          messaging = msg;
+          return msg;
+        } catch (err: unknown) {
+          console.warn("⚠️ FCM getMessaging() failed:", err);
+          return null;
+        }
+      })
+      .catch((err: unknown) => {
+        console.warn("⚠️ FCM isSupported() check failed:", err);
+        return null;
+      });
+
     console.log("✅ Firebase initialized successfully");
   } catch (error) {
     console.error("❌ Firebase initialization error:", error);
@@ -48,4 +66,4 @@ if (typeof window !== "undefined") {
 }
 
 export const clientDb = db as Firestore;
-export { messaging };
+export { messaging, messagingInitPromise };
