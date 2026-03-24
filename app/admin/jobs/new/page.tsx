@@ -1,4 +1,4 @@
-import { getHandymen } from "@/lib/db";
+import { getHandymen, getJobs } from "@/lib/db";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 
 export default async function NewJobPage() {
   const companyId = await getCompanyIdFromCookie();
-  const handymen = await getHandymen(companyId);
+  const [handymen, allJobs] = await Promise.all([
+    getHandymen(companyId),
+    getJobs(companyId),
+  ]);
   return (
     <div>
       <Link
@@ -20,7 +23,7 @@ export default async function NewJobPage() {
         <span className="text-[17px]">Jobs</span>
       </Link>
       <h1 className="ios-title mb-5">New Job</h1>
-      <JobForm handymen={handymen} />
+      <JobForm handymen={handymen} allJobs={allJobs} />
     </div>
   );
 }

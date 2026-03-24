@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
+
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import ServiceWorkerRegistrar from "@/components/service-worker-registrar";
@@ -45,20 +45,20 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.smartlook||(function(d) {
+                var o=smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
+                var c=d.createElement('script');o.api=new Array();c.async=true;c.type='text/javascript';
+                c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';h.appendChild(c);
+              })(document);
+              smartlook('init', '37dfbcca833fb971c081c844ada70da706407ed6', { region: 'eu' });
+            `,
+          }}
+        />
       </head>
       <body className="antialiased">
-        {/* Smartlook Analytics */}
-        <Script id="smartlook" strategy="afterInteractive">
-          {`
-            window.smartlook||(function(d) {
-              var o=window.smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
-              var c=d.createElement('script');o.api=new Array();c.async=true;c.type='text/javascript';
-              c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';
-              c.onload=function(){ window.smartlook('init', '37dfbcca833fb971c081c844ada70da706407ed6', { region: 'eu' }); };
-              h.appendChild(c);
-            })(document);
-          `}
-        </Script>
         <AuthProvider>
           <ServiceWorkerRegistrar />
           {children}

@@ -17,8 +17,10 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Loader2, X, RefreshCw } from "lucide-react";
 import CustomerAutocomplete from "./CustomerAutocomplete";
+import HandymanAvailabilityPicker from "./HandymanAvailabilityPicker";
+import type { Handyman as HandymanType, Job as JobType } from "@/lib/types";
 
-interface Handyman { id: string; name: string }
+interface Handyman { id: string; name: string; specialties?: string[]; status?: string; companyId: string; createdAt: string }
 interface Job {
   id: string; clientName: string; clientPhone?: string | null;
   clientEmail?: string | null; title: string; description?: string | null;
@@ -33,7 +35,7 @@ interface Job {
   } | null;
 }
 
-export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?: Job }) {
+export default function JobForm({ handymen, job, allJobs = [] }: { handymen: Handyman[]; job?: Job; allJobs?: JobType[] }) {
   const router = useRouter();
   const isEditing = !!job;
 
@@ -268,21 +270,25 @@ export default function JobForm({ handymen, job }: { handymen: Handyman[]; job?:
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[13px] font-medium" style={labelStyle}>Handyman</Label>
-            <Select
-              value={formData.handymanId || "none"}
-              onValueChange={val => set("handymanId", val === "none" ? "" : val)}
-            >
-              <SelectTrigger className="h-11 text-[16px] rounded-xl border" style={inputStyle}>
-                <SelectValue placeholder="Select handyman" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Unassigned</SelectItem>
-                {handymen.map(h => (
-                  <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-[13px] font-medium" style={labelStyle}>Assign Worker</Label>
+            <HandymanAvailabilityPicker
+              startTime={formData.date}
+              durationHours={formData.durationHours}
+              handymen={handymen as HandymanType[]}
+              jobs={allJobs}
+              selectedId={formData.handymanId}
+              onSelect={id => set("handymanId", id)}
+            />
+            {formData.handymanId && (
+              <button
+                type="button"
+                className="text-[13px] mt-1"
+                style={{ color: "var(--ios-red)" }}
+                onClick={() => set("handymanId", "")}
+              >
+                Clear selection
+              </button>
+            )}
           </div>
         </div>
       </div>
