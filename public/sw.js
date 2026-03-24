@@ -62,12 +62,16 @@ self.addEventListener("fetch", (event) => {
 
 // Push notification support
 self.addEventListener("push", (event) => {
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || "ROSCO";
+  const payload = event.data ? event.data.json() : {};
+  // FCM webpush sends notification data under payload.notification
+  const notif = payload.notification || {};
+  const data = payload.data || {};
+  const title = notif.title || payload.title || "ROSCO";
+  const body = notif.body || payload.body || "";
   const options = {
-    body: data.body || "You have a new update.",
-    icon: "/apple-touch-icon.png",
-    badge: "/apple-touch-icon.png",
+    body: body,
+    icon: notif.icon || "/apple-touch-icon.png",
+    badge: notif.badge || "/apple-touch-icon.png",
     tag: data.tag || "rosco-notification",
     data: data.url ? { url: data.url } : {},
   };
