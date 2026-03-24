@@ -141,7 +141,12 @@ service cloud.firestore {
       allow read: if resource.data.companyId == "DEMO" 
         || (isActive() && belongsToCompany(resource.data.companyId));
       
-      // Only admins can create/update/delete handymen
+      // Handymen can update their own fcmToken (for push notifications toggle)
+      allow update: if isActive() 
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken']);
+      
+      // Only admins can create/update/delete handymen (all other fields)
       allow create, update, delete: if isActive() && isAdminOf(request.resource.data.companyId);
     }
     
