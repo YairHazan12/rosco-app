@@ -8,6 +8,7 @@ export const VAT_RATES: Record<string, number> = {
   DE: 0.19, // Germany - 19%
   FR: 0.20, // France - 20%
   US: 0.00, // United States - 0% (no federal VAT/GST)
+  ZA: 0.15, // South Africa - 15%
 };
 
 /**
@@ -19,6 +20,7 @@ export const COUNTRY_NAMES: Record<string, string> = {
   DE: "Germany",
   FR: "France",
   US: "United States",
+  ZA: "South Africa",
 };
 
 /**
