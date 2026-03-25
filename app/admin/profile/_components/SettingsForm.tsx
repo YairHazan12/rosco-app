@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { AppSettings } from "@/lib/types";
+import { getAvailableCountries } from "@/lib/vat-rates";
 
 const CURRENCIES = [
   { value: "ZAR", label: "R ZAR – South African Rand" },
@@ -31,6 +32,9 @@ const TIMEZONES = [
   "Asia/Dubai", "Asia/Kolkata", "Asia/Tokyo", "Asia/Shanghai",
   "Australia/Sydney", "Pacific/Auckland",
 ];
+
+// Get available countries for VAT configuration
+const COUNTRIES = getAvailableCountries();
 
 export default function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
@@ -118,6 +122,25 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
           >
             {TIMEZONES.map((tz) => (
               <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center justify-between py-3.5">
+          <div>
+            <p className="text-[16px] font-medium" style={{ color: "var(--label-primary)" }}>Country</p>
+            <p className="text-[13px]" style={{ color: "var(--label-tertiary)" }}>For VAT/tax calculation on invoices</p>
+          </div>
+          <select
+            value={settings.country || "IL"}
+            onChange={(e) => setSettings((s) => ({ ...s, country: e.target.value as AppSettings["country"] }))}
+            className="text-[14px] font-medium rounded-[10px] px-3 py-2 border-0 outline-none"
+            style={{ background: "rgba(120,120,128,0.12)", color: "var(--label-primary)", maxWidth: "160px" }}
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name} ({Math.round(c.rate * 100)}%)
+              </option>
             ))}
           </select>
         </div>

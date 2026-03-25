@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getVatRate, getVatLabel } from "@/lib/vat-rates";
+import type { AppSettings } from "@/lib/types";
 
 interface ServicePreset {
   id: string;
@@ -30,9 +32,11 @@ interface LineItem {
 export default function InvoiceEditor({
   job,
   presets,
+  settings,
 }: {
   job: Job;
   presets: ServicePreset[];
+  settings: AppSettings;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<LineItem[]>([
@@ -41,7 +45,9 @@ export default function InvoiceEditor({
   const [vatEnabled, setVatEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const VAT_RATE = 0.17;
+  // Get VAT rate based on country from settings
+  const VAT_RATE = getVatRate(settings.country);
+  const vatLabel = getVatLabel(settings.country);
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const vatAmount = vatEnabled ? subtotal * VAT_RATE : 0;
@@ -263,7 +269,7 @@ export default function InvoiceEditor({
                 Include VAT
               </p>
               <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
-                17% — Israeli standard
+                {Math.round(VAT_RATE * 100)}% — {settings.country || "IL"}
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -297,7 +303,7 @@ export default function InvoiceEditor({
             </div>
             {vatEnabled && (
               <div className="flex justify-between text-[14px]" style={{ color: "var(--label-tertiary)" }}>
-                <span>VAT (17%)</span>
+                <span>{vatLabel}</span>
                 <span>R{vatAmount.toFixed(2)}</span>
               </div>
             )}

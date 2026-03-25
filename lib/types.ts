@@ -106,6 +106,7 @@ export interface AppSettings {
   currency: "ILS" | "USD" | "EUR" | "GBP";
   language: "en" | "he" | "ru" | "ar";
   timezone: string;
+  country?: "IL" | "GB" | "DE" | "FR" | "US"; // Country code for VAT calculation
   notifications: {
     email: boolean;
     sms: boolean;

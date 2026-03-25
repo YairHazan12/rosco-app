@@ -566,6 +566,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   currency: "ILS",
   language: "en",
   timezone: "Asia/Jerusalem",
+  country: "IL", // Default to Israel for VAT calculation
   notifications: { email: true, sms: false, push: false },
 };
 
