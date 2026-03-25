@@ -29,8 +29,19 @@ export interface Company {
     phone?: string;
     teamSize?: string;
   };
+  // South Africa — billing & compliance
+  vatNumber?: string;            // SARS VAT registration number (e.g., "4123456789")
+  registrationNumber?: string;   // CIPC company registration number (e.g., "2023/123456/07")
+  address?: string;              // Full business address
+  email?: string;                // Business email address
+  phone?: string;                // Business phone number
+  // Banking details for EFT (shown on invoices)
+  bankName?: string;             // e.g., "FNB", "Standard Bank", "ABSA", "Nedbank", "Capitec"
+  accountHolder?: string;        // Account holder name
+  branchCode?: string;           // 6-digit SA branch code (e.g., "250655" for FNB)
+  accountType?: string;          // e.g., "Cheque", "Savings"
   // Paystack subaccount fields (for platform revenue split)
-  settlementBank?: string;      // Bank code for Paystack (e.g., "044")
+  settlementBank?: string;       // Bank code for Paystack (e.g., "044")
   accountNumber?: string;        // Company bank account number
   subaccountCode?: string;       // Paystack subaccount code (ACCT_xxx)
   createdAt: string;

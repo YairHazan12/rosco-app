@@ -5,7 +5,6 @@ import Link from "next/link";
 
 // Async components
 import KPIStrip from "./_components/kpi-strip";
-import WeekMonthStats from "./_components/week-month-stats";
 import JobPipeline from "./_components/job-pipeline";
 import TodayProgress from "./_components/today-progress";
 import TodayJobs from "./_components/today-jobs";
@@ -18,7 +17,6 @@ import BankSetupBanner from "./_components/bank-setup-banner";
 // Skeletons
 import {
   KPISkeleton,
-  WeekMonthSkeleton,
   PipelineSkeleton,
   TodayProgressSkeleton,
   JobsSkeleton,
@@ -44,10 +42,10 @@ export default function AdminDashboard() {
         </div>
         <Link href="/admin/jobs/new">
           <button
-            className="flex items-center gap-1.5 font-semibold text-[15px] px-4 h-[44px] rounded-[12px] text-white transition-opacity active:opacity-75"
+            className="flex items-center gap-1.5 font-semibold text-[15px] px-5 h-[48px] rounded-[14px] text-white transition-all active:scale-[0.97] active:opacity-90"
             style={{
-              background: "linear-gradient(145deg, #FF7A47, #FF5500)",
-              boxShadow: "0 3px 10px rgba(255,107,53,0.30)",
+              background: "#F07028",
+              boxShadow: "0px 4px 16px rgba(240, 112, 40, 0.30)",
             }}
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -59,11 +57,6 @@ export default function AdminDashboard() {
       {/* ── KPI Strip ───────────────────────────────── */}
       <Suspense fallback={<KPISkeleton />}>
         <KPIStrip />
-      </Suspense>
-
-      {/* ── This Week + This Month ───────────────────── */}
-      <Suspense fallback={<WeekMonthSkeleton />}>
-        <WeekMonthStats />
       </Suspense>
 
       {/* ── Job Pipeline ─────────────────────────────── */}

@@ -193,6 +193,25 @@ service cloud.firestore {
       // Only server (admin SDK) creates notifications — no client writes
     }
     
+    // ─── Quotes ──────────────────────────────────────────────────────────────
+    match /quotes/{quoteId} {
+      allow read: if isActive() && belongsToCompany(resource.data.companyId);
+      allow create: if isActive() && isAdminOf(request.resource.data.companyId);
+      allow update, delete: if isActive() && isAdminOf(resource.data.companyId);
+    }
+
+    // ─── Billing Invoices ────────────────────────────────────────────────────
+    match /billingInvoices/{invoiceId} {
+      allow read: if isActive() && belongsToCompany(resource.data.companyId);
+      allow create: if isActive() && isAdminOf(request.resource.data.companyId);
+      allow update, delete: if isActive() && isAdminOf(resource.data.companyId);
+    }
+
+    // ─── Billing Counters ────────────────────────────────────────────────────
+    match /billingCounters/{companyId} {
+      allow read, write: if isActive() && isAdminOf(companyId);
+    }
+
     // ─── Off-Day Requests ────────────────────────────────────────────────────
     match /offDayRequests/{requestId} {
       // Handyman can read their own requests

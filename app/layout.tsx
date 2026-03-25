@@ -1,9 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import ServiceWorkerRegistrar from "@/components/service-worker-registrar";
 import { AuthProvider } from "@/lib/auth-context";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -11,7 +19,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#F8FAFB",
+  themeColor: "#F5F8F6",
 };
 
 export const metadata: Metadata = {
@@ -36,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         {/* PWA & iOS home screen */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -66,10 +74,14 @@ export default function RootLayout({
             position="top-center"
             toastOptions={{
               style: {
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
+                fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
                 borderRadius: "14px",
-                fontSize: "15px",
+                fontSize: "14px",
                 fontWeight: "500",
+                background: "#FFFFFF",
+                color: "#1C2B22",
+                border: "1px solid rgba(0,0,0,0.06)",
+                boxShadow: "0px 4px 24px rgba(0,0,0,0.10)",
               },
             }}
           />

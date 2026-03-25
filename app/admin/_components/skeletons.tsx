@@ -5,8 +5,8 @@
 
 export function KPISkeleton() {
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {[1, 2, 3].map((i) => (
+    <div className="grid grid-cols-2 gap-3">
+      {[1, 2, 3, 4].map((i) => (
         <div key={i} className="ios-card p-4">
           <div
             className="w-9 h-9 rounded-[10px] mb-3 animate-pulse"

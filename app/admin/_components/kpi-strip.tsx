@@ -1,6 +1,15 @@
-import { getJobs, getInvoices, filterTodayJobs, filterOutstandingInvoices, filterPaidInvoices } from "@/lib/db";
+import {
+  getJobs,
+  getInvoices,
+  filterTodayJobs,
+  filterOutstandingInvoices,
+  filterPaidInvoices,
+  filterWeekJobs,
+  filterMonthJobs,
+} from "@/lib/db";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
-import { Briefcase, TrendingUp, AlertCircle } from "lucide-react";
+import { TrendingUp, AlertCircle, Briefcase, LayoutGrid } from "lucide-react";
+import TotalJobsToggle from "./total-jobs-toggle";
 
 export default async function KPIStrip() {
   const companyId = await getCompanyIdFromCookie();
@@ -9,8 +18,13 @@ export default async function KPIStrip() {
   const todayJobs = filterTodayJobs(allJobs);
   const outstanding = filterOutstandingInvoices(allInvoices);
   const paidInvoices = filterPaidInvoices(allInvoices);
+  const weekJobs = filterWeekJobs(allJobs);
+  const monthJobs = filterMonthJobs(allJobs);
 
   const doneToday = todayJobs.filter((j) => j.status === "Completed").length;
+  const weekCompleted = weekJobs.filter((j) => j.status === "Completed").length;
+  const monthCompleted = monthJobs.filter((j) => j.status === "Completed").length;
+
   const totalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0);
   const outstandingTotal = outstanding.reduce((s, i) => s + i.total, 0);
 
@@ -18,32 +32,27 @@ export default async function KPIStrip() {
     n >= 1000 ? `R${(n / 1000).toFixed(1)}k` : `R${n.toFixed(0)}`;
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {/* Today */}
+    <div className="grid grid-cols-2 gap-3">
+      {/* Top-left: Total Revenue Collected */}
       <div className="ios-card p-4">
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-3"
-          style={{ background: "rgba(255,107,53,0.12)" }}
+          style={{ background: "rgba(52,199,89,0.10)" }}
         >
-          <Briefcase className="w-[18px] h-[18px]" style={{ color: "var(--brand)" }} />
+          <TrendingUp className="w-[18px] h-[18px]" style={{ color: "var(--ios-green)" }} />
         </div>
         <p
-          className="text-[30px] font-bold tracking-tight leading-none stat-number"
+          className="text-[26px] font-bold tracking-tight leading-none stat-number"
           style={{ color: "var(--label-primary)" }}
         >
-          {todayJobs.length}
+          {fmtZAR(totalRevenue)}
         </p>
         <p className="text-[12px] mt-1.5 font-medium" style={{ color: "var(--label-tertiary)" }}>
-          Today
+          Total Revenue
         </p>
-        {todayJobs.length > 0 && (
-          <p className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--ios-green)" }}>
-            {doneToday}/{todayJobs.length} done
-          </p>
-        )}
       </div>
 
-      {/* Unpaid */}
+      {/* Top-right: Unpaid Invoices */}
       <div className="ios-card p-4">
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-3"
@@ -58,32 +67,54 @@ export default async function KPIStrip() {
           {outstanding.length}
         </p>
         <p className="text-[12px] mt-1.5 font-medium" style={{ color: "var(--label-tertiary)" }}>
-          Unpaid
+          Unpaid Invoices
         </p>
         {outstanding.length > 0 && (
           <p className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--ios-red)" }}>
-            R{outstandingTotal.toFixed(0)}
+            {fmtZAR(outstandingTotal)} outstanding
           </p>
         )}
       </div>
 
-      {/* Revenue */}
+      {/* Bottom-left: Today's Jobs */}
       <div className="ios-card p-4">
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-3"
-          style={{ background: "rgba(52,199,89,0.10)" }}
+          style={{ background: "rgba(255,107,53,0.12)" }}
         >
-          <TrendingUp className="w-[18px] h-[18px]" style={{ color: "var(--ios-green)" }} />
+          <Briefcase className="w-[18px] h-[18px]" style={{ color: "var(--brand)" }} />
         </div>
         <p
-          className="text-[22px] font-bold tracking-tight leading-none stat-number"
+          className="text-[30px] font-bold tracking-tight leading-none stat-number"
           style={{ color: "var(--label-primary)" }}
         >
-          {fmtZAR(totalRevenue)}
+          {todayJobs.length}
         </p>
         <p className="text-[12px] mt-1.5 font-medium" style={{ color: "var(--label-tertiary)" }}>
-          Collected
+          Today&apos;s Jobs
         </p>
+        {todayJobs.length > 0 && (
+          <p className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--ios-green)" }}>
+            {doneToday}/{todayJobs.length} done
+          </p>
+        )}
+      </div>
+
+      {/* Bottom-right: Total Jobs with weekly/monthly toggle */}
+      <div className="ios-card p-4">
+        <div
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-3"
+          style={{ background: "rgba(0,122,255,0.10)" }}
+        >
+          <LayoutGrid className="w-[18px] h-[18px]" style={{ color: "var(--ios-blue)" }} />
+        </div>
+        <TotalJobsToggle
+          totalJobs={allJobs.length}
+          weekJobs={weekJobs.length}
+          weekCompleted={weekCompleted}
+          monthJobs={monthJobs.length}
+          monthCompleted={monthCompleted}
+        />
       </div>
     </div>
   );
