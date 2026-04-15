@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getCompanyIdFromCookie } from "@/lib/server-auth";
@@ -19,7 +19,9 @@ export default async function InvoiceDetailPage({ params }: Props) {
   const companyId = await getCompanyIdFromCookie();
   const invoice = await getBillingInvoice(id, companyId);
 
-  if (!invoice) notFound();
+  // Legacy invoices live under /admin/invoices/[id]. If an ID isn't found in the new
+  // billingInvoices collection, send the user to the legacy invoice page.
+  if (!invoice) redirect(`/admin/invoices/${id}`);
 
   const colors = STATUS_COLORS[invoice.status];
   const hasVat = invoice.lineItems.some((i) => i.vatApplicable);

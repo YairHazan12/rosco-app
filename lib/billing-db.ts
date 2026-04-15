@@ -13,6 +13,20 @@ import type { Quote, BillingInvoice, BillingCounters, QuoteStatus, BillingInvoic
 
 const now = () => new Date().toISOString();
 
+function stripUndefinedDeep<T>(value: T): T {
+  if (value === undefined) return value;
+  if (value === null) return value;
+  if (Array.isArray(value)) return value.map((v) => stripUndefinedDeep(v)) as T;
+  if (typeof value !== "object") return value;
+
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (v === undefined) continue;
+    out[k] = stripUndefinedDeep(v);
+  }
+  return out as T;
+}
+
 // ─── Serialization ────────────────────────────────────────────────────────────
 
 function serializeDoc<T>(doc: FirebaseFirestore.DocumentSnapshot): T {
@@ -105,7 +119,7 @@ export async function createQuote(
 ): Promise<Quote> {
   const ts = now();
   const ref = db.collection("quotes").doc();
-  const doc: Omit<Quote, "id"> = { ...data, companyId, createdAt: ts, updatedAt: ts };
+  const doc: Omit<Quote, "id"> = stripUndefinedDeep({ ...data, companyId, createdAt: ts, updatedAt: ts });
   await ref.set(doc);
   return { id: ref.id, ...doc };
 }
@@ -115,10 +129,10 @@ export async function updateQuote(
   companyId: string,
   updates: Partial<Omit<Quote, "id" | "companyId" | "createdAt">>
 ): Promise<void> {
-  await db.collection("quotes").doc(id).update({
+  await db.collection("quotes").doc(id).update(stripUndefinedDeep({
     ...updates,
     updatedAt: now(),
-  });
+  }));
 }
 
 // ─── Billing Invoices ─────────────────────────────────────────────────────────
@@ -141,13 +155,23 @@ export async function getBillingInvoice(id: string, companyId: string): Promise<
   return inv;
 }
 
+/**
+ * Public/direct lookup without knowing companyId.
+ * Use sparingly (not cached) for customer-facing pages like /pay/[id].
+ */
+export async function getBillingInvoiceById(id: string): Promise<BillingInvoice | null> {
+  const doc = await db.collection("billingInvoices").doc(id).get();
+  if (!doc.exists) return null;
+  return serializeDoc<BillingInvoice>(doc);
+}
+
 export async function createBillingInvoice(
   companyId: string,
   data: Omit<BillingInvoice, "id" | "createdAt" | "updatedAt">
 ): Promise<BillingInvoice> {
   const ts = now();
   const ref = db.collection("billingInvoices").doc();
-  const doc: Omit<BillingInvoice, "id"> = { ...data, companyId, createdAt: ts, updatedAt: ts };
+  const doc: Omit<BillingInvoice, "id"> = stripUndefinedDeep({ ...data, companyId, createdAt: ts, updatedAt: ts });
   await ref.set(doc);
   return { id: ref.id, ...doc };
 }
@@ -157,10 +181,10 @@ export async function updateBillingInvoice(
   companyId: string,
   updates: Partial<Omit<BillingInvoice, "id" | "companyId" | "createdAt">>
 ): Promise<void> {
-  await db.collection("billingInvoices").doc(id).update({
+  await db.collection("billingInvoices").doc(id).update(stripUndefinedDeep({
     ...updates,
     updatedAt: now(),
-  });
+  }));
 }
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────

@@ -523,7 +523,7 @@ function LineItemCard({ item, onChange, onDelete }: LineItemCardProps) {
               type="number"
               min={0}
               step={0.01}
-              value={item.unitPrice}
+              value={item.unitPrice ?? ""}
               onChange={(e) => update({ unitPrice: parseFloat(e.target.value) || 0 })}
               className="flex-1 text-right bg-transparent outline-none"
               style={{ fontSize: "14px", fontFamily: "inherit", color: "#1C2B22" }}

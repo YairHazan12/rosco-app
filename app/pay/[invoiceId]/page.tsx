@@ -1,8 +1,10 @@
 import { getInvoiceById } from "@/lib/db";
+import { getBillingInvoiceById } from "@/lib/billing-db";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Wrench, MapPin, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
 import PayButton from "./_components/PayButton";
+import { formatZAR } from "@/lib/billing-types";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +16,134 @@ export default async function CustomerPayPage({
   const { invoiceId } = await params;
   if (invoiceId === "demo") return <DemoPage />;
 
-  const invoice = await getInvoiceById(invoiceId);
-  if (!invoice) notFound();
+  const legacyInvoice = await getInvoiceById(invoiceId);
+  const billingInvoice = legacyInvoice ? null : await getBillingInvoiceById(invoiceId);
+  if (!legacyInvoice && !billingInvoice) notFound();
 
+  if (billingInvoice) {
+    const isPaid = billingInvoice.status === "paid";
+    return (
+      <div
+        className="min-h-screen flex flex-col"
+        style={{
+          background: "var(--bg-primary)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif",
+        }}
+      >
+        <header className="ios-header sticky top-0 z-20" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div className="max-w-[430px] mx-auto px-4 h-14 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--brand)" }}>
+              <Wrench className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-semibold text-[17px]" style={{ color: "var(--label-primary)" }}>
+              ROSCO
+            </span>
+          </div>
+        </header>
+
+        <div className="flex-1 max-w-[430px] mx-auto w-full px-4 space-y-3" style={{ paddingTop: 20, paddingBottom: isPaid ? 40 : 40 }}>
+          {isPaid && (
+            <div className="rounded-2xl p-6 text-center animate-fade-up" style={{ background: "var(--ios-green)" }}>
+              <CheckCircle2 className="w-10 h-10 text-white mx-auto mb-2" />
+              <p className="text-white font-bold text-[20px]">Payment Received!</p>
+              <p className="text-white/80 text-[14px] mt-1">Thank you for your business</p>
+            </div>
+          )}
+
+          <div className="ios-card p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[12px] font-mono mb-1" style={{ color: "var(--label-tertiary)" }}>
+                  Invoice {billingInvoice.documentNumber}
+                </p>
+                <p className="text-[20px] font-bold" style={{ color: "var(--label-primary)", letterSpacing: "-0.3px" }}>
+                  {billingInvoice.clientName}
+                </p>
+                <p className="text-[14px] mt-1" style={{ color: "var(--label-secondary)" }}>
+                  {billingInvoice.title}
+                </p>
+              </div>
+              <span
+                className="text-[12px] font-semibold px-3 py-1 rounded-full"
+                style={{
+                  background: isPaid ? "rgba(52,199,89,0.12)" : "rgba(255,107,53,0.12)",
+                  color: isPaid ? "#248A3D" : "var(--brand)",
+                }}
+              >
+                {billingInvoice.status}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[14px]" style={{ color: "var(--label-secondary)" }}>
+                <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: "var(--label-quaternary)" }} />
+                Issued {format(new Date(billingInvoice.issueDate), "MMMM d, yyyy")}
+              </div>
+            </div>
+          </div>
+
+          <div className="ios-card p-5">
+            <p className="ios-section-header mb-4">Line items</p>
+            <div className="space-y-3.5">
+              {billingInvoice.lineItems.map((item) => (
+                <div key={item.id} className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium" style={{ color: "var(--label-primary)" }}>
+                      {item.name}
+                    </p>
+                    <p className="text-[13px] mt-0.5" style={{ color: "var(--label-tertiary)" }}>
+                      {item.quantity} × {formatZAR(item.unitPrice)}
+                    </p>
+                  </div>
+                  <p className="text-[15px] font-semibold flex-shrink-0" style={{ color: "var(--label-primary)" }}>
+                    {formatZAR(item.lineTotal)}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 pt-4 space-y-2" style={{ borderTop: "0.5px solid var(--separator)" }}>
+              <div className="flex justify-between text-[14px]" style={{ color: "var(--label-tertiary)" }}>
+                <span>Total</span>
+                <span>{formatZAR(billingInvoice.total)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!isPaid && (
+          <div
+            className="fixed bottom-0 left-0 right-0 z-20"
+            style={{
+              paddingBottom: "env(safe-area-inset-bottom, 16px)",
+              background: "rgba(242,242,247,0.95)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              borderTop: "0.5px solid var(--separator)",
+            }}
+          >
+            <div className="max-w-[430px] mx-auto px-4 pt-3 pb-2 space-y-2.5">
+              {billingInvoice.paymentLinkUrl?.startsWith("https://checkout.paystack.com") ? (
+                <a className="ios-btn-brand text-center block" href={billingInvoice.paymentLinkUrl}>
+                  Pay {formatZAR(billingInvoice.total)}
+                </a>
+              ) : (
+                <div className="text-center text-[13px]" style={{ color: "var(--label-tertiary)" }}>
+                  Payment link unavailable. Please contact the business.
+                </div>
+              )}
+              <div className="flex items-center justify-center gap-1.5 text-[12px]" style={{ color: "var(--label-tertiary)" }}>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Secured by Paystack · Card · Mobile Money
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const invoice = legacyInvoice;
   const isPaid = invoice.status === "Paid";
 
   return (
