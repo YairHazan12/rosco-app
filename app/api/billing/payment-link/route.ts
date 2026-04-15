@@ -174,7 +174,7 @@ export async function POST(req: Request) {
       activityLog: [...invoice.activityLog, activityEntry],
     });
 
-    revalidateTag(`billing-invoices-${companyId}`);
+    revalidateTag(`billing-invoices-${companyId}`, "max");
 
     return NextResponse.json({ url: paymentUrl });
   } catch (err) {

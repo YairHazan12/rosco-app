@@ -115,7 +115,7 @@ export async function getQuote(id: string, companyId: string): Promise<Quote | n
 
 export async function createQuote(
   companyId: string,
-  data: Omit<Quote, "id" | "createdAt" | "updatedAt">
+  data: Omit<Quote, "id" | "companyId" | "createdAt" | "updatedAt">
 ): Promise<Quote> {
   const ts = now();
   const ref = db.collection("quotes").doc();
@@ -167,7 +167,7 @@ export async function getBillingInvoiceById(id: string): Promise<BillingInvoice 
 
 export async function createBillingInvoice(
   companyId: string,
-  data: Omit<BillingInvoice, "id" | "createdAt" | "updatedAt">
+  data: Omit<BillingInvoice, "id" | "companyId" | "createdAt" | "updatedAt">
 ): Promise<BillingInvoice> {
   const ts = now();
   const ref = db.collection("billingInvoices").doc();

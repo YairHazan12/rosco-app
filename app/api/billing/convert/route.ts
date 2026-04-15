@@ -90,8 +90,8 @@ export async function POST(req: Request) {
       ],
     });
 
-    revalidateTag(`billing-quotes-${companyId}`);
-    revalidateTag(`billing-invoices-${companyId}`);
+    revalidateTag(`billing-quotes-${companyId}`, "max");
+    revalidateTag(`billing-invoices-${companyId}`, "max");
 
     return NextResponse.json({ id: invoice.id });
   } catch (err) {

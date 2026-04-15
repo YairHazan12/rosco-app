@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         depositAmount: data.depositAmount,
         activityLog: data.activityLog ?? [],
       });
-      revalidateTag(`billing-quotes-${companyId}`);
+      revalidateTag(`billing-quotes-${companyId}`, "max");
       return NextResponse.json({ id: quote.id });
     } else {
       const invoice = await createBillingInvoice(companyId, {
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         sourceQuoteId: data.sourceQuoteId,
         activityLog: data.activityLog ?? [],
       });
-      revalidateTag(`billing-invoices-${companyId}`);
+      revalidateTag(`billing-invoices-${companyId}`, "max");
       return NextResponse.json({ id: invoice.id });
     }
   } catch (err) {

@@ -598,7 +598,7 @@ function AddItemSheet({
 
   function addCustom() {
     if (!custom.name.trim()) return;
-    onAdd({ ...custom, description: "", lineTotal: calcLineTotal({ ...custom, lineTotal: 0, id: "", sortOrder: 0 }) });
+    onAdd({ ...custom, description: "", lineTotal: calcLineTotal(custom) });
     onClose();
   }
 

@@ -143,6 +143,7 @@ export default async function CustomerPayPage({
     );
   }
 
+  if (!legacyInvoice) notFound();
   const invoice = legacyInvoice;
   const isPaid = invoice.status === "Paid";
 

@@ -58,10 +58,10 @@ export async function PATCH(req: Request, { params }: RouteContext) {
 
     if (docType === "quote") {
       await updateQuote(id, companyId, updates);
-      revalidateTag(`billing-quotes-${companyId}`);
+      revalidateTag(`billing-quotes-${companyId}`, "max");
     } else {
       await updateBillingInvoice(id, companyId, updates);
-      revalidateTag(`billing-invoices-${companyId}`);
+      revalidateTag(`billing-invoices-${companyId}`, "max");
     }
 
     return NextResponse.json({ ok: true });
