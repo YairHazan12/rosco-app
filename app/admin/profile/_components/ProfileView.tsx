@@ -32,27 +32,21 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
 
         {/* Demo Notice (if no company) */}
         {!company && (
-          <div 
-            className="ios-card p-4"
-            style={{ 
-              background: "linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.05))",
-              borderColor: "rgba(255,107,53,0.2)"
-            }}
-          >
+          <div className="ios-card p-4">
             <div className="flex items-start gap-3">
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "var(--brand)" }}
+              <div
+                className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(240,112,40,0.10)" }}
               >
-                <Building2 className="w-5 h-5 text-white" />
+                <Building2 className="w-5 h-5" style={{ color: "#F07028" }} />
               </div>
               <div>
-                <h3 className="text-[17px] font-semibold mb-1" style={{ color: "var(--label-primary)" }}>
+                <h3 className="text-[16px] font-semibold mb-1" style={{ color: "var(--label-primary)" }}>
                   Demo Mode
                 </h3>
-                <p className="text-[15px] leading-relaxed" style={{ color: "var(--label-secondary)" }}>
-                  You're exploring ROSCO in demo mode. To unlock full company features like team management, 
-                  bank details, and custom branding, create your business account.
+                <p className="text-[14px] leading-relaxed" style={{ color: "var(--label-secondary)" }}>
+                  You&apos;re exploring ROSCO in demo mode. Create your business account to unlock team
+                  management, bank details, and custom branding.
                 </p>
               </div>
             </div>
@@ -61,108 +55,129 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
 
         {/* Section 1: Business Overview (only for real companies) */}
         {company && (
-          <div className="ios-card">
-          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-            <Building2 className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-               style={{ color: "var(--label-tertiary)" }}>
-              Business Overview
-            </p>
-          </div>
+          <div
+            className="rounded-[16px] overflow-hidden"
+            style={{
+              background: "linear-gradient(160deg, #FFFFFF 0%, #F0F8F2 100%)",
+              border: "1px solid rgba(0,0,0,0.06)",
+              boxShadow: "0px 1px 3px rgba(0,0,0,0.06), 0px 4px 12px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <Building2 className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
+              <p
+                className="text-[10px] font-semibold uppercase"
+                style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+              >
+                Business Overview
+              </p>
+            </div>
 
-          <div className="px-4 pb-4 space-y-4">
-            {/* Company name - large and prominent */}
-            <div>
-              <h2 className="text-[28px] font-bold tracking-tight leading-tight"
-                  style={{ color: "var(--label-primary)" }}>
+            <div className="px-4 pb-4 space-y-4">
+              {/* Company name */}
+              <h2
+                className="text-[24px] font-bold tracking-tight leading-tight"
+                style={{ color: "var(--label-primary)" }}
+              >
                 {company.name}
               </h2>
-            </div>
 
-            {/* Company details grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Company Code */}
-              <div 
-                className="p-3 rounded-[10px]"
-                style={{ background: "rgba(120,120,128,0.12)" }}
-              >
-                <p className="text-[11px] font-medium mb-1" style={{ color: "var(--label-tertiary)" }}>
-                  COMPANY CODE
-                </p>
-                <p className="text-[15px] font-semibold font-mono" style={{ color: "var(--brand)" }}>
-                  {company.companyCode}
-                </p>
+              {/* Company details grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Company Code */}
+                <div className="p-3 rounded-[10px]" style={{ background: "#F5F8F6" }}>
+                  <p
+                    className="text-[10px] font-semibold uppercase mb-1"
+                    style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+                  >
+                    Company Code
+                  </p>
+                  <p
+                    className="text-[15px] font-bold"
+                    style={{
+                      color: "#3CC864",
+                      fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {company.companyCode}
+                  </p>
+                </div>
+
+                {/* Business Type */}
+                {company.settings?.businessType && (
+                  <div className="p-3 rounded-[10px]" style={{ background: "#F5F8F6" }}>
+                    <p
+                      className="text-[10px] font-semibold uppercase mb-1"
+                      style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+                    >
+                      Business Type
+                    </p>
+                    <p
+                      className="text-[14px] font-semibold capitalize"
+                      style={{ color: "var(--label-primary)" }}
+                    >
+                      {company.settings.businessType}
+                    </p>
+                  </div>
+                )}
+
+                {/* Team Size */}
+                {company.settings?.teamSize && (
+                  <div className="p-3 rounded-[10px]" style={{ background: "#F5F8F6" }}>
+                    <p
+                      className="text-[10px] font-semibold uppercase mb-1"
+                      style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+                    >
+                      Team Size
+                    </p>
+                    <p className="text-[14px] font-semibold" style={{ color: "var(--label-primary)" }}>
+                      {company.settings.teamSize}
+                    </p>
+                  </div>
+                )}
+
+                {/* Phone */}
+                {company.settings?.phone && (
+                  <div className="p-3 rounded-[10px]" style={{ background: "#F5F8F6" }}>
+                    <p
+                      className="text-[10px] font-semibold uppercase mb-1"
+                      style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+                    >
+                      Phone
+                    </p>
+                    <p className="text-[14px] font-semibold" style={{ color: "var(--label-primary)" }}>
+                      {company.settings.phone}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Business Type */}
-              {company.settings?.businessType && (
-                <div 
-                  className="p-3 rounded-[10px]"
-                  style={{ background: "rgba(120,120,128,0.12)" }}
-                >
-                  <p className="text-[11px] font-medium mb-1" style={{ color: "var(--label-tertiary)" }}>
-                    BUSINESS TYPE
-                  </p>
-                  <p className="text-[15px] font-semibold capitalize" style={{ color: "var(--label-primary)" }}>
-                    {company.settings.businessType}
-                  </p>
-                </div>
-              )}
-
-              {/* Team Size */}
-              {company.settings?.teamSize && (
-                <div 
-                  className="p-3 rounded-[10px]"
-                  style={{ background: "rgba(120,120,128,0.12)" }}
-                >
-                  <p className="text-[11px] font-medium mb-1" style={{ color: "var(--label-tertiary)" }}>
-                    TEAM SIZE
-                  </p>
-                  <p className="text-[15px] font-semibold" style={{ color: "var(--label-primary)" }}>
-                    {company.settings.teamSize}
-                  </p>
-                </div>
-              )}
-
-              {/* Phone */}
-              {company.settings?.phone && (
-                <div 
-                  className="p-3 rounded-[10px]"
-                  style={{ background: "rgba(120,120,128,0.12)" }}
-                >
-                  <p className="text-[11px] font-medium mb-1" style={{ color: "var(--label-tertiary)" }}>
-                    PHONE
-                  </p>
-                  <p className="text-[15px] font-semibold" style={{ color: "var(--label-primary)" }}>
-                    {company.settings.phone}
-                  </p>
-                </div>
-              )}
+              {/* Share Join Link — secondary green button */}
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="w-full flex items-center justify-center gap-2 font-semibold text-[15px] h-[48px] rounded-[12px] transition-all active:scale-[0.98] active:opacity-90"
+                style={{
+                  background: "rgba(60,200,100,0.08)",
+                  border: "1.5px solid rgba(60,200,100,0.25)",
+                  color: "#2BA84A",
+                }}
+              >
+                <Share2 className="w-4 h-4" strokeWidth={1.75} />
+                Share Join Link
+              </button>
             </div>
-
-            {/* Join Link Button */}
-            <button
-              onClick={() => setShowJoinModal(true)}
-              className="w-full flex items-center justify-center gap-2 font-semibold text-[15px] h-[44px] rounded-[10px] transition-opacity active:opacity-75"
-              style={{ 
-                background: "var(--brand)", 
-                color: "white",
-                boxShadow: "0 2px 8px rgba(255,107,53,0.25)"
-              }}
-            >
-              <Share2 className="w-4 h-4" />
-              Share Join Link
-            </button>
           </div>
-        </div>
         )}
 
         {/* Section 2: Admin Profile */}
         <div className="ios-card divide-y" style={{ borderColor: "var(--separator)" }}>
           <div className="px-4 pt-4 pb-2 flex items-center gap-2">
             <User className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-               style={{ color: "var(--label-tertiary)" }}>
+            <p
+              className="text-[10px] font-semibold uppercase"
+              style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+            >
               Admin Profile
             </p>
           </div>
@@ -221,8 +236,10 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
           <div className="ios-card">
             <div className="px-4 pt-4 pb-2 flex items-center gap-2">
               <CreditCard className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-                 style={{ color: "var(--label-tertiary)" }}>
+              <p
+                className="text-[10px] font-semibold uppercase"
+                style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+              >
                 Bank Details
               </p>
             </div>
@@ -243,8 +260,10 @@ export default function ProfileView({ user, company, settings }: ProfileViewProp
         <div className="ios-card">
           <div className="px-4 pt-4 pb-2 flex items-center gap-2">
             <Settings className="w-4 h-4" style={{ color: "var(--label-tertiary)" }} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.6px]"
-               style={{ color: "var(--label-tertiary)" }}>
+            <p
+              className="text-[10px] font-semibold uppercase"
+              style={{ color: "var(--label-tertiary)", letterSpacing: "0.08em" }}
+            >
               Preferences
             </p>
           </div>

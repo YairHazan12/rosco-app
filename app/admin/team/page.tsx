@@ -309,92 +309,86 @@ export default function TeamPage() {
       </div>
 
       {/* ── Team Code Card ─────────────────────────── */}
-      <div className="ios-card" style={{ 
-        background: "linear-gradient(145deg, var(--brand-light), #ffffff)",
-        borderColor: "var(--brand)",
-        borderWidth: "1.5px"
-      }}>
+      <div
+        className="rounded-[16px] overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #3CC864 0%, #1A7A32 100%)",
+          boxShadow: "0px 8px 32px rgba(60, 200, 100, 0.30)",
+        }}
+      >
         <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ 
-                  background: "var(--brand)",
-                  boxShadow: "0 4px 12px rgba(78, 203, 113, 0.25)"
-                }}
-              >
-                <Users className="w-6 h-6 text-white" strokeWidth={2.5} />
-              </div>
-              <div>
-                <h2 className="ios-headline">Team Code</h2>
-                <p className="text-[13px] mt-0.5" style={{ color: "var(--label-secondary)" }}>
-                  Share this code with handymen to join
-                </p>
-              </div>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div
+              className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.20)" }}
+            >
+              <Users className="w-5 h-5 text-white" strokeWidth={1.75} />
+            </div>
+            <div>
+              <p className="text-white font-semibold text-[17px] leading-tight">Team Code</p>
+              <p className="text-[13px] mt-0.5" style={{ color: "rgba(255,255,255,0.70)" }}>
+                Share with handymen to join your team
+              </p>
             </div>
           </div>
 
-          {/* Code Display */}
-          <div 
-            className="rounded-xl p-4 mb-3"
-            style={{ 
-              background: "white",
-              border: "1px solid var(--separator)"
-            }}
+          {/* Code Block */}
+          <div
+            className="rounded-[12px] px-5 py-4 mb-5 text-center"
+            style={{ background: "rgba(0,0,0,0.12)" }}
           >
-            <div className="text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" 
-                 style={{ color: "var(--label-tertiary)" }}>
-                Team Code
-              </p>
-              <p className="text-[32px] font-bold tracking-tight" 
-                 style={{ 
-                   color: "var(--brand)",
-                   fontVariantNumeric: "tabular-nums",
-                   letterSpacing: "1px"
-                 }}>
-                {teamCode ?? "N/A"}
-              </p>
-            </div>
+            <p
+              className="text-[11px] font-semibold uppercase mb-2"
+              style={{ color: "rgba(255,255,255,0.60)", letterSpacing: "0.08em" }}
+            >
+              Your Code
+            </p>
+            <p
+              style={{
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+                fontSize: "22px",
+                fontWeight: 700,
+                color: "#FFFFFF",
+                letterSpacing: "0.12em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {teamCode ?? "—"}
+            </p>
           </div>
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={handleCopyCode}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-[12px] font-semibold text-[15px] text-white transition-all active:scale-[0.97] active:opacity-90"
               style={{
-                background: copied ? "var(--green)" : "var(--brand)",
-                color: "white",
-                boxShadow: copied 
-                  ? "0 2px 8px rgba(16, 185, 129, 0.25)"
-                  : "0 2px 8px rgba(78, 203, 113, 0.25)"
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.25)",
               }}
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4" strokeWidth={2.5} />
+                  <Check className="w-4 h-4" strokeWidth={2.25} />
                   Copied!
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" strokeWidth={2.5} />
+                  <Copy className="w-4 h-4" strokeWidth={1.75} />
                   Copy
                 </>
               )}
             </button>
             <button
               onClick={handleShareLink}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-[12px] font-semibold text-[15px] text-white transition-all active:scale-[0.97] active:opacity-90"
               style={{
-                background: "white",
-                color: "var(--brand)",
-                border: "1.5px solid var(--brand)",
-                boxShadow: "0 1px 3px rgba(78, 203, 113, 0.1)"
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.25)",
               }}
             >
-              <Share2 className="w-4 h-4" strokeWidth={2.5} />
+              <Share2 className="w-4 h-4" strokeWidth={1.75} />
               Share Link
             </button>
           </div>

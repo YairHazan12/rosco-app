@@ -96,7 +96,7 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
         className="ios-tab-bar fixed bottom-0 left-0 right-0 z-30"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="max-w-[430px] mx-auto flex">
+        <div className="max-w-[430px] mx-auto flex" style={{ minHeight: "64px" }}>
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive =
               href === "/handyman"
@@ -108,21 +108,25 @@ export default function HandymanLayout({ children }: { children: React.ReactNode
                 key={href}
                 href={href}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-[3px] py-2 min-h-[50px]",
-                  "transition-all duration-150"
+                  "flex-1 flex flex-col items-center justify-center py-3 transition-all duration-150",
+                  "min-h-[64px]"
                 )}
+                style={{ gap: "5px" }}
               >
                 <Icon
-                  className="w-[26px] h-[26px]"
-                  strokeWidth={isActive ? 2.5 : 1.8}
+                  className="w-[22px] h-[22px]"
+                  strokeWidth={isActive ? 2.25 : 1.75}
                   style={{
-                    color: isActive ? "var(--brand)" : "var(--label-quaternary)",
+                    color: isActive ? "#3CC864" : "#7A8F82",
                   }}
                 />
                 <span
-                  className="text-[10px] font-semibold tracking-[0.2px]"
+                  className="font-medium"
                   style={{
-                    color: isActive ? "var(--brand)" : "var(--label-quaternary)",
+                    fontSize: "11px",
+                    color: isActive ? "#3CC864" : "#7A8F82",
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: "0.01em",
                   }}
                 >
                   {label}

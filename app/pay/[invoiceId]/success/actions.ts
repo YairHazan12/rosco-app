@@ -1,6 +1,7 @@
 "use server";
 
-import { getInvoice, updateInvoice } from "@/lib/db";
+import { getInvoiceById, updateInvoice } from "@/lib/db";
+import { getBillingInvoiceById, updateBillingInvoice } from "@/lib/billing-db";
 
 async function verifyPaystackTransaction(reference: string): Promise<boolean> {
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
@@ -35,16 +36,16 @@ async function verifyPaystackTransaction(reference: string): Promise<boolean> {
 export async function verifyAndUpdatePayment(
   invoiceId: string,
   transactionReference: string | undefined,
-  companyId: string = "DEMO"
 ): Promise<{ success: boolean; shouldRedirect?: string }> {
-  const invoice = await getInvoice(invoiceId, companyId);
+  const legacyInvoice = await getInvoiceById(invoiceId);
+  const billingInvoice = legacyInvoice ? null : await getBillingInvoiceById(invoiceId);
 
-  if (!invoice) {
+  if (!legacyInvoice && !billingInvoice) {
     return { success: false, shouldRedirect: "/404" };
   }
 
   // Already paid - success
-  if (invoice.status === "Paid") {
+  if (legacyInvoice?.status === "Paid" || billingInvoice?.status === "paid") {
     return { success: true };
   }
 
@@ -57,15 +58,35 @@ export async function verifyAndUpdatePayment(
   const isVerified = await verifyPaystackTransaction(transactionReference);
 
   if (isVerified) {
-    await updateInvoice(
-      invoiceId,
-      {
-        status: "Paid",
-        paidAt: new Date().toISOString(),
-        paystackReference: transactionReference,
-      },
-      companyId
-    );
+    const paidAt = new Date().toISOString();
+
+    if (legacyInvoice) {
+      await updateInvoice(
+        invoiceId,
+        {
+          status: "Paid",
+          paidAt,
+          paystackReference: transactionReference,
+        },
+        legacyInvoice.companyId
+      );
+    } else if (billingInvoice) {
+      await updateBillingInvoice(invoiceId, billingInvoice.companyId, {
+        status: "paid",
+        amountPaid: billingInvoice.total,
+        amountOutstanding: 0,
+        activityLog: [
+          ...(billingInvoice.activityLog ?? []),
+          {
+            id: Math.random().toString(36).slice(2, 10),
+            type: "paid",
+            timestamp: paidAt,
+            description: `Invoice ${billingInvoice.documentNumber} paid`,
+            metadata: { transactionReference },
+          },
+        ],
+      });
+    }
     return { success: true };
   } else {
     return { success: false, shouldRedirect: `/pay/${invoiceId}?error=verification_failed` };

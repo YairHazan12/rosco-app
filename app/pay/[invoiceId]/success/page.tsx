@@ -1,4 +1,5 @@
 import { getInvoiceById } from "@/lib/db";
+import { getBillingInvoiceById } from "@/lib/billing-db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,12 +17,14 @@ export default async function PaymentSuccessPage({
   const { invoiceId } = await params;
   const { reference, trxref } = await searchParams;
 
-  const invoice = await getInvoiceById(invoiceId);
+  const legacyInvoice = await getInvoiceById(invoiceId);
+  const billingInvoice = legacyInvoice ? null : await getBillingInvoiceById(invoiceId);
+  const invoice = legacyInvoice ?? billingInvoice;
   if (!invoice) notFound();
 
   // Paystack uses either 'reference' or 'trxref' in callback
-  const transactionReference = reference || trxref || invoice.paystackReference;
-  const alreadyPaid = invoice.status === "Paid";
+  const transactionReference = reference || trxref || (legacyInvoice ? legacyInvoice.paystackReference : undefined);
+  const alreadyPaid = legacyInvoice ? legacyInvoice.status === "Paid" : billingInvoice?.status === "paid";
 
   return (
     <PaymentVerifier
@@ -98,7 +101,7 @@ export default async function PaymentSuccessPage({
                 className="font-mono text-[13px] font-medium mt-0.5"
                 style={{ color: "var(--label-secondary)" }}
               >
-                #{invoice.id.slice(-8).toUpperCase()}
+                {legacyInvoice ? `#${legacyInvoice.id.slice(-8).toUpperCase()}` : (billingInvoice?.documentNumber ?? `#${invoiceId.slice(-8).toUpperCase()}`)}
               </p>
               <p
                 className="text-[28px] font-bold mt-2 tracking-tight"
