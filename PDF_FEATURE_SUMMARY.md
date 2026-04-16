@@ -1,230 +1,230 @@
-# PDF Generation and Sharing Feature - Implementation Summary
+# PDF Generation and Native Sharing Feature - Implementation Summary
 
-## ✅ Completed Tasks
+## ✅ Overview
 
-### 1. PDF Generation System
-- **Created** `lib/pdf-templates.tsx` with React PDF components:
-  - `InvoicePDF` - Full invoice PDF template with SARS compliance
-  - `QuotePDF` - Professional quote PDF template
-  - Both templates include:
-    - Company and client details
-    - Line items with VAT breakdown
-    - Banking details for EFT payments
-    - Notes and terms
-    - Professional styling matching the app design
+The PDF sharing feature has been updated to use **native sharing flows** instead of automated API-based email/WhatsApp sending. This gives users full control over how they send documents from their own apps.
 
-### 2. API Endpoints
+## 📋 Changes Made
 
-#### `/app/api/billing/generate-pdf/route.ts`
-- **POST** - Generate PDF, upload to Vercel Blob, and return URL
-  - Request: `{ docType: "invoice" | "quote", id: string }`
-  - Response: `{ url: string, filename: string }`
-  - Updates document record with `pdfUrl`
+### 1. Native Sharing Approach
 
-- **GET** - Generate and download PDF directly (no storage)
-  - Query params: `?docType=invoice&id=xxx`
-  - Returns PDF file as download
+**Before:**
+- App automatically sent emails via Resend API
+- PDFs uploaded to Vercel Blob storage for WhatsApp sharing
+- Users had no control over the sending process
 
-#### `/app/api/billing/send-email/route.ts`
-- **POST** - Send invoice/quote via email with PDF attachment
-  - Request: `{ docType: "invoice" | "quote", id: string, recipientEmail?: string }`
-  - Response: `{ success: true, sentTo: string }`
-  - Uses Resend API
-  - Includes beautiful HTML email template with document details
-  - Attaches generated PDF
+**After:**
+- PDFs generated and downloaded to user's device
+- Email: Opens native mailto: link with pre-filled subject/body
+- WhatsApp: Uses Web Share API (mobile) or opens WhatsApp Web
+- User manually attaches PDF and sends from their own app
 
-### 3. UI Updates
+### 2. New Utility: `lib/native-share.ts`
 
-#### Invoice Actions (`/app/admin/billing/invoices/[id]/_components/invoice-actions.tsx`)
-Added to the "More" menu:
-- **📄 Send PDF via WhatsApp** - Generates PDF, uploads to Blob, shares link
-- **📧 Send PDF via Email** - Generates PDF and emails with attachment
-- Loading states during PDF generation
-- Toast notifications for success/errors
+Created helper functions for native sharing:
 
-#### Quote Actions (`/app/admin/billing/quotes/[id]/_components/quote-actions.tsx`)
-Added to the "More" menu:
-- **📄 Send PDF via WhatsApp** - Generates PDF, uploads to Blob, shares link
-- **📧 Send PDF via Email** - Generates PDF and emails with attachment
-- Loading states during PDF generation
-- Toast notifications for success/errors
+- **`downloadPDF(docType, id)`** - Downloads PDF using GET endpoint
+- **`shareViaEmail({ recipientEmail, subject, body })`** - Opens mailto: link
+- **`shareViaWhatsApp({ recipientPhone, message, file })`** - Web Share API or WhatsApp Web
+- **`canUseWebShare()`** - Check if Web Share API is available
 
-### 4. Dependencies Installed
+### 3. Updated Components
+
+#### Invoice Actions (`invoice-actions.tsx`)
+- **Share via Email**: Downloads PDF → Opens mailto: with pre-filled content
+- **Share via WhatsApp**: Downloads PDF → Web Share API (mobile) or WhatsApp Web (desktop)
+- Toast messages: "PDF downloaded. Opening email..." / "PDF downloaded. Opening WhatsApp..."
+
+#### Quote Actions (`quote-actions.tsx`)
+- Same native sharing approach as invoices
+- Pre-filled messages with quote details
+
+### 4. API Simplification
+
+#### Removed:
+- ❌ `/api/billing/send-email` route (no longer needed)
+- ❌ POST endpoint from `/api/billing/generate-pdf` (no blob upload)
+- ❌ Resend integration
+- ❌ Vercel Blob storage
+
+#### Kept:
+- ✅ GET `/api/billing/generate-pdf?docType=invoice&id=xxx` (direct download)
+- ✅ PDF generation logic with `@react-pdf/renderer`
+- ✅ InvoicePDF and QuotePDF components
+
+### 5. Dependencies Removed
+
+Uninstalled packages no longer needed:
 ```json
 {
-  "@react-pdf/renderer": "^latest",
-  "resend": "^latest",
-  "@vercel/blob": "^latest"
+  "resend": "^6.12.0",           // ❌ Removed
+  "@vercel/blob": "^2.3.3"       // ❌ Removed
 }
 ```
 
-### 5. Environment Configuration
-Created `.env.example` with required variables:
+### 6. Environment Variables
+
+Updated `.env.example` to remove:
 ```env
-RESEND_API_KEY=          # Get from resend.com
-RESEND_FROM_EMAIL=       # billing@yourdomain.com
-BLOB_READ_WRITE_TOKEN=   # Vercel Blob storage token
+# ❌ No longer needed
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+BLOB_READ_WRITE_TOKEN=
 ```
+
+## 🎯 How It Works
+
+### Email Flow
+
+1. User clicks "Share via Email"
+2. PDF is generated and downloaded to browser
+3. Mailto link opens with:
+   - **To:** Client email
+   - **Subject:** "Invoice #INV-001 from Business Name"
+   - **Body:** "Please find attached invoice #INV-001. Total: R1,234.00"
+4. User manually attaches downloaded PDF
+5. User sends email from their own email client
+
+### WhatsApp Flow
+
+#### Mobile (Web Share API)
+1. User clicks "Share via WhatsApp"
+2. PDF is generated and downloaded
+3. Native share sheet opens with PDF pre-attached
+4. User selects WhatsApp
+5. Message is pre-filled: "Hi Client, here's your invoice..."
+6. User sends from WhatsApp
+
+#### Desktop (Fallback)
+1. User clicks "Share via WhatsApp"
+2. PDF is downloaded to computer
+3. WhatsApp Web opens with pre-filled message
+4. User manually attaches PDF and sends
 
 ## 🧪 Testing Checklist
 
-### Invoice PDF Generation
-- [ ] Open an invoice detail page
-- [ ] Click "More" (⋯) button
-- [ ] Click "Send PDF via WhatsApp"
-  - [ ] Verify PDF generates (loading state appears)
-  - [ ] Verify WhatsApp opens with pre-filled message
-  - [ ] Verify message contains PDF link
-  - [ ] Click the PDF link and verify it opens correctly
-  - [ ] Check PDF content (all invoice details, client info, line items, totals)
-- [ ] Click "Send PDF via Email"
-  - [ ] Verify "Sending..." state appears
-  - [ ] Verify success toast: "Invoice sent to [email]"
-  - [ ] Check recipient's email inbox
-  - [ ] Verify email has nice HTML formatting
-  - [ ] Verify PDF is attached
-  - [ ] Download and open PDF attachment
-  - [ ] Verify all invoice details render correctly
+### Email Sharing
+- [ ] Click "Share via Email" on invoice
+- [ ] Verify PDF downloads to browser
+- [ ] Verify mailto: link opens with correct recipient
+- [ ] Check subject line format: "Invoice #XXX from Business Name"
+- [ ] Check body has invoice details and total
+- [ ] Manually attach PDF and send test email
+- [ ] Verify recipient receives email with PDF
 
-### Quote PDF Generation
-- [ ] Open a quote detail page
-- [ ] Click "More" (⋯) button
-- [ ] Click "Send PDF via WhatsApp"
-  - [ ] Verify PDF generates (loading state appears)
-  - [ ] Verify WhatsApp opens with pre-filled message
-  - [ ] Verify message contains PDF link
-  - [ ] Click the PDF link and verify it opens correctly
-  - [ ] Check PDF content (all quote details, client info, line items, totals, deposit info)
-- [ ] Click "Send PDF via Email"
-  - [ ] Verify "Sending..." state appears
-  - [ ] Verify success toast: "Quote sent to [email]"
-  - [ ] Check recipient's email inbox
-  - [ ] Verify email has nice HTML formatting
-  - [ ] Verify PDF is attached
-  - [ ] Download and open PDF attachment
-  - [ ] Verify all quote details render correctly
+### WhatsApp Sharing (Mobile)
+- [ ] Click "Share via WhatsApp" on mobile device
+- [ ] Verify native share sheet appears
+- [ ] Select WhatsApp from share options
+- [ ] Verify PDF is pre-attached
+- [ ] Check pre-filled message has invoice details
+- [ ] Send test message
+- [ ] Verify recipient receives WhatsApp with PDF
 
-### PDF Content Verification
-- [ ] Company details (name, VAT, address, contact)
-- [ ] Client details (name, VAT, address, contact)
-- [ ] Document number and dates
-- [ ] Line items with correct calculations
-- [ ] VAT breakdown (when applicable)
-- [ ] Totals (subtotal, VAT, total)
-- [ ] Banking details (for invoices with outstanding amounts)
-- [ ] Notes section
-- [ ] Professional styling and layout
-- [ ] SARS compliance elements (VAT numbers, proper labeling)
+### WhatsApp Sharing (Desktop)
+- [ ] Click "Share via WhatsApp" on desktop
+- [ ] Verify PDF downloads
+- [ ] Verify WhatsApp Web opens
+- [ ] Check pre-filled message content
+- [ ] Manually attach downloaded PDF
+- [ ] Send test message
+- [ ] Verify recipient receives message with PDF
 
-### Mobile Responsiveness
-- [ ] Test WhatsApp sharing on mobile device
-- [ ] Verify PDF link opens correctly in mobile browser
-- [ ] Test email receipt and PDF viewing on mobile
+### Quote Sharing
+- [ ] Test same flows with quotes
+- [ ] Verify subject line: "Quote #XXX from Business Name"
+- [ ] Check quote-specific message content
 
 ### Error Handling
-- [ ] Test with missing client email (should show error)
+- [ ] Test with missing client email (should still work, opens blank mailto)
 - [ ] Test with invalid document ID (should show error toast)
-- [ ] Test with network failure (should show error toast)
-- [ ] Verify error messages are user-friendly
+- [ ] Test PDF generation failure (should show error)
 
-## 🚀 Deployment Setup
+## 💡 Benefits
 
-### 1. Environment Variables
-Add to your Vercel project or `.env.local`:
+### For Users
+- ✅ **Full control** - Send from their own apps
+- ✅ **No API dependencies** - Works even if email service is down
+- ✅ **Better privacy** - No third-party email sending
+- ✅ **Familiar UX** - Uses native email/WhatsApp clients
+- ✅ **Works offline** - Can generate PDF, send later
 
-```env
-# Resend API Key (get from https://resend.com)
-RESEND_API_KEY=re_123...
+### For Developers
+- ✅ **Simpler codebase** - Removed complex email/blob logic
+- ✅ **Lower costs** - No Resend or Vercel Blob fees
+- ✅ **Fewer dependencies** - Less to maintain
+- ✅ **Better security** - No email credentials to manage
 
-# From email (must be verified domain in Resend)
-RESEND_FROM_EMAIL=billing@yourdomain.com
+## 📱 Browser Compatibility
 
-# Vercel Blob token (auto-provided in Vercel, or create manually)
-BLOB_READ_WRITE_TOKEN=vercel_blob_...
-```
+### Web Share API (WhatsApp on Mobile)
+- ✅ Safari (iOS 12+)
+- ✅ Chrome (Android 61+)
+- ✅ Edge (Android)
+- ❌ Desktop browsers (falls back to WhatsApp Web)
 
-### 2. Resend Setup
-1. Sign up at [resend.com](https://resend.com)
-2. Verify your domain
-3. Generate API key
-4. Set `RESEND_FROM_EMAIL` to use your verified domain
+### Mailto Links (Email)
+- ✅ All modern browsers
+- ✅ Works with any email client (Gmail, Outlook, Apple Mail, etc.)
 
-### 3. Vercel Blob Setup
-1. In Vercel dashboard, go to Storage tab
-2. Create a Blob store (or use existing)
-3. The `BLOB_READ_WRITE_TOKEN` is auto-injected in production
-4. For local dev, copy the token from Vercel dashboard
+### PDF Downloads
+- ✅ All modern browsers
+- ✅ Works on mobile and desktop
 
-### 4. Deploy
-```bash
-git push origin feature/pdf-sharing
-# Create PR and merge to main
-# Vercel will auto-deploy
-```
+## 🚀 Deployment
 
-## 📝 Usage Notes
+Since this removes external dependencies:
 
-### For WhatsApp Sharing
-- PDF is uploaded to Vercel Blob storage
-- User gets a public URL to share
-- URL is permanent and publicly accessible
-- Ideal for quick sharing without email
+1. **No new environment variables needed**
+2. **Remove old variables:**
+   ```bash
+   # From Vercel project settings, delete:
+   RESEND_API_KEY
+   RESEND_FROM_EMAIL
+   BLOB_READ_WRITE_TOKEN
+   ```
+3. **Deploy as normal:**
+   ```bash
+   git push origin feature/pdf-sharing
+   ```
 
-### For Email Sharing
-- PDF is generated on-the-fly
-- Attached directly to email (no public URL)
-- More secure for sensitive documents
-- Better user experience (PDF in inbox)
+## 📝 Future Enhancements
 
-### PDF Storage
-- PDFs uploaded to Vercel Blob are public
-- Each document's `pdfUrl` field is updated after first generation
-- Subsequent shares can reuse the same URL (saves storage)
-- Consider implementing cleanup/expiry for old PDFs
+Possible improvements:
+
+- [ ] Add "Download PDF" button (separate from sharing)
+- [ ] Support multiple recipients (BCC in mailto)
+- [ ] Custom message templates per company
+- [ ] PDF preview before sharing
+- [ ] Track which documents were shared (local analytics)
+- [ ] Batch sharing (multiple invoices at once)
+- [ ] SMS sharing option (similar to WhatsApp)
 
 ## 🔧 Troubleshooting
 
-### "Missing API key" error
-- Verify `RESEND_API_KEY` is set in environment variables
-- Check that the key is valid and not expired
-
-### "Failed to generate PDF" error
+### "Failed to generate PDF"
 - Check server logs for details
-- Verify @react-pdf/renderer is installed correctly
-- Ensure document data is complete (no missing required fields)
+- Verify @react-pdf/renderer is installed
+- Ensure document data is complete
 
-### "Failed to send email" error
-- Verify Resend domain is verified
-- Check `RESEND_FROM_EMAIL` matches verified domain
-- Check Resend dashboard for delivery status
+### Mailto link doesn't open
+- User may not have default email client configured
+- Mobile: Suggest installing email app
+- Desktop: Check browser's default email handler settings
 
-### PDF content issues
-- Check `lib/pdf-templates.tsx` for styling issues
-- Verify all document data is serialized correctly
-- Test with different document types (draft, sent, paid, etc.)
+### WhatsApp doesn't open
+- Mobile: Verify WhatsApp app is installed
+- Desktop: User needs WhatsApp Desktop or WhatsApp Web access
+- Check phone number format (should include country code)
 
-## 🎯 Future Enhancements
-- [ ] PDF download button (in addition to sharing)
-- [ ] Batch PDF generation for multiple invoices
-- [ ] Custom PDF templates per company
-- [ ] PDF preview before sending
-- [ ] Send to multiple recipients
-- [ ] Schedule email delivery
-- [ ] Track email opens and PDF downloads
-- [ ] Add watermarks for draft documents
-- [ ] Digital signatures for invoices
-- [ ] Automated cleanup of old PDFs from Blob storage
-
-## 📊 Performance Considerations
-- PDF generation takes ~1-3 seconds
-- Vercel Blob upload is fast (<1 second)
-- Email delivery is async (quick response)
-- Consider caching generated PDFs for reuse
-- Monitor Blob storage costs if volume is high
+### PDF doesn't download
+- Check browser's download permissions
+- Verify popup blocker isn't blocking download
+- Try different browser if issue persists
 
 ---
 
-**Implementation Date:** 2026-04-16
-**Branch:** `feature/pdf-sharing`
-**Commit:** `e3c55c5`
-**Status:** ✅ Ready for testing
+**Implementation Date:** 2026-04-16  
+**Branch:** `feature/pdf-sharing`  
+**Status:** ✅ Updated to native sharing flows  
+**Breaking Changes:** Removed Resend API and Vercel Blob storage

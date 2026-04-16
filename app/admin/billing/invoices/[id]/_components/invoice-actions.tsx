@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import type { BillingInvoice } from "@/lib/billing-types";
 import { formatZAR } from "@/lib/billing-types";
+import { downloadPDF, shareViaEmail, shareViaWhatsApp, canUseWebShare } from "@/lib/native-share";
 
 interface InvoiceActionsProps {
   invoice: BillingInvoice;
@@ -91,22 +92,27 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
   async function sendPDFViaWhatsApp() {
     setSendingPDF('whatsapp');
     try {
-      // Generate PDF and upload to blob storage
-      const pdfRes = await fetch('/api/billing/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType: 'invoice', id: invoice.id }),
-      });
-      if (!pdfRes.ok) throw new Error('Failed to generate PDF');
-      const { url } = await pdfRes.json();
+      // Generate and download PDF
+      toast.info('Generating PDF...');
+      const pdfFile = await downloadPDF('invoice', invoice.id);
       
-      // Share via WhatsApp
-      const text = encodeURIComponent(
-        `Hi ${invoice.clientName},\n\nYour invoice ${invoice.documentNumber} for ${formatZAR(invoice.amountOutstanding)} is ready.\n\nView/Download PDF: ${url}${paymentLink ? `\n\nPay securely here: ${paymentLink}` : ''}`
-      );
-      window.open(`https://wa.me/${invoice.clientPhone?.replace(/\D/g, "") ?? ""}?text=${text}`, "_blank");
-      toast.success('PDF link shared via WhatsApp');
-    } catch {
+      // Prepare message
+      const message = `Hi ${invoice.clientName},\n\nHere's your invoice ${invoice.documentNumber}. Total: ${formatZAR(invoice.amountOutstanding)}${paymentLink ? `\n\nPay securely here: ${paymentLink}` : ''}`;
+      
+      // Share via WhatsApp (Web Share API or WhatsApp Web)
+      const method = await shareViaWhatsApp({
+        recipientPhone: invoice.clientPhone,
+        message,
+        file: pdfFile,
+      });
+      
+      if (method === 'web-share') {
+        toast.success('PDF shared via WhatsApp');
+      } else {
+        toast.success('PDF downloaded. Opening WhatsApp...');
+      }
+    } catch (error) {
+      console.error('Share error:', error);
       toast.error('Could not generate PDF');
     } finally {
       setSendingPDF(null);
@@ -117,16 +123,24 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
   async function sendPDFViaEmail() {
     setSendingPDF('email');
     try {
-      const res = await fetch('/api/billing/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType: 'invoice', id: invoice.id }),
+      // Generate and download PDF
+      toast.info('Generating PDF...');
+      const pdfFile = await downloadPDF('invoice', invoice.id);
+      
+      // Open mailto link
+      const subject = `Invoice ${invoice.documentNumber} from ${invoice.companyName || 'Your Business'}`;
+      const body = `Please find attached invoice ${invoice.documentNumber}. Total: ${formatZAR(invoice.amountOutstanding)}${paymentLink ? `\n\nPay online: ${paymentLink}` : ''}`;
+      
+      shareViaEmail({
+        recipientEmail: invoice.clientEmail || '',
+        subject,
+        body,
       });
-      if (!res.ok) throw new Error('Failed to send email');
-      const { sentTo } = await res.json();
-      toast.success(`Invoice sent to ${sentTo}`);
-    } catch {
-      toast.error('Could not send email');
+      
+      toast.success('PDF downloaded. Opening email...');
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.error('Could not generate PDF');
     } finally {
       setSendingPDF(null);
       setShowMenu(false);
@@ -241,7 +255,7 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
                 >
                   <span style={{ fontSize: "18px" }}>📄</span>
                   <span style={{ fontSize: "14px", color: "#1C2B22" }}>
-                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Send PDF via WhatsApp'}
+                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Share via WhatsApp'}
                   </span>
                 </button>
                 <button
@@ -252,7 +266,7 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
                 >
                   <span style={{ fontSize: "18px" }}>📧</span>
                   <span style={{ fontSize: "14px", color: "#1C2B22" }}>
-                    {sendingPDF === 'email' ? 'Sending...' : 'Send PDF via Email'}
+                    {sendingPDF === 'email' ? 'Generating PDF...' : 'Share via Email'}
                   </span>
                 </button>
                 {invoice.status !== "overdue" && invoice.status !== "paid" && (

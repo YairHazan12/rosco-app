@@ -6,6 +6,7 @@ import { Send, Eye, MoreHorizontal, CheckCircle, ArrowRight, X } from "lucide-re
 import { toast } from "sonner";
 import type { Quote } from "@/lib/billing-types";
 import { formatZAR } from "@/lib/billing-types";
+import { downloadPDF, shareViaEmail, shareViaWhatsApp } from "@/lib/native-share";
 
 interface QuoteActionsProps {
   quote: Quote;
@@ -74,22 +75,27 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
   async function sendPDFViaWhatsApp() {
     setSendingPDF('whatsapp');
     try {
-      // Generate PDF and upload to blob storage
-      const pdfRes = await fetch('/api/billing/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType: 'quote', id: quote.id }),
-      });
-      if (!pdfRes.ok) throw new Error('Failed to generate PDF');
-      const { url } = await pdfRes.json();
+      // Generate and download PDF
+      toast.info('Generating PDF...');
+      const pdfFile = await downloadPDF('quote', quote.id);
       
-      // Share via WhatsApp
-      const text = encodeURIComponent(
-        `Hi ${quote.clientName},\n\nYour quote ${quote.documentNumber} for ${quote.title} is ready.\n\nTotal: ${formatZAR(quote.total)}\nValid until: ${quote.validUntil}\n\nView/Download PDF: ${url}`
-      );
-      window.open(`https://wa.me/${quote.clientPhone?.replace(/\D/g, "") ?? ""}?text=${text}`, "_blank");
-      toast.success('PDF link shared via WhatsApp');
-    } catch {
+      // Prepare message
+      const message = `Hi ${quote.clientName},\n\nHere's your quote ${quote.documentNumber}. Total: ${formatZAR(quote.total)}`;
+      
+      // Share via WhatsApp (Web Share API or WhatsApp Web)
+      const method = await shareViaWhatsApp({
+        recipientPhone: quote.clientPhone,
+        message,
+        file: pdfFile,
+      });
+      
+      if (method === 'web-share') {
+        toast.success('PDF shared via WhatsApp');
+      } else {
+        toast.success('PDF downloaded. Opening WhatsApp...');
+      }
+    } catch (error) {
+      console.error('Share error:', error);
       toast.error('Could not generate PDF');
     } finally {
       setSendingPDF(null);
@@ -100,16 +106,24 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
   async function sendPDFViaEmail() {
     setSendingPDF('email');
     try {
-      const res = await fetch('/api/billing/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType: 'quote', id: quote.id }),
+      // Generate and download PDF
+      toast.info('Generating PDF...');
+      const pdfFile = await downloadPDF('quote', quote.id);
+      
+      // Open mailto link
+      const subject = `Quote ${quote.documentNumber} from ${quote.companyName || 'Your Business'}`;
+      const body = `Please find attached quote ${quote.documentNumber}. Total: ${formatZAR(quote.total)}`;
+      
+      shareViaEmail({
+        recipientEmail: quote.clientEmail || '',
+        subject,
+        body,
       });
-      if (!res.ok) throw new Error('Failed to send email');
-      const { sentTo } = await res.json();
-      toast.success(`Quote sent to ${sentTo}`);
-    } catch {
-      toast.error('Could not send email');
+      
+      toast.success('PDF downloaded. Opening email...');
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.error('Could not generate PDF');
     } finally {
       setSendingPDF(null);
       setShowMenu(false);
@@ -233,7 +247,7 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
                 >
                   <span style={{ fontSize: "18px" }}>📄</span>
                   <span style={{ fontSize: "14px", color: "#1C2B22" }}>
-                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Send PDF via WhatsApp'}
+                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Share via WhatsApp'}
                   </span>
                 </button>
                 <button
@@ -244,7 +258,7 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
                 >
                   <span style={{ fontSize: "18px" }}>📧</span>
                   <span style={{ fontSize: "14px", color: "#1C2B22" }}>
-                    {sendingPDF === 'email' ? 'Sending...' : 'Send PDF via Email'}
+                    {sendingPDF === 'email' ? 'Generating PDF...' : 'Share via Email'}
                   </span>
                 </button>
                 {quote.status !== "expired" && quote.status !== "accepted" && (
