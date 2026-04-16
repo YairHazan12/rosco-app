@@ -10,6 +10,7 @@
     "reset-data": "node -r dotenv/config node_modules/.bin/tsx scripts/reset-data.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
