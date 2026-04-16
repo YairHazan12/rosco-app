@@ -16,6 +16,7 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [showMenu, setShowMenu] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [sendingPDF, setSendingPDF] = useState<'whatsapp' | 'email' | null>(null);
 
   async function updateStatus(status: Quote["status"]) {
     try {
@@ -68,6 +69,51 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
     );
     window.location.href = `mailto:${quote.clientEmail ?? ""}?subject=${subject}&body=${body}`;
     setShowMenu(false);
+  }
+
+  async function sendPDFViaWhatsApp() {
+    setSendingPDF('whatsapp');
+    try {
+      // Generate PDF and upload to blob storage
+      const pdfRes = await fetch('/api/billing/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: 'quote', id: quote.id }),
+      });
+      if (!pdfRes.ok) throw new Error('Failed to generate PDF');
+      const { url } = await pdfRes.json();
+      
+      // Share via WhatsApp
+      const text = encodeURIComponent(
+        `Hi ${quote.clientName},\n\nYour quote ${quote.documentNumber} for ${quote.title} is ready.\n\nTotal: ${formatZAR(quote.total)}\nValid until: ${quote.validUntil}\n\nView/Download PDF: ${url}`
+      );
+      window.open(`https://wa.me/${quote.clientPhone?.replace(/\D/g, "") ?? ""}?text=${text}`, "_blank");
+      toast.success('PDF link shared via WhatsApp');
+    } catch {
+      toast.error('Could not generate PDF');
+    } finally {
+      setSendingPDF(null);
+      setShowMenu(false);
+    }
+  }
+
+  async function sendPDFViaEmail() {
+    setSendingPDF('email');
+    try {
+      const res = await fetch('/api/billing/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: 'quote', id: quote.id }),
+      });
+      if (!res.ok) throw new Error('Failed to send email');
+      const { sentTo } = await res.json();
+      toast.success(`Quote sent to ${sentTo}`);
+    } catch {
+      toast.error('Could not send email');
+    } finally {
+      setSendingPDF(null);
+      setShowMenu(false);
+    }
   }
 
   return (
@@ -169,7 +215,7 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
                   style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
                 >
                   <span style={{ fontSize: "18px" }}>💬</span>
-                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share via WhatsApp</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share Text (WhatsApp)</span>
                 </button>
                 <button
                   onClick={shareEmail}
@@ -177,7 +223,29 @@ export default function QuoteActions({ quote }: QuoteActionsProps) {
                   style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
                 >
                   <span style={{ fontSize: "18px" }}>✉️</span>
-                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share via Email</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share Text (Email)</span>
+                </button>
+                <button
+                  onClick={sendPDFViaWhatsApp}
+                  disabled={sendingPDF === 'whatsapp'}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#F5F8F6] active:bg-[#F5F8F6]"
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", opacity: sendingPDF === 'whatsapp' ? 0.6 : 1 }}
+                >
+                  <span style={{ fontSize: "18px" }}>📄</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>
+                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Send PDF via WhatsApp'}
+                  </span>
+                </button>
+                <button
+                  onClick={sendPDFViaEmail}
+                  disabled={sendingPDF === 'email'}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#F5F8F6] active:bg-[#F5F8F6]"
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", opacity: sendingPDF === 'email' ? 0.6 : 1 }}
+                >
+                  <span style={{ fontSize: "18px" }}>📧</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>
+                    {sendingPDF === 'email' ? 'Sending...' : 'Send PDF via Email'}
+                  </span>
                 </button>
                 {quote.status !== "expired" && quote.status !== "accepted" && (
                   <button

@@ -19,6 +19,7 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [paymentLink, setPaymentLink] = useState<string | null>(invoice.paymentLinkUrl ?? null);
   const [showQR, setShowQR] = useState(false);
+  const [sendingPDF, setSendingPDF] = useState<'whatsapp' | 'email' | null>(null);
 
   async function updateStatus(status: BillingInvoice["status"]) {
     try {
@@ -85,6 +86,51 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
     );
     window.location.href = `mailto:${invoice.clientEmail ?? ""}?subject=${subject}&body=${body}`;
     setShowMenu(false);
+  }
+
+  async function sendPDFViaWhatsApp() {
+    setSendingPDF('whatsapp');
+    try {
+      // Generate PDF and upload to blob storage
+      const pdfRes = await fetch('/api/billing/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: 'invoice', id: invoice.id }),
+      });
+      if (!pdfRes.ok) throw new Error('Failed to generate PDF');
+      const { url } = await pdfRes.json();
+      
+      // Share via WhatsApp
+      const text = encodeURIComponent(
+        `Hi ${invoice.clientName},\n\nYour invoice ${invoice.documentNumber} for ${formatZAR(invoice.amountOutstanding)} is ready.\n\nView/Download PDF: ${url}${paymentLink ? `\n\nPay securely here: ${paymentLink}` : ''}`
+      );
+      window.open(`https://wa.me/${invoice.clientPhone?.replace(/\D/g, "") ?? ""}?text=${text}`, "_blank");
+      toast.success('PDF link shared via WhatsApp');
+    } catch {
+      toast.error('Could not generate PDF');
+    } finally {
+      setSendingPDF(null);
+      setShowMenu(false);
+    }
+  }
+
+  async function sendPDFViaEmail() {
+    setSendingPDF('email');
+    try {
+      const res = await fetch('/api/billing/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: 'invoice', id: invoice.id }),
+      });
+      if (!res.ok) throw new Error('Failed to send email');
+      const { sentTo } = await res.json();
+      toast.success(`Invoice sent to ${sentTo}`);
+    } catch {
+      toast.error('Could not send email');
+    } finally {
+      setSendingPDF(null);
+      setShowMenu(false);
+    }
   }
 
   return (
@@ -177,7 +223,7 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
                   style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
                 >
                   <span style={{ fontSize: "18px" }}>💬</span>
-                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share via WhatsApp</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share Payment Link (WhatsApp)</span>
                 </button>
                 <button
                   onClick={shareEmail}
@@ -185,7 +231,29 @@ export default function InvoiceActions({ invoice }: InvoiceActionsProps) {
                   style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
                 >
                   <span style={{ fontSize: "18px" }}>✉️</span>
-                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share via Email</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>Share Payment Link (Email)</span>
+                </button>
+                <button
+                  onClick={sendPDFViaWhatsApp}
+                  disabled={sendingPDF === 'whatsapp'}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#F5F8F6]"
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", opacity: sendingPDF === 'whatsapp' ? 0.6 : 1 }}
+                >
+                  <span style={{ fontSize: "18px" }}>📄</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>
+                    {sendingPDF === 'whatsapp' ? 'Generating PDF...' : 'Send PDF via WhatsApp'}
+                  </span>
+                </button>
+                <button
+                  onClick={sendPDFViaEmail}
+                  disabled={sendingPDF === 'email'}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#F5F8F6]"
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", opacity: sendingPDF === 'email' ? 0.6 : 1 }}
+                >
+                  <span style={{ fontSize: "18px" }}>📧</span>
+                  <span style={{ fontSize: "14px", color: "#1C2B22" }}>
+                    {sendingPDF === 'email' ? 'Sending...' : 'Send PDF via Email'}
+                  </span>
                 </button>
                 {invoice.status !== "overdue" && invoice.status !== "paid" && (
                   <button
